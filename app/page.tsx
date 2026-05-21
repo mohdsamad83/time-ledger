@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import {
-  Clock, BarChart2, History, RefreshCw, CheckCircle,
+  Clock, BarChart2, History, CheckCircle,
   AlertCircle, Loader2, ExternalLink, BookOpen,
 } from "lucide-react";
 
@@ -22,6 +22,7 @@ import BlockModal      from "@/components/BlockModal";
 import EveningReviewModal from "@/components/EveningReview";
 import InsightsView    from "@/components/InsightsView";
 import HistoryView     from "@/components/HistoryView";
+import ThemeToggle     from "@/components/ThemeToggle";
 
 type Tab = "today" | "history" | "insights";
 
@@ -145,15 +146,15 @@ export default function App() {
       {/* ── Top Nav ────────────────────────────────────────────────────────── */}
       <header
         className="sticky top-0 z-40 flex items-center justify-between px-4 md:px-6 py-3"
-        style={{ background: "#0D0C0A", borderBottom: "1px solid #2A261A" }}
+        style={{ background: "var(--bg)", borderBottom: "1px solid var(--border)" }}
       >
         {/* Logo */}
         <div className="flex items-center gap-2.5">
           <div
             className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-            style={{ background: "#17150F", border: "1px solid #7A6228" }}
+            style={{ background: "var(--surface)", border: "1px solid var(--dim)" }}
           >
-            <Clock size={15} className="text-[#C9A84C]" />
+            <Clock size={15} style={{ color: "var(--gold)" }} />
           </div>
           <div className="hidden sm:block">
             <span className="gold-text font-serif text-xl font-semibold tracking-wide">
@@ -174,9 +175,9 @@ export default function App() {
               onClick={() => { setTab(t.id); if (t.id === "today") setViewDate(TODAY); }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all"
               style={{
-                background: tab === t.id ? "#17150F" : "transparent",
-                border:     `1px solid ${tab === t.id ? "#2A261A" : "transparent"}`,
-                color:      tab === t.id ? "#C9A84C" : "#5C5247",
+                background: tab === t.id ? "var(--surface)" : "transparent",
+                border:     `1px solid ${tab === t.id ? "var(--border)" : "transparent"}`,
+                color:      tab === t.id ? "var(--gold)" : "var(--faint)",
               }}
             >
               {t.icon}
@@ -185,7 +186,7 @@ export default function App() {
           ))}
         </nav>
 
-        {/* Sync status */}
+        {/* Sync status + Theme toggle */}
         <div className="flex items-center gap-2">
           <SyncIndicator state={syncState} msg={syncMsg} />
           {process.env.NEXT_PUBLIC_SHEET_URL && (
@@ -200,6 +201,7 @@ export default function App() {
               <span className="hidden sm:inline">Sheets</span>
             </a>
           )}
+          <ThemeToggle />
         </div>
       </header>
 
@@ -207,14 +209,14 @@ export default function App() {
       {tab === "today" && dayData.setup && (
         <div
           className="px-4 md:px-6 py-3 flex items-center justify-between"
-          style={{ background: "#0D0C0A", borderBottom: "1px solid #1E1B13" }}
+          style={{ background: "var(--bg)", borderBottom: "1px solid var(--s2)" }}
         >
           <div>
-            <p className="font-mono text-xs text-[#5C5247]">
+            <p className="font-mono text-xs" style={{ color: "var(--faint)" }}>
               {format(new Date(viewDate + "T12:00:00"), "EEEE, MMMM d, yyyy")}
             </p>
           </div>
-          <p className="text-xs text-[#5C5247] italic hidden md:block font-serif max-w-sm text-right">
+          <p className="text-xs italic hidden md:block font-serif max-w-sm text-right" style={{ color: "var(--faint)" }}>
             {quote}
           </p>
         </div>
@@ -285,10 +287,10 @@ export default function App() {
       {/* ── Drucker footer (desktop) ─────────────────────────────────────── */}
       <footer
         className="hidden md:flex items-center justify-center py-3 px-6 gap-2"
-        style={{ borderTop: "1px solid #1E1B13" }}
+        style={{ borderTop: "1px solid var(--s2)" }}
       >
-        <BookOpen size={11} className="text-[#2A261A]" />
-        <p className="text-[#2A261A] text-xs font-serif italic">
+        <BookOpen size={11} style={{ color: "var(--border)" }} />
+        <p className="text-xs font-serif italic" style={{ color: "var(--border)" }}>
           Based on the principles of The Effective Executive · Peter F. Drucker
         </p>
       </footer>

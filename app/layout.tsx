@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, JetBrains_Mono, Lato } from "next/font/google";
 import "./globals.css";
+import { ThemeProvider } from "@/lib/theme";
 
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
@@ -32,8 +33,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="en"
       className={`${cormorant.variable} ${jetbrains.variable} ${lato.variable}`}
     >
-      <body className="bg-[#0D0C0A] text-[#EDE8DC] font-sans antialiased min-h-screen">
-        {children}
+      <body
+        className="font-sans antialiased min-h-screen"
+        style={{ background: "var(--bg)", color: "var(--text)" }}
+      >
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

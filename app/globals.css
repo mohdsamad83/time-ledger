@@ -2,7 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
+/* ── Dark Gold (default) ── */
+:root,
+[data-theme="dark"] {
   --bg:      #0D0C0A;
   --surface: #17150F;
   --s2:      #1E1B13;
@@ -12,6 +14,40 @@
   --text:    #EDE8DC;
   --muted:   #A09580;
   --faint:   #5C5247;
+  color-scheme: dark;
+}
+
+/* ── Parchment (light) ── */
+[data-theme="light"] {
+  --bg:      #F9F3E6;
+  --surface: #F0E8D0;
+  --s2:      #E8DCBF;
+  --border:  #D4C49A;
+  --gold:    #9A6F1E;
+  --dim:     #B8860B;
+  --text:    #1A1408;
+  --muted:   #5C4A1E;
+  --faint:   #9C8A60;
+  color-scheme: light;
+}
+
+/* ── Midnight (deep navy) ── */
+[data-theme="midnight"] {
+  --bg:      #060B18;
+  --surface: #0D1526;
+  --s2:      #131E35;
+  --border:  #1E3058;
+  --gold:    #60A5FA;
+  --dim:     #3B82F6;
+  --text:    #E2EEFF;
+  --muted:   #94AECF;
+  --faint:   #3D5A8A;
+  color-scheme: dark;
+}
+
+/* ── Theme transition ── */
+*, *::before, *::after {
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
 }
 
 /* ── Scrollbar ── */
@@ -43,7 +79,33 @@
 .pulse-dot    { animation: pulse-dot 1.2s ease-in-out infinite; }
 
 .gold-text {
+  background: linear-gradient(90deg, var(--gold), var(--dim), var(--gold));
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 4s linear infinite;
+}
+
+/* Per-theme gold-text overrides */
+[data-theme="dark"] .gold-text {
   background: linear-gradient(90deg, #C9A84C, #F0D080, #C9A84C);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 4s linear infinite;
+}
+[data-theme="light"] .gold-text {
+  background: linear-gradient(90deg, #7A4F0D, #C9A84C, #7A4F0D);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 4s linear infinite;
+}
+[data-theme="midnight"] .gold-text {
+  background: linear-gradient(90deg, #3B82F6, #93C5FD, #3B82F6);
   background-size: 200% auto;
   -webkit-background-clip: text;
   background-clip: text;
