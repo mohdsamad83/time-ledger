@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import { TimeBlock, CATEGORIES, Category, EnergyLevel, DelegateOpt } from "@/lib/types";
 import { X, Zap, Battery, BatteryLow, HelpCircle } from "lucide-react";
-import clsx from "clsx";
 
 interface Props {
   hour:        number;
@@ -64,27 +63,27 @@ export default function BlockModal({ hour, block, topPriority, onSave, onClose }
   return (
     <div
       className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4"
-      style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)" }}
+      style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)" }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
         className="w-full md:max-w-2xl max-h-[95vh] overflow-y-auto rounded-t-2xl md:rounded-xl fade-up"
-        style={{ background: "#17150F", border: "1px solid #2A261A" }}
+        style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
       >
         {/* Header */}
         <div
           className="sticky top-0 z-10 flex items-center justify-between p-5 pb-4"
-          style={{ background: "#17150F", borderBottom: "1px solid #2A261A" }}
+          style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)" }}
         >
           <div>
-            <span className="font-mono text-[#C9A84C] text-sm">
+            <span style={{ color: "var(--gold)" }} className="font-mono text-sm">
               {toTime(hour)} – {toTime(hour + 1)}
             </span>
-            <h3 className="font-serif text-xl text-[#EDE8DC] mt-0.5">
+            <h3 style={{ color: "var(--text)" }} className="font-serif text-xl mt-0.5">
               {block ? "Edit Hour" : "Log This Hour"}
             </h3>
           </div>
-          <button onClick={onClose} className="text-[#5C5247] hover:text-[#EDE8DC] transition-colors">
+          <button onClick={onClose} style={{ color: "var(--faint)" }} className="hover:text-[var(--text)] transition-colors">
             <X size={20} />
           </button>
         </div>
@@ -92,7 +91,7 @@ export default function BlockModal({ hour, block, topPriority, onSave, onClose }
         <div className="p-5 space-y-6">
           {/* Activity */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-[#A09580] mb-2">
+            <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-2">
               What did you do? *
             </label>
             <textarea
@@ -106,7 +105,7 @@ export default function BlockModal({ hour, block, topPriority, onSave, onClose }
 
           {/* Category */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-[#A09580] mb-3">
+            <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-3">
               Category
             </label>
             <div className="grid grid-cols-2 gap-2">
@@ -116,9 +115,9 @@ export default function BlockModal({ hour, block, topPriority, onSave, onClose }
                   onClick={() => setCategory(cat.value)}
                   className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-left transition-all"
                   style={{
-                    background: category === cat.value ? cat.bg : "#1E1B13",
-                    border: `1px solid ${category === cat.value ? cat.color : "#2A261A"}`,
-                    color: category === cat.value ? cat.color : "#A09580",
+                    background: category === cat.value ? cat.bg : "var(--s2)",
+                    border: `1px solid ${category === cat.value ? cat.color : "var(--border)"}`,
+                    color: category === cat.value ? cat.color : "var(--muted)",
                   }}
                 >
                   <span className="text-base">{cat.emoji}</span>
@@ -131,7 +130,7 @@ export default function BlockModal({ hour, block, topPriority, onSave, onClose }
           {/* Row: Energy + Planned */}
           <div className="grid grid-cols-2 gap-5">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-widest text-[#A09580] mb-3">
+              <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-3">
                 Energy Level
               </label>
               <div className="flex gap-2">
@@ -141,9 +140,9 @@ export default function BlockModal({ hour, block, topPriority, onSave, onClose }
                     onClick={() => setEnergy(opt.value)}
                     className="flex-1 flex flex-col items-center gap-1 py-2.5 rounded-lg transition-all text-xs font-bold"
                     style={{
-                      background: energy === opt.value ? `${opt.color}22` : "#1E1B13",
-                      border: `1px solid ${energy === opt.value ? opt.color : "#2A261A"}`,
-                      color: energy === opt.value ? opt.color : "#5C5247",
+                      background: energy === opt.value ? `${opt.color}22` : "var(--s2)",
+                      border: `1px solid ${energy === opt.value ? opt.color : "var(--border)"}`,
+                      color: energy === opt.value ? opt.color : "var(--faint)",
                     }}
                   >
                     {opt.icon}
@@ -154,7 +153,7 @@ export default function BlockModal({ hour, block, topPriority, onSave, onClose }
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-widest text-[#A09580] mb-3">
+              <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-3">
                 Was this planned?
               </label>
               <div className="flex gap-2">
@@ -164,9 +163,9 @@ export default function BlockModal({ hour, block, topPriority, onSave, onClose }
                     onClick={() => setWasPlanned(v)}
                     className="flex-1 py-2.5 rounded-lg text-xs font-bold transition-all"
                     style={{
-                      background: wasPlanned === v ? (v ? "#063e2b" : "#4a0d0d") : "#1E1B13",
-                      border: `1px solid ${wasPlanned === v ? (v ? "#34D399" : "#F87171") : "#2A261A"}`,
-                      color: wasPlanned === v ? (v ? "#34D399" : "#F87171") : "#5C5247",
+                      background: wasPlanned === v ? (v ? "#063e2b" : "#4a0d0d") : "var(--s2)",
+                      border: `1px solid ${wasPlanned === v ? (v ? "#34D399" : "#F87171") : "var(--border)"}`,
+                      color: wasPlanned === v ? (v ? "#34D399" : "#F87171") : "var(--faint)",
                     }}
                   >
                     {v ? "Planned" : "Reactive"}
@@ -179,16 +178,16 @@ export default function BlockModal({ hour, block, topPriority, onSave, onClose }
           {/* Drucker Questions */}
           <div
             className="rounded-lg p-4 space-y-4"
-            style={{ background: "#1E1B13", border: "1px solid #2A261A" }}
+            style={{ background: "var(--s2)", border: "1px solid var(--border)" }}
           >
-            <p className="text-xs font-bold uppercase tracking-widest text-[#C9A84C] flex items-center gap-2">
+            <p style={{ color: "var(--gold)" }} className="text-xs font-bold uppercase tracking-widest flex items-center gap-2">
               <HelpCircle size={12} /> Drucker Effectiveness Check
             </p>
 
             {/* Top Priority */}
             <div>
-              <p className="text-xs text-[#A09580] mb-2">
-                Did this contribute to: <span className="text-[#EDE8DC] italic">"{topPriority || "your top priority"}"</span>?
+              <p style={{ color: "var(--muted)" }} className="text-xs mb-2">
+                Did this contribute to: <span style={{ color: "var(--text)" }} className="italic">"{topPriority || "your top priority"}"</span>?
               </p>
               <div className="flex gap-2">
                 {[true, false].map((v) => (
@@ -197,9 +196,9 @@ export default function BlockModal({ hour, block, topPriority, onSave, onClose }
                     onClick={() => setTopPri(v)}
                     className="px-4 py-2 rounded text-xs font-bold transition-all"
                     style={{
-                      background: topPri === v ? (v ? "#063e2b" : "#1E1B13") : "#1E1B13",
-                      border: `1px solid ${topPri === v ? (v ? "#34D399" : "#2A261A") : "#2A261A"}`,
-                      color: topPri === v ? (v ? "#34D399" : "#5C5247") : "#5C5247",
+                      background: topPri === v ? (v ? "#063e2b" : "var(--s2)") : "var(--s2)",
+                      border: `1px solid ${topPri === v ? (v ? "#34D399" : "var(--border)") : "var(--border)"}`,
+                      color: topPri === v ? (v ? "#34D399" : "var(--faint)") : "var(--faint)",
                     }}
                   >
                     {v ? "✓ Yes" : "✗ No"}
@@ -210,8 +209,8 @@ export default function BlockModal({ hour, block, topPriority, onSave, onClose }
 
             {/* Delegate */}
             <div>
-              <p className="text-xs text-[#A09580] mb-2">
-                Could someone else have done this? <span className="text-[#5C5247]">(delegation check)</span>
+              <p style={{ color: "var(--muted)" }} className="text-xs mb-2">
+                Could someone else have done this? <span style={{ color: "var(--faint)" }}>(delegation check)</span>
               </p>
               <div className="flex gap-2">
                 {(["yes", "no", "na"] as DelegateOpt[]).map((v) => (
@@ -220,9 +219,9 @@ export default function BlockModal({ hour, block, topPriority, onSave, onClose }
                     onClick={() => setCouldDel(v)}
                     className="px-4 py-2 rounded text-xs font-bold transition-all"
                     style={{
-                      background: couldDel === v ? "#2A261A" : "#1E1B13",
-                      border: `1px solid ${couldDel === v ? "#C9A84C" : "#2A261A"}`,
-                      color: couldDel === v ? "#C9A84C" : "#5C5247",
+                      background: couldDel === v ? "var(--border)" : "var(--s2)",
+                      border: `1px solid ${couldDel === v ? "var(--gold)" : "var(--border)"}`,
+                      color: couldDel === v ? "var(--gold)" : "var(--faint)",
                     }}
                   >
                     {v === "na" ? "N/A" : v.charAt(0).toUpperCase() + v.slice(1)}
@@ -234,7 +233,7 @@ export default function BlockModal({ hour, block, topPriority, onSave, onClose }
 
           {/* Satisfaction */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-[#A09580] mb-3">
+            <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-3">
               Satisfaction with this hour
             </label>
             <div className="flex gap-2">
@@ -248,7 +247,7 @@ export default function BlockModal({ hour, block, topPriority, onSave, onClose }
                   ⭐
                 </button>
               ))}
-              <span className="ml-2 text-sm text-[#A09580] self-center">
+              <span style={{ color: "var(--muted)" }} className="ml-2 text-sm self-center">
                 {["", "Poor", "Below avg", "Okay", "Good", "Excellent"][satisfaction]}
               </span>
             </div>
@@ -256,7 +255,7 @@ export default function BlockModal({ hour, block, topPriority, onSave, onClose }
 
           {/* Contribution */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-[#A09580] mb-2">
+            <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-2">
               What contribution did you make?
             </label>
             <p className="drucker-highlight text-xs mb-2">
@@ -272,8 +271,8 @@ export default function BlockModal({ hour, block, topPriority, onSave, onClose }
 
           {/* Notes */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-[#A09580] mb-2">
-              Notes <span className="text-[#5C5247] normal-case font-normal">(optional)</span>
+            <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-2">
+              Notes <span style={{ color: "var(--faint)" }} className="normal-case font-normal">(optional)</span>
             </label>
             <textarea
               value={notes}
@@ -287,7 +286,7 @@ export default function BlockModal({ hour, block, topPriority, onSave, onClose }
         {/* Footer */}
         <div
           className="sticky bottom-0 flex gap-3 p-5 pt-4"
-          style={{ background: "#17150F", borderTop: "1px solid #2A261A" }}
+          style={{ background: "var(--surface)", borderTop: "1px solid var(--border)" }}
         >
           <button className="btn-ghost flex-1" onClick={onClose}>Cancel</button>
           <button

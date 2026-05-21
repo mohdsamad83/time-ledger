@@ -54,26 +54,26 @@ export default function EveningReviewModal({ setup, blocks, review, onSave, onCl
   return (
     <div
       className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4"
-      style={{ background: "rgba(0,0,0,0.8)", backdropFilter: "blur(4px)" }}
+      style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)" }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
         className="w-full md:max-w-2xl max-h-[95vh] overflow-y-auto rounded-t-2xl md:rounded-xl fade-up"
-        style={{ background: "#17150F", border: "1px solid #2A261A" }}
+        style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
       >
         {/* Header */}
         <div
           className="sticky top-0 z-10 flex items-center justify-between p-5 pb-4"
-          style={{ background: "#17150F", borderBottom: "1px solid #2A261A" }}
+          style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)" }}
         >
           <div className="flex items-center gap-3">
             <Moon size={18} className="text-violet-400" />
             <div>
-              <h3 className="font-serif text-xl text-[#EDE8DC]">Evening Review</h3>
-              <p className="text-xs text-[#5C5247]">Your daily ledger closing entry</p>
+              <h3 style={{ color: "var(--text)" }} className="font-serif text-xl">Evening Review</h3>
+              <p style={{ color: "var(--faint)" }} className="text-xs">Your daily ledger closing entry</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-[#5C5247] hover:text-[#EDE8DC] transition-colors">
+          <button onClick={onClose} style={{ color: "var(--faint)" }} className="hover:text-[var(--text)] transition-colors">
             <X size={20} />
           </button>
         </div>
@@ -83,28 +83,28 @@ export default function EveningReviewModal({ setup, blocks, review, onSave, onCl
           {/* Auto-stats */}
           <div
             className="rounded-lg p-4 grid grid-cols-3 gap-4"
-            style={{ background: "#1E1B13", border: "1px solid #2A261A" }}
+            style={{ background: "var(--s2)", border: "1px solid var(--border)" }}
           >
             <div className="text-center">
-              <p className="text-2xl font-mono font-semibold text-[#C9A84C]">{loggedBlocks.length}</p>
-              <p className="text-[#5C5247] text-xs mt-1">Hours logged</p>
+              <p style={{ color: "var(--gold)" }} className="text-2xl font-mono font-semibold">{loggedBlocks.length}</p>
+              <p style={{ color: "var(--faint)" }} className="text-xs mt-1">Hours logged</p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-mono font-semibold text-[#4ADE80]">{plannedPct}%</p>
-              <p className="text-[#5C5247] text-xs mt-1">Planned time</p>
+              <p style={{ color: "var(--faint)" }} className="text-xs mt-1">Planned time</p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-mono font-semibold text-[#60A5FA]">{priorityPct}%</p>
-              <p className="text-[#5C5247] text-xs mt-1">On top priority</p>
+              <p style={{ color: "var(--faint)" }} className="text-xs mt-1">On top priority</p>
             </div>
           </div>
 
           {/* Top priority accomplished? */}
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-[#A09580] mb-2">
+            <p style={{ color: "var(--muted)" }} className="text-xs font-bold uppercase tracking-widest mb-2">
               Did you accomplish your #1 priority?
             </p>
-            <p className="text-sm text-[#EDE8DC] italic mb-3">"{setup.topPriority}"</p>
+            <p style={{ color: "var(--text)" }} className="text-sm italic mb-3">"{setup.topPriority}"</p>
             <div className="flex gap-3">
               {[true, false].map((v) => (
                 <button
@@ -112,9 +112,9 @@ export default function EveningReviewModal({ setup, blocks, review, onSave, onCl
                   onClick={() => setTopAccomplished(v)}
                   className="flex-1 py-3 rounded-lg text-sm font-bold transition-all"
                   style={{
-                    background: topAccomplished === v ? (v ? "#063e2b" : "#4a0d0d") : "#1E1B13",
-                    border: `1px solid ${topAccomplished === v ? (v ? "#34D399" : "#F87171") : "#2A261A"}`,
-                    color: topAccomplished === v ? (v ? "#34D399" : "#F87171") : "#5C5247",
+                    background: topAccomplished === v ? (v ? "#063e2b" : "#4a0d0d") : "var(--s2)",
+                    border: `1px solid ${topAccomplished === v ? (v ? "#34D399" : "#F87171") : "var(--border)"}`,
+                    color: topAccomplished === v ? (v ? "#34D399" : "#F87171") : "var(--faint)",
                   }}
                 >
                   {v ? "✓ Yes, done." : "✗ Not fully."}
@@ -125,7 +125,7 @@ export default function EveningReviewModal({ setup, blocks, review, onSave, onCl
 
           {/* Accomplishments */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-[#A09580] mb-2">
+            <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-2">
               What did you actually get done?
             </label>
             <p className="drucker-highlight text-xs mb-2">
@@ -137,7 +137,7 @@ export default function EveningReviewModal({ setup, blocks, review, onSave, onCl
 
           {/* Biggest waste */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-[#A09580] mb-2">
+            <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-2">
               Biggest time waste today
             </label>
             <p className="drucker-highlight text-xs mb-2">
@@ -167,7 +167,7 @@ export default function EveningReviewModal({ setup, blocks, review, onSave, onCl
 
           {/* Drucker contribution */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-[#A09580] mb-2">
+            <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-2">
               The Drucker Contribution Question
             </label>
             <p className="drucker-highlight text-xs mb-2">
@@ -179,7 +179,7 @@ export default function EveningReviewModal({ setup, blocks, review, onSave, onCl
 
           {/* Tomorrow priority */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-[#A09580] mb-2">
+            <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-2">
               Tomorrow's #1 Priority
             </label>
             <input type="text" value={tomorrowPri} onChange={(e) => setTomorrowPri(e.target.value)}
@@ -189,7 +189,7 @@ export default function EveningReviewModal({ setup, blocks, review, onSave, onCl
           {/* Day rating + energy */}
           <div className="grid grid-cols-2 gap-5">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-widest text-[#A09580] mb-3">
+              <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-3">
                 Day Rating
               </label>
               <div className="flex items-center gap-3">
@@ -198,15 +198,15 @@ export default function EveningReviewModal({ setup, blocks, review, onSave, onCl
                   className="flex-1 accent-yellow-500"
                   style={{ background: "transparent", border: "none", padding: 0 }}
                 />
-                <span className="font-mono text-xl font-bold text-[#C9A84C] w-6">{rating}</span>
+                <span style={{ color: "var(--gold)" }} className="font-mono text-xl font-bold w-6">{rating}</span>
               </div>
-              <div className="flex justify-between text-[#5C5247] text-xs mt-1">
+              <div style={{ color: "var(--faint)" }} className="flex justify-between text-xs mt-1">
                 <span>Terrible</span><span>Perfect</span>
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-widest text-[#A09580] mb-3">
+              <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-3">
                 Energy at Day's End
               </label>
               <div className="flex flex-col gap-2">
@@ -215,14 +215,14 @@ export default function EveningReviewModal({ setup, blocks, review, onSave, onCl
                     className="py-2 rounded text-xs font-bold transition-all text-left px-3"
                     style={{
                       background: energyEnd === v
-                        ? v === "energized" ? "#063e2b" : v === "neutral" ? "#2A261A" : "#4a0d0d"
-                        : "#1E1B13",
+                        ? v === "energized" ? "#063e2b" : v === "neutral" ? "var(--border)" : "#4a0d0d"
+                        : "var(--s2)",
                       border: `1px solid ${energyEnd === v
-                        ? v === "energized" ? "#34D399" : v === "neutral" ? "#7A6228" : "#F87171"
-                        : "#2A261A"}`,
+                        ? v === "energized" ? "#34D399" : v === "neutral" ? "var(--dim)" : "#F87171"
+                        : "var(--border)"}`,
                       color: energyEnd === v
-                        ? v === "energized" ? "#34D399" : v === "neutral" ? "#C9A84C" : "#F87171"
-                        : "#5C5247",
+                        ? v === "energized" ? "#34D399" : v === "neutral" ? "var(--gold)" : "#F87171"
+                        : "var(--faint)",
                     }}>
                     {v === "energized" ? "⚡ Energized" : v === "neutral" ? "😐 Neutral" : "😮‍💨 Drained"}
                   </button>
@@ -235,7 +235,7 @@ export default function EveningReviewModal({ setup, blocks, review, onSave, onCl
         {/* Footer */}
         <div
           className="sticky bottom-0 flex gap-3 p-5 pt-4"
-          style={{ background: "#17150F", borderTop: "1px solid #2A261A" }}
+          style={{ background: "var(--surface)", borderTop: "1px solid var(--border)" }}
         >
           <button className="btn-ghost flex-1" onClick={onClose}>Cancel</button>
           <button className="btn-gold flex-[2]" onClick={handleSave}>

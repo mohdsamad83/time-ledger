@@ -1,10 +1,8 @@
 "use client";
 import { AppData, CATEGORIES } from "@/lib/types";
-import { parseISO, format, startOfWeek, addDays, isWithinInterval } from "date-fns";
+import { parseISO, format } from "date-fns";
 
 interface Props { data: AppData }
-
-const toWeekStart = (date: Date) => startOfWeek(date, { weekStartsOn: 1 });
 
 export default function InsightsView({ data }: Props) {
   const allDates = Object.keys(data.days).sort().reverse();
@@ -13,8 +11,8 @@ export default function InsightsView({ data }: Props) {
   if (days7.length === 0) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-16 text-center">
-        <p className="font-serif text-3xl text-[#EDE8DC] mb-3">No data yet</p>
-        <p className="text-[#5C5247] text-sm">Start logging your hours to see insights here.</p>
+        <p style={{ color: "var(--text)" }} className="font-serif text-3xl mb-3">No data yet</p>
+        <p style={{ color: "var(--faint)" }} className="text-sm">Start logging your hours to see insights here.</p>
       </div>
     );
   }
@@ -63,8 +61,8 @@ export default function InsightsView({ data }: Props) {
 
   return (
     <div className="max-w-3xl mx-auto px-4 pb-16">
-      <h2 className="font-serif text-3xl text-[#EDE8DC] mb-1">Insights</h2>
-      <p className="text-[#5C5247] text-sm mb-8">Last 7 days · {totalHours} hours logged</p>
+      <h2 style={{ color: "var(--text)" }} className="font-serif text-3xl mb-1">Insights</h2>
+      <p style={{ color: "var(--faint)" }} className="text-sm mb-8">Last 7 days · {totalHours} hours logged</p>
 
       {/* Drucker Score Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
@@ -107,17 +105,17 @@ export default function InsightsView({ data }: Props) {
               return (
                 <div key={cat.value} className="flex items-center gap-3">
                   <span className="w-5 text-sm">{cat.emoji}</span>
-                  <span className="text-xs text-[#A09580] w-32 truncate">{cat.label}</span>
-                  <div className="flex-1 rounded-full overflow-hidden h-2" style={{ background: "#1E1B13" }}>
+                  <span style={{ color: "var(--muted)" }} className="text-xs w-32 truncate">{cat.label}</span>
+                  <div className="flex-1 rounded-full overflow-hidden h-2" style={{ background: "var(--s2)" }}>
                     <div
                       className="h-full rounded-full transition-all"
                       style={{ width: `${frac * 100}%`, background: cat.color }}
                     />
                   </div>
-                  <span className="font-mono text-xs text-[#EDE8DC] w-10 text-right">
+                  <span style={{ color: "var(--text)" }} className="font-mono text-xs w-10 text-right">
                     {hrs}h
                   </span>
-                  <span className="font-mono text-xs text-[#5C5247] w-8 text-right">
+                  <span style={{ color: "var(--faint)" }} className="font-mono text-xs w-8 text-right">
                     {Math.round(frac * 100)}%
                   </span>
                 </div>
@@ -130,12 +128,12 @@ export default function InsightsView({ data }: Props) {
       {meetingPct > 30 && (
         <div
           className="rounded-lg p-4 mb-6 flex gap-3"
-          style={{ background: "#2d1f5e22", border: "1px solid #7C3AED55" }}
+          style={{ background: "var(--s2)", border: "1px solid #7C3AED55" }}
         >
           <span className="text-xl">⚠️</span>
           <div>
             <p className="text-sm font-bold text-[#A78BFA]">Meeting-Heavy Week</p>
-            <p className="text-xs text-[#5C5247] mt-1">
+            <p style={{ color: "var(--faint)" }} className="text-xs mt-1">
               {meetingPct}% of your time was in meetings ({meetingHours}h). Drucker warns: "Meetings are a symptom of bad organisation." Consider cutting, batching, or declining.
             </p>
           </div>
@@ -158,13 +156,13 @@ export default function InsightsView({ data }: Props) {
                     }}
                   />
                 ) : (
-                  <div className="w-full rounded-t" style={{ height: "4px", background: "#1E1B13" }} />
+                  <div className="w-full rounded-t" style={{ height: "4px", background: "var(--s2)" }} />
                 )}
               </div>
-              <span className="text-[#5C5247] text-[9px] font-mono">
+              <span style={{ color: "var(--faint)" }} className="text-[9px] font-mono">
                 {format(parseISO(date), "EEE")}
               </span>
-              <span className="text-[#A09580] text-[9px] font-mono">
+              <span style={{ color: "var(--muted)" }} className="text-[9px] font-mono">
                 {avg !== null ? avg.toFixed(1) : "—"}
               </span>
             </div>
@@ -210,11 +208,11 @@ export default function InsightsView({ data }: Props) {
             <div
               key={principle}
               className="flex items-start gap-3 p-3 rounded-lg"
-              style={{ background: "#1E1B13", border: `1px solid ${check ? "#34D39922" : "#F8717122"}` }}
+              style={{ background: "var(--s2)", border: `1px solid ${check ? "#34D39933" : "#F8717133"}` }}
             >
               <span className="flex-shrink-0 mt-0.5">{check ? "✅" : "⚠️"}</span>
               <div>
-                <p className="text-xs font-bold text-[#A09580] uppercase tracking-widest">{principle}</p>
+                <p style={{ color: "var(--muted)" }} className="text-xs font-bold uppercase tracking-widest">{principle}</p>
                 <p className="text-sm mt-1" style={{ color: check ? "#34D399" : "#F87171" }}>
                   {check ? pass : fail}
                 </p>
@@ -233,11 +231,11 @@ function ScoreCard({ label, value, sub, color }: {
   return (
     <div
       className="rounded-xl p-4"
-      style={{ background: "#17150F", border: "1px solid #2A261A" }}
+      style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
     >
-      <p className="text-[#5C5247] text-xs uppercase tracking-widest font-bold mb-2">{label}</p>
+      <p style={{ color: "var(--faint)" }} className="text-xs uppercase tracking-widest font-bold mb-2">{label}</p>
       <p className="font-mono text-2xl font-semibold" style={{ color }}>{value}</p>
-      <p className="text-[#5C5247] text-xs mt-1 leading-tight">{sub}</p>
+      <p style={{ color: "var(--faint)" }} className="text-xs mt-1 leading-tight">{sub}</p>
     </div>
   );
 }
@@ -248,10 +246,10 @@ function Section({ title, subtitle, children }: {
   return (
     <div
       className="rounded-xl p-5 mb-5"
-      style={{ background: "#17150F", border: "1px solid #2A261A" }}
+      style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
     >
-      <p className="font-serif text-lg text-[#EDE8DC] mb-0.5">{title}</p>
-      {subtitle && <p className="text-[#5C5247] text-xs mb-4">{subtitle}</p>}
+      <p style={{ color: "var(--text)" }} className="font-serif text-lg mb-0.5">{title}</p>
+      {subtitle && <p style={{ color: "var(--faint)" }} className="text-xs mb-4">{subtitle}</p>}
       {children}
     </div>
   );

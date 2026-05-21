@@ -2,7 +2,6 @@
 import { TimeBlock, DaySetup, CATEGORIES } from "@/lib/types";
 import { Plus, Edit2, Moon, AlertTriangle, TrendingUp, Clock } from "lucide-react";
 import { SyncState } from "@/lib/types";
-import clsx from "clsx";
 
 interface Props {
   date:          string;
@@ -53,7 +52,7 @@ export default function TimelineView({
       {/* Day stats bar */}
       <div
         className="rounded-xl p-4 mb-6 grid grid-cols-2 md:grid-cols-4 gap-4"
-        style={{ background: "#17150F", border: "1px solid #2A261A" }}
+        style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
       >
         <Stat label="Hours Logged" value={`${loggedCount} / ${hours.length}`} color="#C9A84C" />
         <Stat label="Planned" value={loggedCount > 0 ? `${Math.round((plannedCount/loggedCount)*100)}%` : "—"} color="#4ADE80" />
@@ -64,12 +63,12 @@ export default function TimelineView({
       {/* Top priority reminder */}
       <div
         className="rounded-lg px-4 py-3 mb-5 flex items-start gap-3"
-        style={{ background: "#1E1B13", border: "1px solid #7A6228" }}
+        style={{ background: "var(--s2)", border: "1px solid var(--dim)" }}
       >
-        <TrendingUp size={14} className="text-[#C9A84C] mt-0.5 flex-shrink-0" />
+        <TrendingUp size={14} style={{ color: "var(--gold)", marginTop: 2, flexShrink: 0 }} />
         <div>
-          <span className="text-[#5C5247] text-xs font-bold uppercase tracking-widest">Today's #1 Priority</span>
-          <p className="text-[#EDE8DC] text-sm mt-0.5">{setup.topPriority}</p>
+          <span style={{ color: "var(--faint)" }} className="text-xs font-bold uppercase tracking-widest">Today's #1 Priority</span>
+          <p style={{ color: "var(--text)" }} className="text-sm mt-0.5">{setup.topPriority}</p>
         </div>
       </div>
 
@@ -85,9 +84,9 @@ export default function TimelineView({
             <div key={hour} className="flex gap-3 items-stretch">
               {/* Time label */}
               <div className="w-14 flex-shrink-0 flex flex-col items-end justify-start pt-3">
-                <span className="font-mono text-xs text-[#5C5247]">{toTime(hour)}</span>
+                <span style={{ color: "var(--faint)" }} className="font-mono text-xs">{toTime(hour)}</span>
                 {isCurrent && (
-                  <span className="w-2 h-2 rounded-full mt-1 pulse-dot" style={{ background: "#C9A84C" }} />
+                  <span className="w-2 h-2 rounded-full mt-1 pulse-dot" style={{ background: "var(--gold)" }} />
                 )}
               </div>
 
@@ -99,8 +98,8 @@ export default function TimelineView({
                     onClick={() => onLogBlock(hour)}
                     className="w-full text-left rounded-lg p-3.5 transition-all group"
                     style={{
-                      background: cat?.bg ?? "#1E1B13",
-                      border: `1px solid ${cat?.color ?? "#2A261A"}22`,
+                      background: cat?.bg ?? "var(--s2)",
+                      border: `1px solid ${cat?.color ?? "var(--border)"}22`,
                     }}
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -123,9 +122,9 @@ export default function TimelineView({
                             </span>
                           )}
                         </div>
-                        <p className="text-[#EDE8DC] text-sm leading-snug truncate">{block.activity}</p>
+                        <p style={{ color: "var(--text)" }} className="text-sm leading-snug truncate">{block.activity}</p>
                         {block.contribution && (
-                          <p className="text-[#5C5247] text-xs mt-1 truncate italic">
+                          <p style={{ color: "var(--faint)" }} className="text-xs mt-1 truncate italic">
                             Contribution: {block.contribution}
                           </p>
                         )}
@@ -138,14 +137,15 @@ export default function TimelineView({
                         </div>
                         <Edit2
                           size={12}
-                          className="text-[#5C5247] opacity-0 group-hover:opacity-100 transition-opacity"
+                          style={{ color: "var(--faint)" }}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
                         />
                       </div>
                     </div>
                     {block.syncedAt === null && (
                       <div className="mt-1.5 flex items-center gap-1">
                         <div className="w-1.5 h-1.5 rounded-full bg-amber-500/60" />
-                        <span className="text-[10px] text-[#5C5247]">Not synced to Sheets</span>
+                        <span style={{ color: "var(--faint)" }} className="text-[10px]">Not synced to Sheets</span>
                       </div>
                     )}
                   </button>
@@ -154,20 +154,20 @@ export default function TimelineView({
                   <button
                     onClick={() => onLogBlock(hour)}
                     className="w-full text-left rounded-lg p-3 transition-all flex items-center gap-2"
-                    style={{ background: "#1a0f0f", border: "1px solid #4a1a1a" }}
+                    style={{ background: "var(--s2)", border: "1px solid #F8717140" }}
                   >
-                    <AlertTriangle size={12} className="text-[#F87171] flex-shrink-0" />
-                    <span className="text-[#F87171] text-xs">Unlogged hour — tap to fill in</span>
+                    <AlertTriangle size={12} style={{ color: "#F87171", flexShrink: 0 }} />
+                    <span style={{ color: "#F87171" }} className="text-xs">Unlogged hour — tap to fill in</span>
                   </button>
                 ) : (
                   /* Future / current */
                   <button
                     onClick={() => onLogBlock(hour)}
                     className="w-full text-left rounded-lg p-3 transition-all flex items-center gap-2 group"
-                    style={{ background: "#1E1B13", border: "1px dashed #2A261A" }}
+                    style={{ background: "var(--s2)", border: "1px dashed var(--border)" }}
                   >
-                    <Plus size={14} className="text-[#5C5247] group-hover:text-[#C9A84C] transition-colors" />
-                    <span className="text-[#5C5247] text-xs group-hover:text-[#A09580] transition-colors">
+                    <Plus size={14} style={{ color: "var(--faint)" }} className="group-hover:text-[var(--gold)] transition-colors" />
+                    <span style={{ color: "var(--faint)" }} className="text-xs group-hover:text-[var(--muted)] transition-colors">
                       {isCurrent ? "You're here — log this hour" : "Log this hour"}
                     </span>
                   </button>
@@ -180,14 +180,14 @@ export default function TimelineView({
         {/* Sleep */}
         <div className="flex gap-3 items-center">
           <div className="w-14 flex-shrink-0 flex justify-end">
-            <span className="font-mono text-xs text-[#5C5247]">{toTime(setup.sleepHour)}</span>
+            <span style={{ color: "var(--faint)" }} className="font-mono text-xs">{toTime(setup.sleepHour)}</span>
           </div>
           <div
             className="flex-1 rounded-lg p-3 flex items-center gap-2"
-            style={{ background: "#1E1B13", border: "1px solid #2A261A" }}
+            style={{ background: "var(--s2)", border: "1px solid var(--border)" }}
           >
-            <Moon size={12} className="text-[#5C5247]" />
-            <span className="text-[#5C5247] text-xs">Sleep — end of ledger</span>
+            <Moon size={12} style={{ color: "var(--faint)" }} />
+            <span style={{ color: "var(--faint)" }} className="text-xs">Sleep — end of ledger</span>
           </div>
         </div>
       </div>
@@ -198,22 +198,23 @@ export default function TimelineView({
           onClick={onEveningReview}
           className="w-full rounded-xl p-5 text-left transition-all group"
           style={{
-            background: hasEveningReview ? "#063e2b" : "#17150F",
-            border: `1px solid ${hasEveningReview ? "#34D399" : "#2A261A"}`,
+            background: hasEveningReview ? "#063e2b" : "var(--surface)",
+            border: `1px solid ${hasEveningReview ? "#34D399" : "var(--border)"}`,
           }}
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-serif text-lg text-[#EDE8DC]">
+              <p style={{ color: "var(--text)" }} className="font-serif text-lg">
                 {hasEveningReview ? "✓ Evening Review Done" : "Evening Review"}
               </p>
-              <p className="text-xs text-[#5C5247] mt-1">
+              <p style={{ color: "var(--faint)" }} className="text-xs mt-1">
                 {hasEveningReview
                   ? "Click to edit your reflections"
                   : "Drucker: \"What did I actually accomplish? What was wasted time?\""}
               </p>
             </div>
-            <Moon size={20} className={hasEveningReview ? "text-[#34D399]" : "text-[#2A261A] group-hover:text-[#C9A84C]"} />
+            <Moon size={20} style={{ color: hasEveningReview ? "#34D399" : "var(--border)" }}
+              className="group-hover:text-[var(--gold)] transition-colors" />
           </div>
         </button>
       </div>
@@ -224,7 +225,7 @@ export default function TimelineView({
 function Stat({ label, value, color }: { label: string; value: string; color: string }) {
   return (
     <div>
-      <p className="text-[#5C5247] text-xs uppercase tracking-widest font-bold mb-1">{label}</p>
+      <p style={{ color: "var(--faint)" }} className="text-xs uppercase tracking-widest font-bold mb-1">{label}</p>
       <p className="font-mono text-lg font-semibold" style={{ color }}>{value}</p>
     </div>
   );

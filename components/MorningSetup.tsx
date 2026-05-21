@@ -33,7 +33,7 @@ export default function MorningSetup({ date, onComplete }: Props) {
       content: (
         <div className="space-y-5">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-[#A09580] mb-2">
+            <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-2">
               I wake up at
             </label>
             <select
@@ -46,7 +46,7 @@ export default function MorningSetup({ date, onComplete }: Props) {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-[#A09580] mb-2">
+            <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-2">
               I plan to sleep by
             </label>
             <select
@@ -58,7 +58,7 @@ export default function MorningSetup({ date, onComplete }: Props) {
               ))}
             </select>
           </div>
-          <p className="text-[#5C5247] text-sm font-mono">
+          <p style={{ color: "var(--faint)" }} className="text-sm font-mono">
             {sleepHour > wakeHour
               ? `${sleepHour - wakeHour} hours in your ledger today`
               : `${24 - wakeHour + sleepHour} hours in your ledger today`}
@@ -68,13 +68,13 @@ export default function MorningSetup({ date, onComplete }: Props) {
       canNext: true,
     },
     {
-      icon: <Target size={20} className="text-[#C9A84C]" />,
+      icon: <Target size={20} style={{ color: "var(--gold)" }} />,
       title: "The ONE Thing",
       subtitle: "Drucker: \"What needs to be done?\" — not what you want, what NEEDS to be done.",
       content: (
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-[#A09580] mb-2">
+            <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-2">
               If I accomplish only one thing today, it must be…
             </label>
             <textarea
@@ -85,7 +85,7 @@ export default function MorningSetup({ date, onComplete }: Props) {
             />
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-[#A09580] mb-2">
+            <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-2">
               Drucker question: What NEEDS to be done?
             </label>
             <textarea
@@ -111,7 +111,7 @@ export default function MorningSetup({ date, onComplete }: Props) {
             { val: task3, set: setTask3, label: "Commitment #3", placeholder: "Would be great to do" },
           ].map((t, i) => (
             <div key={i}>
-              <label className="block text-xs font-bold uppercase tracking-widest text-[#A09580] mb-2">
+              <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-2">
                 {t.label}
               </label>
               <input
@@ -132,7 +132,7 @@ export default function MorningSetup({ date, onComplete }: Props) {
       subtitle: "Drucker: \"Effectiveness is doing the right things.\" What does right look like today?",
       content: (
         <div>
-          <label className="block text-xs font-bold uppercase tracking-widest text-[#A09580] mb-2">
+          <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-2">
             At 11 PM, I'll know today was a great day if…
           </label>
           <textarea
@@ -177,7 +177,7 @@ export default function MorningSetup({ date, onComplete }: Props) {
               className="h-1.5 rounded-full transition-all duration-300"
               style={{
                 width: i === step ? 28 : 8,
-                background: i <= step ? "#C9A84C" : "#2A261A",
+                background: i <= step ? "var(--gold)" : "var(--border)",
               }}
             />
           ))}
@@ -186,11 +186,11 @@ export default function MorningSetup({ date, onComplete }: Props) {
         {/* Card */}
         <div
           className="rounded-xl p-8"
-          style={{ background: "#17150F", border: "1px solid #2A261A" }}
+          style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
         >
           <div className="flex items-center gap-3 mb-2">
             {s.icon}
-            <h2 className="font-serif text-2xl text-[#EDE8DC]">{s.title}</h2>
+            <h2 style={{ color: "var(--text)" }} className="font-serif text-2xl">{s.title}</h2>
           </div>
           <p className="drucker-highlight mb-6 text-sm">{s.subtitle}</p>
 
@@ -216,7 +216,7 @@ export default function MorningSetup({ date, onComplete }: Props) {
         </div>
 
         {/* Step label */}
-        <p className="text-center text-[#5C5247] text-xs font-mono mt-4">
+        <p style={{ color: "var(--faint)" }} className="text-center text-xs font-mono mt-4">
           Step {step + 1} of {steps.length}
         </p>
       </div>

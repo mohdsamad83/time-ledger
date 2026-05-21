@@ -13,16 +13,16 @@ export default function HistoryView({ data, onSelectDate }: Props) {
   if (dates.length === 0) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-16 text-center">
-        <p className="font-serif text-3xl text-[#EDE8DC] mb-3">No history yet</p>
-        <p className="text-[#5C5247] text-sm">Your logged days will appear here.</p>
+        <p style={{ color: "var(--text)" }} className="font-serif text-3xl mb-3">No history yet</p>
+        <p style={{ color: "var(--faint)" }} className="text-sm">Your logged days will appear here.</p>
       </div>
     );
   }
 
   return (
     <div className="max-w-3xl mx-auto px-4 pb-16">
-      <h2 className="font-serif text-3xl text-[#EDE8DC] mb-1">History</h2>
-      <p className="text-[#5C5247] text-sm mb-8">{dates.length} days logged</p>
+      <h2 style={{ color: "var(--text)" }} className="font-serif text-3xl mb-1">History</h2>
+      <p style={{ color: "var(--faint)" }} className="text-sm mb-8">{dates.length} days logged</p>
 
       <div className="space-y-3">
         {dates.map((date) => {
@@ -50,24 +50,33 @@ export default function HistoryView({ data, onSelectDate }: Props) {
             <button
               key={date}
               onClick={() => onSelectDate(date)}
-              className="w-full text-left rounded-xl p-4 transition-all group hover:border-[#7A6228]"
-              style={{ background: "#17150F", border: "1px solid #2A261A" }}
+              className="w-full text-left rounded-xl p-4 transition-all group"
+              style={{
+                background: "var(--surface)",
+                border: "1px solid var(--border)",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--dim)";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border)";
+              }}
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="font-serif text-[#EDE8DC] text-lg">{dayOfWeek}</span>
-                    <span className="text-[#5C5247] text-sm">{dateLabel}</span>
+                    <span style={{ color: "var(--text)" }} className="font-serif text-lg">{dayOfWeek}</span>
+                    <span style={{ color: "var(--faint)" }} className="text-sm">{dateLabel}</span>
                   </div>
 
                   {topPri && (
-                    <p className="text-xs text-[#A09580] truncate mb-2">
+                    <p style={{ color: "var(--muted)" }} className="text-xs truncate mb-2">
                       🎯 {topPri}
                     </p>
                   )}
 
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-mono text-xs text-[#5C5247]">
+                    <span style={{ color: "var(--faint)" }} className="font-mono text-xs">
                       {blocks.length}h logged
                     </span>
                     {topCats.map((cat) => (
@@ -84,12 +93,12 @@ export default function HistoryView({ data, onSelectDate }: Props) {
 
                 <div className="flex flex-col items-end gap-2 flex-shrink-0">
                   {rating != null && (
-                    <span className="font-mono text-lg font-semibold text-[#C9A84C]">
+                    <span style={{ color: "var(--gold)" }} className="font-mono text-lg font-semibold">
                       {rating}/10
                     </span>
                   )}
                   {avgSat && (
-                    <span className="text-xs text-[#5C5247]">⭐ {avgSat} avg</span>
+                    <span style={{ color: "var(--faint)" }} className="text-xs">⭐ {avgSat} avg</span>
                   )}
                   {accomplished != null && (
                     <span
