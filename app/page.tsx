@@ -15,6 +15,7 @@ import {
   markSetupSynced, markBlockSynced, markEveningSynced,
   getAllDates, getRawData, toggleTaskCompleted,
 } from "@/lib/storage";
+import { ScheduleTemplate } from "@/lib/templates";
 
 import MorningSetup    from "@/components/MorningSetup";
 import TimelineView    from "@/components/TimelineView";
@@ -141,6 +142,27 @@ export default function App() {
     refreshDay();
   };
 
+  const handleApplyTemplate = (template: ScheduleTemplate) => {
+    template.blocks.forEach((tb) => {
+      const block: TimeBlock = {
+        id:                      `${tb.startHour}-template-${Date.now()}`,
+        startHour:               tb.startHour,
+        activity:                tb.activity,
+        category:                tb.category,
+        energy:                  tb.energy,
+        wasPlanned:              tb.wasPlanned,
+        contributedToTopPriority: tb.contributedToTopPriority,
+        couldDelegate:           tb.couldDelegate,
+        satisfaction:            tb.satisfaction,
+        contribution:            tb.contribution,
+        notes:                   tb.notes,
+        syncedAt:                null,
+      };
+      saveBlock(viewDate, block);
+    });
+    refreshDay();
+  };
+
   if (!mounted) return null;
 
   const isToday = viewDate === TODAY;
@@ -245,6 +267,7 @@ export default function App() {
                 onEveningReview={() => setShowEvening(true)}
                 hasEveningReview={!!dayData.eveningReview}
                 onToggleTask={handleToggleTask}
+                onApplyTemplate={handleApplyTemplate}
               />
             )}
           </>

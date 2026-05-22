@@ -1,7 +1,10 @@
 "use client";
+import { useState } from "react";
 import { TimeBlock, DaySetup, CATEGORIES } from "@/lib/types";
-import { Plus, Edit2, Moon, AlertTriangle, TrendingUp, Clock, CheckSquare } from "lucide-react";
+import { Plus, Edit2, Moon, AlertTriangle, TrendingUp, Clock, CheckSquare, LayoutTemplate } from "lucide-react";
 import { SyncState } from "@/lib/types";
+import { ScheduleTemplate } from "@/lib/templates";
+import TemplateModal from "@/components/TemplateModal";
 
 interface Props {
   date:          string;
@@ -12,6 +15,7 @@ interface Props {
   onEveningReview: () => void;
   hasEveningReview: boolean;
   onToggleTask:  (taskIndex: number) => void;
+  onApplyTemplate: (template: ScheduleTemplate) => void;
 }
 
 const toTime = (h: number) => {
@@ -28,8 +32,9 @@ const COMMITMENT_BADGES = [
 ];
 
 export default function TimelineView({
-  date, setup, blocks, syncState, onLogBlock, onEveningReview, hasEveningReview, onToggleTask,
+  date, setup, blocks, syncState, onLogBlock, onEveningReview, hasEveningReview, onToggleTask, onApplyTemplate,
 }: Props) {
+  const [showTemplates, setShowTemplates] = useState(false);
   const hours = Array.from(
     { length: Math.max(1, (setup.sleepHour > setup.wakeHour
       ? setup.sleepHour - setup.wakeHour
@@ -70,6 +75,31 @@ export default function TimelineView({
         <Stat label="Planned" value={loggedCount > 0 ? `${Math.round((plannedCount/loggedCount)*100)}%` : "—"} color="#4ADE80" />
         <Stat label="On Priority" value={loggedCount > 0 ? `${Math.round((priorityCount/loggedCount)*100)}%` : "—"} color="#60A5FA" />
         <Stat label="Avg Rating" value={String(avgSat)} color="#A78BFA" />
+      </div>
+
+      {/* Templates shortcut button */}
+      <div className="flex justify-end mb-3">
+        <button
+          onClick={() => setShowTemplates(true)}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-all"
+          style={{
+            background: "var(--s2)",
+            border: "1px solid var(--border)",
+            color: "var(--muted)",
+            fontFamily: "var(--font-lato), sans-serif",
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLElement).style.color = "var(--gold)";
+            (e.currentTarget as HTMLElement).style.borderColor = "var(--dim)";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.color = "var(--muted)";
+            (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
+          }}
+        >
+          <LayoutTemplate size={12} />
+          <span>Load Template</span>
+        </button>
       </div>
 
       {/* Top priority reminder */}
@@ -313,6 +343,17 @@ export default function TimelineView({
           </div>
         </button>
       </div>
+
+      {/* ── Template Modal ── */}
+      {showTemplates && (
+        <TemplateModal
+          onApply={(tpl) => {
+            onApplyTemplate(tpl);
+            setShowTemplates(false);
+          }}
+          onClose={() => setShowTemplates(false)}
+        />
+      )}
     </div>
   );
 }
