@@ -100,7 +100,7 @@ export async function POST() {
         await sheets.spreadsheets.values.update({
           spreadsheetId: sheetId,
           range: `${cfg.title}!A1`,
-          valueInputOption: "USER_ENTERED",
+          valueInputOption: "RAW",
           requestBody: { values: [cfg.headers] },
         });
       }
@@ -125,7 +125,13 @@ export async function POST() {
             range: { sheetId: sid, startRowIndex: 0, endRowIndex: 1 },
             cell: {
               userEnteredFormat: {
-                textFormat: { bold: true, fontSize: 11 },
+                textFormat: {
+                  bold: true,
+                  fontSize: 11,
+                  foregroundColorStyle: {
+                    rgbColor: { red: 0.93, green: 0.89, blue: 0.80 },
+                  },
+                },
                 backgroundColor: { red: 0.11, green: 0.09, blue: 0.06 },
               },
             },

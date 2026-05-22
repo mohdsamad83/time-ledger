@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
       await sheets.spreadsheets.values.update({
         spreadsheetId: SHEET_ID(),
         range: `🌙 Evening Reviews!A${rowIdx + 1}`,
-        valueInputOption: "USER_ENTERED",
+        valueInputOption: "RAW",
         requestBody: { values: [row] },
       });
     } else {

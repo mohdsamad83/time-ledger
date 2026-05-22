@@ -1,6 +1,6 @@
 "use client";
 import { TimeBlock, DaySetup, CATEGORIES } from "@/lib/types";
-import { Plus, Edit2, Moon, AlertTriangle, TrendingUp, Clock } from "lucide-react";
+import { Plus, Edit2, Moon, AlertTriangle, TrendingUp, Clock, CheckSquare } from "lucide-react";
 import { SyncState } from "@/lib/types";
 
 interface Props {
@@ -11,6 +11,7 @@ interface Props {
   onLogBlock:    (hour: number) => void;
   onEveningReview: () => void;
   hasEveningReview: boolean;
+  onToggleTask:  (taskIndex: number) => void;
 }
 
 const toTime = (h: number) => {
@@ -20,8 +21,14 @@ const toTime = (h: number) => {
 
 const nowHour = () => new Date().getHours();
 
+const COMMITMENT_BADGES = [
+  { label: "Must", color: "#F87171", bg: "#4a0d0d" },
+  { label: "Should", color: "#FCD34D", bg: "#4a3800" },
+  { label: "Could", color: "#60A5FA", bg: "#1e3a5f" },
+];
+
 export default function TimelineView({
-  date, setup, blocks, syncState, onLogBlock, onEveningReview, hasEveningReview,
+  date, setup, blocks, syncState, onLogBlock, onEveningReview, hasEveningReview, onToggleTask,
 }: Props) {
   const hours = Array.from(
     { length: Math.max(1, (setup.sleepHour > setup.wakeHour
@@ -46,6 +53,11 @@ export default function TimelineView({
   const topCat = Object.entries(catTotals).sort((a, b) => b[1] - a[1])[0];
   const topCatInfo = topCat ? CATEGORIES.find((c) => c.value === topCat[0]) : null;
 
+  // Commitment tracking
+  const tasksCompleted = setup.tasksCompleted ?? [false, false, false];
+  const filledTasks = setup.tasks.filter((t) => t.trim().length > 0);
+  const completedCount = filledTasks.reduce((count, _, i) => count + (tasksCompleted[i] ? 1 : 0), 0);
+
   return (
     <div className="max-w-3xl mx-auto px-4 pb-16">
 
@@ -62,7 +74,7 @@ export default function TimelineView({
 
       {/* Top priority reminder */}
       <div
-        className="rounded-lg px-4 py-3 mb-5 flex items-start gap-3"
+        className="rounded-lg px-4 py-3 mb-3 flex items-start gap-3"
         style={{ background: "var(--s2)", border: "1px solid var(--dim)" }}
       >
         <TrendingUp size={14} style={{ color: "var(--gold)", marginTop: 2, flexShrink: 0 }} />
@@ -71,6 +83,89 @@ export default function TimelineView({
           <p style={{ color: "var(--text)" }} className="text-sm mt-0.5">{setup.topPriority}</p>
         </div>
       </div>
+
+      {/* ── Commitments Tracker ────────────────────────────────────────────── */}
+      {filledTasks.length > 0 && (
+        <div
+          className="rounded-xl p-4 mb-6"
+          style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <CheckSquare size={14} style={{ color: "var(--gold)" }} />
+              <span style={{ color: "var(--text)" }} className="text-sm font-serif font-semibold">
+                Today's Commitments
+              </span>
+            </div>
+            <span
+              className="text-xs font-mono px-2 py-0.5 rounded-full"
+              style={{
+                background: completedCount === filledTasks.length ? "#063e2b" : "var(--s2)",
+                color: completedCount === filledTasks.length ? "#34D399" : "var(--faint)",
+                border: `1px solid ${completedCount === filledTasks.length ? "#34D39944" : "var(--border)"}`,
+              }}
+            >
+              {completedCount} / {filledTasks.length} done
+            </span>
+          </div>
+          <p className="drucker-highlight text-xs mb-3" style={{ marginTop: 0 }}>
+            Drucker: "Concentrate on the few major areas where superior performance will produce outstanding results."
+          </p>
+          <div className="space-y-2">
+            {setup.tasks.map((task, i) => {
+              if (!task.trim()) return null;
+              const badge = COMMITMENT_BADGES[i];
+              const done = tasksCompleted[i];
+              return (
+                <button
+                  key={i}
+                  onClick={() => onToggleTask(i)}
+                  className="w-full text-left rounded-lg px-3.5 py-3 transition-all flex items-center gap-3 group"
+                  style={{
+                    background: done ? "#063e2b" : "var(--s2)",
+                    border: `1px solid ${done ? "#34D39944" : "var(--border)"}`,
+                  }}
+                >
+                  {/* Checkbox */}
+                  <div
+                    className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0 transition-all"
+                    style={{
+                      background: done ? "#34D399" : "transparent",
+                      border: `2px solid ${done ? "#34D399" : "var(--dim)"}`,
+                    }}
+                  >
+                    {done && (
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                        <path d="M2.5 6L5 8.5L9.5 3.5" stroke="#063e2b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
+                    <span
+                      className="cat-badge text-[10px]"
+                      style={{ background: `${badge.color}22`, color: badge.color }}
+                    >
+                      {badge.label}
+                    </span>
+                    <span
+                      className="text-sm truncate"
+                      style={{
+                        color: done ? "#34D399" : "var(--text)",
+                        textDecoration: done ? "line-through" : "none",
+                        opacity: done ? 0.7 : 1,
+                      }}
+                    >
+                      {task}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Timeline */}
       <div className="space-y-2">

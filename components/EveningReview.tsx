@@ -82,7 +82,7 @@ export default function EveningReviewModal({ setup, blocks, review, onSave, onCl
 
           {/* Auto-stats */}
           <div
-            className="rounded-lg p-4 grid grid-cols-3 gap-4"
+            className="rounded-lg p-4 grid grid-cols-2 md:grid-cols-4 gap-4"
             style={{ background: "var(--s2)", border: "1px solid var(--border)" }}
           >
             <div className="text-center">
@@ -96,6 +96,12 @@ export default function EveningReviewModal({ setup, blocks, review, onSave, onCl
             <div className="text-center">
               <p className="text-2xl font-mono font-semibold text-[#60A5FA]">{priorityPct}%</p>
               <p style={{ color: "var(--faint)" }} className="text-xs mt-1">On top priority</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-mono font-semibold text-[#A78BFA]">
+                {(setup.tasksCompleted ?? [false, false, false]).filter(Boolean).length} / {setup.tasks.filter((t) => t.trim()).length}
+              </p>
+              <p style={{ color: "var(--faint)" }} className="text-xs mt-1">Commitments done</p>
             </div>
           </div>
 

@@ -66,6 +66,19 @@ export function markEveningSynced(date: string, ts: string) {
   persist(data);
 }
 
+export function toggleTaskCompleted(date: string, taskIndex: number) {
+  const data = load();
+  const day = data.days[date];
+  if (day?.setup) {
+    // Ensure tasksCompleted exists (backwards compat with old data)
+    if (!day.setup.tasksCompleted) {
+      day.setup.tasksCompleted = [false, false, false];
+    }
+    day.setup.tasksCompleted[taskIndex] = !day.setup.tasksCompleted[taskIndex];
+    persist(data);
+  }
+}
+
 export function getAllDates(): string[] {
   return Object.keys(load().days).sort().reverse();
 }

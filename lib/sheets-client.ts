@@ -36,7 +36,7 @@ export async function appendRows(range: string, values: (string | number | boole
   await sheets.spreadsheets.values.append({
     spreadsheetId: SHEET_ID(),
     range,
-    valueInputOption: "USER_ENTERED",
+    valueInputOption: "RAW",
     insertDataOption: "INSERT_ROWS",
     requestBody: { values: [values] },
   });
@@ -48,7 +48,7 @@ export async function updateRange(range: string, values: (string | number | bool
   await sheets.spreadsheets.values.update({
     spreadsheetId: SHEET_ID(),
     range,
-    valueInputOption: "USER_ENTERED",
+    valueInputOption: "RAW",
     requestBody: { values },
   });
 }

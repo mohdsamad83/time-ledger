@@ -54,6 +54,7 @@ export interface DaySetup {
   sleepHour:         number;
   topPriority:       string;
   tasks:             [string, string, string];
+  tasksCompleted:    [boolean, boolean, boolean];  // Track commitment completion
   successDefinition: string;
   druckerFocus:      string;   // "What needs to be done today?"
   syncedAt?:         string | null;

@@ -156,6 +156,7 @@ export default function MorningSetup({ date, onComplete }: Props) {
         sleepHour,
         topPriority,
         tasks: [task1, task2, task3],
+        tasksCompleted: [false, false, false],
         successDefinition,
         druckerFocus,
       });

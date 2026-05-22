@@ -13,7 +13,7 @@ import {
 import {
   getDay, saveSetup, saveBlock, saveEvening,
   markSetupSynced, markBlockSynced, markEveningSynced,
-  getAllDates, getRawData,
+  getAllDates, getRawData, toggleTaskCompleted,
 } from "@/lib/storage";
 
 import MorningSetup    from "@/components/MorningSetup";
@@ -136,6 +136,11 @@ export default function App() {
     );
   };
 
+  const handleToggleTask = (taskIndex: number) => {
+    toggleTaskCompleted(viewDate, taskIndex);
+    refreshDay();
+  };
+
   if (!mounted) return null;
 
   const isToday = viewDate === TODAY;
@@ -239,6 +244,7 @@ export default function App() {
                 onLogBlock={(hour) => setModalHour(hour)}
                 onEveningReview={() => setShowEvening(true)}
                 hasEveningReview={!!dayData.eveningReview}
+                onToggleTask={handleToggleTask}
               />
             )}
           </>
