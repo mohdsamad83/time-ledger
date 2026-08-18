@@ -11,9 +11,9 @@ import {
   DaySetup, EveningReview, TimeBlock, AppData, SyncState,
 } from "@/lib/types";
 import {
-  getDay, saveSetup, saveBlock, saveEvening,
-  markSetupSynced, markBlockSynced, markEveningSynced,
-  getAllDates, getRawData, toggleTaskCompleted, resetDay, toggleTarget,
+  fetchAppData, getDay, applySetup, applyBlock, applyEvening,
+  applySetupSynced, applyBlockSynced, applyEveningSynced,
+  applyTaskToggle, applyResetDay, applyTargetToggle, applyTargetsUpdate
 } from "@/lib/storage";
 import { ScheduleTemplate } from "@/lib/templates";
 
@@ -42,8 +42,7 @@ const DRUCKER_QUOTES = [
 export default function App() {
   const [tab,           setTab]           = useState<Tab>("today");
   const [viewDate,      setViewDate]      = useState(TODAY);
-  const [dayData,       setDayData]       = useState(() => getDay(TODAY));
-  const [appData,       setAppData]       = useState<AppData>({ days: {}, version: "1.0" });
+  const [appData,       setAppData]       = useState<AppData | null>(null);
   const [modalHour,     setModalHour]     = useState<number | null>(null);
   const [showEvening,   setShowEvening]   = useState(false);
   const [showReminder,  setShowReminder]  = useState(false);
@@ -56,9 +55,8 @@ export default function App() {
   // ── Hydrate ────────────────────────────────────────────────────────────────
   useEffect(() => {
     setMounted(true);
-    setAppData(getRawData());
-    setDayData(getDay(viewDate));
-  }, [viewDate]);
+    fetchAppData().then(data => setAppData(data));
+  }, []);
 
   // ── Init Google Sheet (once per session) ──────────────────────────────────
   useEffect(() => {
@@ -74,11 +72,6 @@ export default function App() {
   }, [mounted]);
 
   // ── Helpers ───────────────────────────────────────────────────────────────
-  const refreshDay = useCallback(() => {
-    setDayData(getDay(viewDate));
-    setAppData(getRawData());
-  }, [viewDate]);
-
   const syncToSheets = useCallback(async (
     endpoint: string,
     payload: object,
@@ -102,55 +95,66 @@ export default function App() {
       }
     } catch (err) {
       setSyncState("error");
-      setSyncMsg("Sheets sync failed — data saved locally");
+      setSyncMsg("Sheets sync failed — try again later");
       setTimeout(() => setSyncState("idle"), 4000);
     }
   }, []);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleSetupComplete = async (setup: DaySetup) => {
-    saveSetup(viewDate, setup);
-    refreshDay();
+    if (!appData) return;
+    setAppData(prev => prev ? applySetup(prev, viewDate, setup) : prev);
     await syncToSheets(
       "/api/sheets/setup",
       { date: viewDate, setup },
-      (ts) => { markSetupSynced(viewDate, ts); refreshDay(); }
+      (ts) => setAppData(prev => prev ? applySetupSynced(prev, viewDate, ts) : prev)
     );
   };
 
   const handleBlockSave = async (block: TimeBlock) => {
-    saveBlock(viewDate, block);
+    if (!appData) return;
+    setAppData(prev => prev ? applyBlock(prev, viewDate, block) : prev);
     setModalHour(null);
-    refreshDay();
     await syncToSheets(
       "/api/sheets/log",
       { date: viewDate, block },
-      (ts) => { markBlockSynced(viewDate, block.startHour, ts); refreshDay(); }
+      (ts) => setAppData(prev => prev ? applyBlockSynced(prev, viewDate, block.startHour, ts) : prev)
     );
   };
 
   const handleEveningSave = async (review: EveningReview) => {
-    saveEvening(viewDate, review);
+    if (!appData) return;
+    setAppData(prev => prev ? applyEvening(prev, viewDate, review) : prev);
     setShowEvening(false);
-    refreshDay();
     await syncToSheets(
       "/api/sheets/evening",
       { date: viewDate, review },
-      (ts) => { markEveningSynced(viewDate, ts); refreshDay(); }
+      (ts) => setAppData(prev => prev ? applyEveningSynced(prev, viewDate, ts) : prev)
     );
   };
 
   const handleToggleTask = (taskIndex: number) => {
-    toggleTaskCompleted(viewDate, taskIndex);
-    refreshDay();
+    if (!appData) return;
+    setAppData(prev => prev ? applyTaskToggle(prev, viewDate, taskIndex) : prev);
   };
 
   const handleToggleTarget = (targetDate: string, targetName: string) => {
-    toggleTarget(targetDate, targetName);
-    refreshDay();
+    if (!appData) return;
+    setAppData(prev => prev ? applyTargetToggle(prev, targetDate, targetName) : prev);
+  };
+
+  const handleUpdateTargets = async (targets: string[]) => {
+    if (!appData) return;
+    setAppData(prev => prev ? applyTargetsUpdate(prev, targets) : prev);
+    await syncToSheets(
+      "/api/sheets/targets",
+      { targets },
+      () => {}
+    );
   };
 
   const handleApplyTemplate = (template: ScheduleTemplate) => {
+    if (!appData) return;
     template.blocks.forEach((tb) => {
       const block: TimeBlock = {
         id:                      `${tb.startHour}-template-${Date.now()}`,
@@ -160,19 +164,31 @@ export default function App() {
         energy:                  tb.energy,
         wasPlanned:              tb.wasPlanned,
         contributedToTopPriority: tb.contributedToTopPriority,
+        contributedPriority:     tb.contributedPriority,
         couldDelegate:           tb.couldDelegate,
         satisfaction:            tb.satisfaction,
         contribution:            tb.contribution,
         notes:                   tb.notes,
         syncedAt:                null,
       };
-      saveBlock(viewDate, block);
+      setAppData(prev => prev ? applyBlock(prev, viewDate, block) : prev);
     });
-    refreshDay();
   };
 
   if (!mounted) return null;
 
+  if (!appData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4 text-[var(--faint)]">
+          <Loader2 className="spin-slow" size={32} />
+          <p className="text-sm uppercase tracking-widest font-bold">Syncing from Sheets...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const dayData = getDay(appData, viewDate);
   const isToday = viewDate === TODAY;
 
   return (
@@ -262,8 +278,7 @@ export default function App() {
             <button
               onClick={() => {
                 if (window.confirm("Are you sure you want to completely reset this day? This will delete your setup, logs, and evening review locally.")) {
-                  resetDay(viewDate);
-                  refreshDay();
+                  setAppData(prev => prev ? applyResetDay(prev, viewDate) : prev);
                 }
               }}
               className="flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded transition-all hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30"
@@ -315,6 +330,7 @@ export default function App() {
             <TargetsTracker 
               data={appData}
               onToggle={handleToggleTarget}
+              onUpdateTargets={handleUpdateTargets}
             />
           </div>
         )}
@@ -341,7 +357,7 @@ export default function App() {
         <BlockModal
           hour={modalHour}
           block={dayData.blocks[modalHour] ?? null}
-          tasks={dayData.setup.tasks}
+          targets={appData.targets || []}
           onSave={handleBlockSave}
           onClose={() => setModalHour(null)}
         />

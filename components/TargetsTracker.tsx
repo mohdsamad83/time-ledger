@@ -1,21 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format, getDaysInMonth, startOfMonth, addMonths, subMonths } from "date-fns";
 import { AppData } from "@/lib/types";
-import { ChevronLeft, ChevronRight, Target } from "lucide-react";
+import { ChevronLeft, ChevronRight, Target, X } from "lucide-react";
 
 interface Props {
   data: AppData;
   onToggle: (date: string, targetName: string) => void;
+  onUpdateTargets?: (targets: string[]) => void;
 }
 
-export default function TargetsTracker({ data, onToggle }: Props) {
+export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Props) {
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()));
+  const [isEditing, setIsEditing] = useState(false);
+  const [localTargets, setLocalTargets] = useState<string[]>([]);
+  const [newTarget, setNewTarget] = useState("");
 
   const daysInMonth = getDaysInMonth(currentMonth);
   const targets = data.targets || [];
   
+  useEffect(() => {
+    if (isEditing) {
+      setLocalTargets([...targets]);
+    }
+  }, [isEditing, targets]);
+
   const monthStr = format(currentMonth, "yyyy-MM");
   
   // Create array of date strings for the month (e.g., "2026-08-01", "2026-08-02")
@@ -59,7 +69,7 @@ export default function TargetsTracker({ data, onToggle }: Props) {
   return (
     <div className="max-w-6xl mx-auto space-y-6 fade-up">
       {/* Header & Month Navigation */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "var(--s2)" }}>
             <Target className="primary-text" size={20} />
@@ -70,26 +80,99 @@ export default function TargetsTracker({ data, onToggle }: Props) {
           </div>
         </div>
         
-        <div className="flex items-center gap-4 bg-white/5 p-1 rounded-lg" style={{ border: "1px solid var(--border)" }}>
-          <button 
-            onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-            className="p-1 rounded hover:bg-white/10"
-            style={{ color: "var(--muted)" }}
-          >
-            <ChevronLeft size={18} />
-          </button>
-          <span className="font-medium text-sm w-32 text-center" style={{ color: "var(--text)" }}>
-            {format(currentMonth, "MMMM yyyy")}
-          </span>
-          <button 
-            onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-            className="p-1 rounded hover:bg-white/10"
-            style={{ color: "var(--muted)" }}
-          >
-            <ChevronRight size={18} />
-          </button>
+        <div className="flex items-center gap-4">
+          {onUpdateTargets && (
+            <button 
+              onClick={() => setIsEditing(!isEditing)} 
+              className="btn-ghost text-xs px-3 py-1.5"
+            >
+              {isEditing ? "Cancel Edit" : "Edit Targets"}
+            </button>
+          )}
+
+          <div className="flex items-center gap-4 bg-white/5 p-1 rounded-lg" style={{ border: "1px solid var(--border)" }}>
+            <button 
+              onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
+              className="p-1 rounded hover:bg-white/10"
+              style={{ color: "var(--muted)" }}
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <span className="font-medium text-sm w-32 text-center" style={{ color: "var(--text)" }}>
+              {format(currentMonth, "MMMM yyyy")}
+            </span>
+            <button 
+              onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+              className="p-1 rounded hover:bg-white/10"
+              style={{ color: "var(--muted)" }}
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
         </div>
       </div>
+
+      {isEditing && (
+        <div className="p-5 rounded-xl space-y-5 fade-up" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+          <h3 className="font-bold text-sm uppercase tracking-widest" style={{ color: "var(--text)" }}>Manage Targets</h3>
+          
+          <div className="flex flex-wrap gap-2">
+             {localTargets.length === 0 && <span className="text-xs text-[var(--faint)]">No targets added yet.</span>}
+             {localTargets.map((t, idx) => (
+                <div key={idx} className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold" style={{ background: "var(--s2)", border: "1px solid var(--border)" }}>
+                  <span style={{ color: "var(--text)" }}>{t}</span>
+                  <button 
+                    onClick={() => setLocalTargets(localTargets.filter((_, i) => i !== idx))} 
+                    className="hover:text-red-400 transition-colors"
+                    style={{ color: "var(--faint)" }}
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+             ))}
+          </div>
+
+          <div className="flex gap-2">
+            <input 
+              value={newTarget}
+              onChange={e => setNewTarget(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === "Enter" && newTarget.trim()) {
+                  setLocalTargets([...localTargets, newTarget.trim()]);
+                  setNewTarget("");
+                }
+              }}
+              placeholder="New Target Name..."
+              className="px-4 py-2 text-sm rounded-lg border bg-transparent flex-1 focus:outline-none"
+              style={{ borderColor: "var(--border)", color: "var(--text)" }}
+            />
+            <button 
+               onClick={() => { 
+                 if(newTarget.trim() && !localTargets.includes(newTarget.trim())) { 
+                   setLocalTargets([...localTargets, newTarget.trim()]); 
+                   setNewTarget(""); 
+                 } 
+               }}
+               className="btn-gold text-sm px-5 py-2"
+               disabled={!newTarget.trim()}
+            >
+               Add
+            </button>
+          </div>
+
+          <div className="pt-2 border-t" style={{ borderColor: "var(--border)" }}>
+            <button 
+              onClick={() => { 
+                onUpdateTargets?.(localTargets); 
+                setIsEditing(false); 
+              }}
+              className="btn-primary w-full py-2.5 mt-2"
+            >
+              Save Targets to Ledger ✓
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -131,6 +214,13 @@ export default function TargetsTracker({ data, onToggle }: Props) {
             </tr>
           </thead>
           <tbody>
+            {targets.length === 0 && (
+               <tr>
+                 <td colSpan={days.length + 2} className="p-8 text-center text-[var(--faint)]">
+                   No targets configured. Click "Edit Targets" to add some!
+                 </td>
+               </tr>
+            )}
             {targets.map((target, rowIdx) => {
               const stat = rowStats[rowIdx];
               return (

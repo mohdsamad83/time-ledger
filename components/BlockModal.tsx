@@ -6,7 +6,7 @@ import { X, Zap, Battery, BatteryLow, HelpCircle } from "lucide-react";
 interface Props {
   hour:        number;
   block:       TimeBlock | null;
-  tasks:       string[];
+  targets:     string[];
   onSave:      (block: TimeBlock) => void;
   onClose:     () => void;
 }
@@ -22,7 +22,7 @@ const ENERGY_OPTIONS: { value: EnergyLevel; label: string; icon: React.ReactNode
   { value: "low",    label: "Low",    icon: <BatteryLow size={14} />, color: "#F87171" },
 ];
 
-export default function BlockModal({ hour, block, tasks, onSave, onClose }: Props) {
+export default function BlockModal({ hour, block, targets, onSave, onClose }: Props) {
   const [activity,     setActivity]     = useState(block?.activity     ?? "");
   const [category,     setCategory]     = useState<Category>(block?.category     ?? "deep-work");
   const [energy,       setEnergy]       = useState<EnergyLevel>(block?.energy   ?? "medium");
@@ -190,13 +190,10 @@ export default function BlockModal({ hour, block, tasks, onSave, onClose }: Prop
             {/* Top Priority */}
             <div>
               <p style={{ color: "var(--muted)" }} className="text-xs mb-2">
-                Did this contribute to: <span style={{ color: "var(--text)" }} className="italic">any of your Top 3 Priorities</span>?
+                Did this contribute to: <span style={{ color: "var(--text)" }} className="italic">any of your Targets</span>?
               </p>
               <div className="flex flex-col gap-2 mt-2">
-                {(["P1", "P2", "P3", "None"] as PriorityTag[]).map((v) => {
-                  const taskText = v !== "None" ? tasks[parseInt(v[1]) - 1] : "";
-                  if (v !== "None" && !taskText) return null; // skip empty tasks
-                  
+                {[...targets, "None"].map((v) => {
                   const isSelected = contributedPriority === v;
                   return (
                     <button
@@ -209,9 +206,9 @@ export default function BlockModal({ hour, block, tasks, onSave, onClose }: Prop
                         color: isSelected ? (v === "None" ? "#F87171" : "#34D399") : "var(--faint)",
                       }}
                     >
-                      <span className="w-8 flex-shrink-0">{v === "None" ? "✗" : `✓ ${v}`}</span>
+                      <span className="w-8 flex-shrink-0">{v === "None" ? "✗" : `✓`}</span>
                       <span className="truncate font-normal" style={{ color: isSelected ? "inherit" : "var(--text)" }}>
-                        {v === "None" ? "Did not contribute to a priority" : taskText}
+                        {v === "None" ? "Did not contribute to a target" : v}
                       </span>
                     </button>
                   );

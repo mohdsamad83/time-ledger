@@ -42,6 +42,11 @@ const SHEETS_CONFIG = [
     ],
     color: { red: 0.05, green: 0.05, blue: 0.09 },
   },
+  {
+    title: "🎯 Targets",
+    headers: ["Target Name", "Added At"],
+    color: { red: 0.05, green: 0.08, blue: 0.09 },
+  },
 ];
 
 export async function POST() {

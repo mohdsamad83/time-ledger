@@ -33,7 +33,7 @@ export const CATEGORIES: {
 // ─── Core models ─────────────────────────────────────────────────────────────
 export type EnergyLevel   = "high" | "medium" | "low";
 export type DelegateOpt   = "yes" | "no" | "na";
-export type PriorityTag   = "P1" | "P2" | "P3" | "None";
+export type PriorityTag   = string;
 
 export interface TimeBlock {
   id:                      string;
