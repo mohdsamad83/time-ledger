@@ -207,7 +207,7 @@ export default function TimelineView({
                 <div className="w-14 flex-shrink-0 flex flex-col items-end justify-start pt-3">
                   <span style={{ color: "var(--faint)" }} className="font-mono text-xs">{toTime(hour)}</span>
                   {isCurrent && (
-                    <span className="w-2 h-2 rounded-full mt-2 animate-pulse shadow-sm shadow-[var(--gold)]" style={{ background: "var(--gold)" }} />
+                    <span className="w-2 h-2 rounded-full mt-2 animate-pulse shadow-sm shadow-[var(--gold)] inline-block" style={{ background: "var(--gold)" }} />
                   )}
                 </div>
 
