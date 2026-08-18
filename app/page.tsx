@@ -295,7 +295,7 @@ export default function App() {
         <BlockModal
           hour={modalHour}
           block={dayData.blocks[modalHour] ?? null}
-          topPriority={dayData.setup.topPriority}
+          tasks={dayData.setup.tasks}
           onSave={handleBlockSave}
           onClose={() => setModalHour(null)}
         />

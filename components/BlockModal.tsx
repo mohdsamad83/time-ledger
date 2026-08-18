@@ -1,12 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
-import { TimeBlock, CATEGORIES, Category, EnergyLevel, DelegateOpt } from "@/lib/types";
+import { TimeBlock, CATEGORIES, Category, EnergyLevel, DelegateOpt, PriorityTag } from "@/lib/types";
 import { X, Zap, Battery, BatteryLow, HelpCircle } from "lucide-react";
 
 interface Props {
   hour:        number;
   block:       TimeBlock | null;
-  topPriority: string;
+  tasks:       string[];
   onSave:      (block: TimeBlock) => void;
   onClose:     () => void;
 }
@@ -22,12 +22,14 @@ const ENERGY_OPTIONS: { value: EnergyLevel; label: string; icon: React.ReactNode
   { value: "low",    label: "Low",    icon: <BatteryLow size={14} />, color: "#F87171" },
 ];
 
-export default function BlockModal({ hour, block, topPriority, onSave, onClose }: Props) {
+export default function BlockModal({ hour, block, tasks, onSave, onClose }: Props) {
   const [activity,     setActivity]     = useState(block?.activity     ?? "");
   const [category,     setCategory]     = useState<Category>(block?.category     ?? "deep-work");
   const [energy,       setEnergy]       = useState<EnergyLevel>(block?.energy   ?? "medium");
   const [wasPlanned,   setWasPlanned]   = useState(block?.wasPlanned   ?? true);
-  const [topPri,       setTopPri]       = useState(block?.contributedToTopPriority ?? false);
+  const [contributedPriority, setContributedPriority] = useState<PriorityTag>(
+    block?.contributedPriority ?? (block?.contributedToTopPriority ? "P1" : "None")
+  );
   const [couldDel,     setCouldDel]     = useState<DelegateOpt>(block?.couldDelegate ?? "no");
   const [satisfaction, setSatisfaction] = useState(block?.satisfaction ?? 3);
   const [contribution, setContribution] = useState(block?.contribution ?? "");
@@ -51,7 +53,8 @@ export default function BlockModal({ hour, block, topPriority, onSave, onClose }
       category,
       energy,
       wasPlanned,
-      contributedToTopPriority: topPri,
+      contributedToTopPriority: contributedPriority !== "None",
+      contributedPriority,
       couldDelegate:           couldDel,
       satisfaction,
       contribution:            contribution.trim(),
@@ -189,21 +192,30 @@ export default function BlockModal({ hour, block, topPriority, onSave, onClose }
               <p style={{ color: "var(--muted)" }} className="text-xs mb-2">
                 Did this contribute to: <span style={{ color: "var(--text)" }} className="italic">any of your Top 3 Priorities</span>?
               </p>
-              <div className="flex gap-2">
-                {[true, false].map((v) => (
-                  <button
-                    key={String(v)}
-                    onClick={() => setTopPri(v)}
-                    className="px-4 py-2 rounded text-xs font-bold transition-all"
-                    style={{
-                      background: topPri === v ? (v ? "#063e2b" : "var(--s2)") : "var(--s2)",
-                      border: `1px solid ${topPri === v ? (v ? "#34D399" : "var(--border)") : "var(--border)"}`,
-                      color: topPri === v ? (v ? "#34D399" : "var(--faint)") : "var(--faint)",
-                    }}
-                  >
-                    {v ? "✓ Yes" : "✗ No"}
-                  </button>
-                ))}
+              <div className="flex flex-col gap-2 mt-2">
+                {(["P1", "P2", "P3", "None"] as PriorityTag[]).map((v) => {
+                  const taskText = v !== "None" ? tasks[parseInt(v[1]) - 1] : "";
+                  if (v !== "None" && !taskText) return null; // skip empty tasks
+                  
+                  const isSelected = contributedPriority === v;
+                  return (
+                    <button
+                      key={v}
+                      onClick={() => setContributedPriority(v)}
+                      className="px-4 py-2 rounded text-xs font-bold transition-all text-left flex items-center gap-2"
+                      style={{
+                        background: isSelected ? (v === "None" ? "#4a0d0d" : "#063e2b") : "var(--s2)",
+                        border: `1px solid ${isSelected ? (v === "None" ? "#F87171" : "#34D399") : "var(--border)"}`,
+                        color: isSelected ? (v === "None" ? "#F87171" : "#34D399") : "var(--faint)",
+                      }}
+                    >
+                      <span className="w-8 flex-shrink-0">{v === "None" ? "✗" : `✓ ${v}`}</span>
+                      <span className="truncate font-normal" style={{ color: isSelected ? "inherit" : "var(--text)" }}>
+                        {v === "None" ? "Did not contribute to a priority" : taskText}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

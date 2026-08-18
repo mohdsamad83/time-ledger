@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
       catLabel,
       block.energy,
       block.wasPlanned ? "Yes" : "No",
-      block.contributedToTopPriority ? "Yes" : "No",
+      block.contributedPriority ? (block.contributedPriority === "None" ? "No" : block.contributedPriority) : (block.contributedToTopPriority ? "P1" : "No"),
       block.couldDelegate === "na" ? "N/A" : block.couldDelegate === "yes" ? "Yes" : "No",
       block.satisfaction,
       block.contribution,

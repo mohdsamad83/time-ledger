@@ -46,7 +46,7 @@ export default function TimelineView({
   const isToday = date === new Date().toISOString().split("T")[0];
   const loggedCount  = Object.keys(blocks).length;
   const plannedCount = Object.values(blocks).filter((b) => b.wasPlanned).length;
-  const priorityCount = Object.values(blocks).filter((b) => b.contributedToTopPriority).length;
+  const priorityCount = Object.values(blocks).filter((b) => b.contributedPriority ? b.contributedPriority !== "None" : b.contributedToTopPriority).length;
   const avgSat = loggedCount > 0
     ? (Object.values(blocks).reduce((a, b) => a + b.satisfaction, 0) / loggedCount).toFixed(1)
     : "—";
@@ -231,10 +231,16 @@ export default function TimelineView({
                               Reactive
                             </span>
                           )}
-                          {block.contributedToTopPriority && (
+                          {(block.contributedPriority && block.contributedPriority !== "None") ? (
                             <span className="cat-badge" style={{ background: "#063e2b", color: "#34D399" }}>
-                              ✓ Priority
+                              ✓ {block.contributedPriority}
                             </span>
+                          ) : (
+                            block.contributedToTopPriority && (
+                              <span className="cat-badge" style={{ background: "#063e2b", color: "#34D399" }}>
+                                ✓ P1
+                              </span>
+                            )
                           )}
                         </div>
                         <p style={{ color: "var(--text)" }} className="text-sm leading-snug truncate">{block.activity}</p>

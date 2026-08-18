@@ -33,6 +33,7 @@ export const CATEGORIES: {
 // ─── Core models ─────────────────────────────────────────────────────────────
 export type EnergyLevel   = "high" | "medium" | "low";
 export type DelegateOpt   = "yes" | "no" | "na";
+export type PriorityTag   = "P1" | "P2" | "P3" | "None";
 
 export interface TimeBlock {
   id:                      string;
@@ -41,7 +42,8 @@ export interface TimeBlock {
   category:                Category;
   energy:                  EnergyLevel;
   wasPlanned:              boolean;
-  contributedToTopPriority: boolean;
+  contributedToTopPriority: boolean; // deprecated, use contributedPriority
+  contributedPriority?:    PriorityTag;
   couldDelegate:           DelegateOpt;
   satisfaction:            number;          // 1–5
   contribution:            string;          // Drucker Q: "What did I contribute?"

@@ -34,7 +34,7 @@ export default function EveningReviewModal({ setup, blocks, review, onSave, onCl
   const plannedPct = loggedBlocks.length > 0
     ? Math.round((loggedBlocks.filter((b) => b.wasPlanned).length / loggedBlocks.length) * 100) : 0;
   const priorityPct = loggedBlocks.length > 0
-    ? Math.round((loggedBlocks.filter((b) => b.contributedToTopPriority).length / loggedBlocks.length) * 100) : 0;
+    ? Math.round((loggedBlocks.filter((b) => b.contributedPriority ? b.contributedPriority !== "None" : b.contributedToTopPriority).length / loggedBlocks.length) * 100) : 0;
 
   const handleSave = () => {
     onSave({

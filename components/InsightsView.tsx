@@ -43,7 +43,7 @@ export default function InsightsView({ data }: Props) {
     for (const block of Object.values(data.days[d].blocks)) {
       totalBlocks++;
       if (block.wasPlanned) plannedBlocks++;
-      if (block.contributedToTopPriority) priorityBlocks++;
+      if (block.contributedPriority ? block.contributedPriority !== "None" : block.contributedToTopPriority) priorityBlocks++;
       if (block.couldDelegate === "yes") delegateBlocks++;
     }
   }
