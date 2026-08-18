@@ -36,8 +36,10 @@ export default function TimelineView({
     (_, i) => (setup.wakeHour + i) % 24
   );
 
+  const now = new Date();
+  const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
+  const isToday = date === localDate;
   const currentHour = nowHour();
-  const isToday = date === new Date().toISOString().split("T")[0];
   const loggedCount  = Object.keys(blocks).length;
   const plannedCount = Object.values(blocks).filter((b) => b.wasPlanned).length;
   const priorityCount = Object.values(blocks).filter((b) => b.contributedPriority ? b.contributedPriority !== "None" : b.contributedToTopPriority).length;
@@ -205,7 +207,7 @@ export default function TimelineView({
                 <div className="w-14 flex-shrink-0 flex flex-col items-end justify-start pt-3">
                   <span style={{ color: "var(--faint)" }} className="font-mono text-xs">{toTime(hour)}</span>
                   {isCurrent && (
-                    <span className="w-2 h-2 rounded-full mt-2 pulse-dot" style={{ background: "var(--gold)" }} />
+                    <span className="w-2 h-2 rounded-full mt-2 animate-pulse shadow-sm shadow-[var(--gold)]" style={{ background: "var(--gold)" }} />
                   )}
                 </div>
 
