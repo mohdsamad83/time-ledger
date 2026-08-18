@@ -1,4 +1,4 @@
-import { Category, EnergyLevel, DelegateOpt } from "./types";
+import { Category, EnergyLevel, DelegateOpt, PriorityTag } from "./types";
 
 // ─── Template block ────────────────────────────────────────────────────────────
 export interface TemplateBlock {
@@ -8,6 +8,7 @@ export interface TemplateBlock {
   energy:                  EnergyLevel;
   wasPlanned:              boolean;
   contributedToTopPriority: boolean;
+  contributedPriority?:    PriorityTag;
   couldDelegate:           DelegateOpt;
   satisfaction:            number;
   contribution:            string;
