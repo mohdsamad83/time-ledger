@@ -113,13 +113,28 @@ export default function App() {
 
   const handleBlockSave = async (block: TimeBlock) => {
     if (!appData) return;
-    setAppData(prev => prev ? applyBlock(prev, viewDate, block) : prev);
+    const nextAppData = applyBlock(appData, viewDate, block);
+    setAppData(nextAppData);
     setModalHour(null);
+    
     await syncToSheets(
       "/api/sheets/log",
       { date: viewDate, block },
       (ts) => setAppData(prev => prev ? applyBlockSynced(prev, viewDate, block.startHour, ts) : prev)
     );
+
+    if (block.contributedPriority && block.contributedPriority !== "None") {
+      const updatedTargetsObj = nextAppData.days[viewDate]?.targets || {};
+      const completedTargetsList = Object.entries(updatedTargetsObj)
+        .filter(([_, isCompleted]) => isCompleted)
+        .map(([name]) => name);
+
+      await syncToSheets(
+        "/api/sheets/daily-targets",
+        { date: viewDate, targets: completedTargetsList },
+        () => {}
+      );
+    }
   };
 
   const handleEveningSave = async (review: EveningReview) => {

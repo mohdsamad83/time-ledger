@@ -35,8 +35,13 @@ export function applySetup(data: AppData, date: string, setup: DaySetup): AppDat
 
 export function applyBlock(data: AppData, date: string, block: TimeBlock): AppData {
   const next = structuredClone(data);
-  if (!next.days[date]) next.days[date] = { date, setup: null, blocks: {}, eveningReview: null };
+  if (!next.days[date]) next.days[date] = { date, setup: null, blocks: {}, eveningReview: null, targets: {} };
   next.days[date].blocks[block.startHour] = block;
+
+  if (block.contributedPriority && block.contributedPriority !== "None") {
+    if (!next.days[date].targets) next.days[date].targets = {};
+    next.days[date].targets![block.contributedPriority] = true;
+  }
   return next;
 }
 
