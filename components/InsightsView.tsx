@@ -1,6 +1,10 @@
 "use client";
 import { AppData, CATEGORIES } from "@/lib/types";
 import { parseISO, format } from "date-fns";
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
+  LineChart, Line, PieChart, Pie, Cell, AreaChart, Area
+} from "recharts";
 
 interface Props { data: AppData }
 
@@ -17,240 +21,156 @@ export default function InsightsView({ data }: Props) {
     );
   }
 
-  // ── Category breakdown (last 7 days) ──────────────────────────────────────
-  const catHours: { [k: string]: number } = {};
-  let totalHours = 0;
-  for (const d of days7) {
+  // 1. Time Allocation Data (Stacked Bar)
+  const timeData = [...days7].reverse().map(d => {
     const day = data.days[d];
+    const obj: any = { date: format(parseISO(d), "MMM d") };
     for (const block of Object.values(day.blocks)) {
-      catHours[block.category] = (catHours[block.category] ?? 0) + 1;
-      totalHours++;
+      obj[block.category] = (obj[block.category] || 0) + 1;
     }
-  }
-
-  // ── Satisfaction trend ────────────────────────────────────────────────────
-  const satByDay = days7.slice(0, 7).reverse().map((d) => {
-    const blocks = Object.values(data.days[d].blocks);
-    const avg = blocks.length > 0
-      ? blocks.reduce((a, b) => a + b.satisfaction, 0) / blocks.length
-      : null;
-    return { date: d, avg };
+    return obj;
   });
 
-  // ── Drucker metrics ───────────────────────────────────────────────────────
-  let totalBlocks = 0, plannedBlocks = 0, priorityBlocks = 0, delegateBlocks = 0;
+  // 2. Drucker Split (Donut)
+  let focused = 0, maintenance = 0, reactive = 0;
   for (const d of days7) {
     for (const block of Object.values(data.days[d].blocks)) {
-      totalBlocks++;
-      if (block.wasPlanned) plannedBlocks++;
-      if (block.contributedPriority ? block.contributedPriority !== "None" : block.contributedToTopPriority) priorityBlocks++;
-      if (block.couldDelegate === "yes") delegateBlocks++;
+      const hasPriority = block.contributedPriority ? block.contributedPriority !== "None" : block.contributedToTopPriority;
+      if (hasPriority) focused++;
+      else if (block.wasPlanned) maintenance++;
+      else reactive++;
     }
   }
+  const donutData = [
+    { name: "Focused Contribution", value: focused, color: "#4ADE80" },
+    { name: "Planned Routine", value: maintenance, color: "#60A5FA" },
+    { name: "Reactive / Distraction", value: reactive, color: "#F87171" }
+  ].filter(d => d.value > 0);
 
-  const pct = (n: number) => totalBlocks > 0 ? Math.round((n / totalBlocks) * 100) : 0;
+  // 3. Trends (Lines)
+  const trendData = [...days7].reverse().map(d => {
+    const blocks = Object.values(data.days[d].blocks);
+    const avgSat = blocks.length > 0 ? blocks.reduce((a, b) => a + b.satisfaction, 0) / blocks.length : null;
+    const avgEnergy = blocks.length > 0 ? blocks.reduce((a, b) => a + (b.energy === "high" ? 5 : b.energy === "medium" ? 3 : 1), 0) / blocks.length : null;
+    return {
+      date: format(parseISO(d), "MMM d"),
+      Satisfaction: avgSat ? Number(avgSat.toFixed(1)) : undefined,
+      Energy: avgEnergy ? Number(avgEnergy.toFixed(1)) : undefined
+    };
+  });
 
-  // ── Priority accomplishment rate ──────────────────────────────────────────
-  const eveningDays = days7.filter((d) => data.days[d].eveningReview);
-  const accomplished = eveningDays.filter((d) => data.days[d].eveningReview?.topPriorityAccomplished).length;
-  const accomplishRate = eveningDays.length > 0 ? Math.round((accomplished / eveningDays.length) * 100) : null;
+  // 4. Targets Met (Area)
+  const targetData = [...days7].reverse().map(d => {
+    const t = data.days[d].targets || {};
+    const count = Object.values(t).filter(Boolean).length;
+    return {
+      date: format(parseISO(d), "MMM d"),
+      Targets: count
+    };
+  });
 
-  // ── Meeting time warning ──────────────────────────────────────────────────
-  const meetingHours = catHours["meetings"] ?? 0;
-  const meetingPct   = totalHours > 0 ? Math.round((meetingHours / totalHours) * 100) : 0;
+  // Custom Tooltip component for better styling
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div style={{ background: "var(--surface)", border: "1px solid var(--border)" }} className="p-3 rounded-lg shadow-xl text-xs font-mono">
+          <p className="font-bold mb-2" style={{ color: "var(--text)" }}>{label}</p>
+          {payload.map((entry: any, i: number) => (
+            <div key={i} className="flex justify-between gap-4 mb-1">
+              <span style={{ color: entry.color }}>{entry.name}</span>
+              <span style={{ color: "var(--text)" }} className="font-bold">{entry.value}</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 pb-16">
-      <h2 style={{ color: "var(--text)" }} className="font-serif text-3xl mb-1">Insights</h2>
-      <p style={{ color: "var(--faint)" }} className="text-sm mb-8">Last 7 days · {totalHours} hours logged</p>
+    <div className="max-w-4xl mx-auto px-4 pb-16">
+      <h2 style={{ color: "var(--text)" }} className="font-serif text-3xl mb-8">Visual Insights</h2>
 
-      {/* Drucker Score Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
-        <ScoreCard
-          label="Planned Time"
-          value={`${pct(plannedBlocks)}%`}
-          sub="of hours were intentional"
-          color={pct(plannedBlocks) >= 70 ? "#4ADE80" : pct(plannedBlocks) >= 50 ? "#FCD34D" : "#F87171"}
-        />
-        <ScoreCard
-          label="Priority Focus"
-          value={`${pct(priorityBlocks)}%`}
-          sub="hours on your #1 priority"
-          color={pct(priorityBlocks) >= 30 ? "#4ADE80" : "#FCD34D"}
-        />
-        <ScoreCard
-          label="Delegation Leak"
-          value={`${pct(delegateBlocks)}%`}
-          sub="hours you could delegate"
-          color={pct(delegateBlocks) <= 10 ? "#4ADE80" : pct(delegateBlocks) <= 25 ? "#FCD34D" : "#F87171"}
-        />
-        {accomplishRate !== null && (
-          <ScoreCard
-            label="Priority Win Rate"
-            value={`${accomplishRate}%`}
-            sub={`of ${eveningDays.length} reviewed days`}
-            color={accomplishRate >= 70 ? "#4ADE80" : "#FCD34D"}
-          />
-        )}
-      </div>
-
-      {/* Category breakdown */}
-      <Section title="⏱  Where Your Time Goes" subtitle="Last 7 days">
-        <div className="space-y-2.5">
-          {CATEGORIES.filter((c) => (catHours[c.value] ?? 0) > 0)
-            .sort((a, b) => (catHours[b.value] ?? 0) - (catHours[a.value] ?? 0))
-            .map((cat) => {
-              const hrs  = catHours[cat.value] ?? 0;
-              const frac = totalHours > 0 ? hrs / totalHours : 0;
-              return (
-                <div key={cat.value} className="flex items-center gap-3">
-                  <span className="w-5 text-sm">{cat.emoji}</span>
-                  <span style={{ color: "var(--muted)" }} className="text-xs w-32 truncate">{cat.label}</span>
-                  <div className="flex-1 rounded-full overflow-hidden h-2" style={{ background: "var(--s2)" }}>
-                    <div
-                      className="h-full rounded-full transition-all"
-                      style={{ width: `${frac * 100}%`, background: cat.color }}
-                    />
-                  </div>
-                  <span style={{ color: "var(--text)" }} className="font-mono text-xs w-10 text-right">
-                    {hrs}h
-                  </span>
-                  <span style={{ color: "var(--faint)" }} className="font-mono text-xs w-8 text-right">
-                    {Math.round(frac * 100)}%
-                  </span>
-                </div>
-              );
-            })}
-        </div>
-      </Section>
-
-      {/* Meeting time warning */}
-      {meetingPct > 30 && (
-        <div
-          className="rounded-lg p-4 mb-6 flex gap-3"
-          style={{ background: "var(--s2)", border: "1px solid #7C3AED55" }}
-        >
-          <span className="text-xl">⚠️</span>
-          <div>
-            <p className="text-sm font-bold text-[#A78BFA]">Meeting-Heavy Week</p>
-            <p style={{ color: "var(--faint)" }} className="text-xs mt-1">
-              {meetingPct}% of your time was in meetings ({meetingHours}h). Drucker warns: "Meetings are a symptom of bad organisation." Consider cutting, batching, or declining.
-            </p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        {/* Chart 1: Time Allocation */}
+        <div className="rounded-xl p-5" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+          <h3 className="font-serif text-lg mb-1" style={{ color: "var(--text)" }}>Where Time Goes</h3>
+          <p className="text-xs mb-6" style={{ color: "var(--faint)" }}>Hours logged by category (Last 7 Days)</p>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={timeData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                <XAxis dataKey="date" tick={{ fill: 'var(--faint)', fontSize: 10 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: 'var(--faint)', fontSize: 10 }} axisLine={false} tickLine={false} />
+                <Tooltip content={<CustomTooltip />} />
+                {CATEGORIES.map(cat => (
+                  <Bar key={cat.value} dataKey={cat.value} name={cat.label} stackId="a" fill={cat.color} />
+                ))}
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
-      )}
 
-      {/* Satisfaction trend */}
-      <Section title="⭐  Satisfaction Trend" subtitle="Daily average rating">
-        <div className="flex items-end gap-2 h-24">
-          {satByDay.map(({ date, avg }) => (
-            <div key={date} className="flex-1 flex flex-col items-center gap-1">
-              <div className="flex-1 flex items-end w-full">
-                {avg !== null ? (
-                  <div
-                    className="w-full rounded-t transition-all"
-                    style={{
-                      height: `${(avg / 5) * 80}px`,
-                      background: avg >= 4 ? "#4ADE80" : avg >= 3 ? "#FCD34D" : "#F87171",
-                      opacity: 0.8,
-                    }}
-                  />
-                ) : (
-                  <div className="w-full rounded-t" style={{ height: "4px", background: "var(--s2)" }} />
-                )}
-              </div>
-              <span style={{ color: "var(--faint)" }} className="text-[9px] font-mono">
-                {format(parseISO(date), "EEE")}
-              </span>
-              <span style={{ color: "var(--muted)" }} className="text-[9px] font-mono">
-                {avg !== null ? avg.toFixed(1) : "—"}
-              </span>
-            </div>
-          ))}
+        {/* Chart 2: Drucker Split */}
+        <div className="rounded-xl p-5" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+          <h3 className="font-serif text-lg mb-1" style={{ color: "var(--text)" }}>The Drucker Split</h3>
+          <p className="text-xs mb-6" style={{ color: "var(--faint)" }}>Intentional vs Reactive focus</p>
+          <div className="h-64 w-full relative flex items-center justify-center">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={donutData} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value" stroke="none">
+                  {donutData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+                <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: '10px', color: 'var(--faint)' }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </div>
-      </Section>
 
-      {/* Drucker Principles Checklist */}
-      <Section title="📖  Drucker Principles Check" subtitle="Based on your patterns">
-        <div className="space-y-3">
-          {[
-            {
-              principle: "Know where your time goes",
-              check: totalHours >= days7.length * 4,
-              pass: `You logged ${totalHours} hours across ${days7.length} days — solid tracking.`,
-              fail: `You averaged ${(totalHours / days7.length).toFixed(1)} hours/day logged. Track more consistently.`,
-            },
-            {
-              principle: "Focus on contribution",
-              check: pct(priorityBlocks) >= 25,
-              pass: `${pct(priorityBlocks)}% of your time went toward your #1 priority. Good focus.`,
-              fail: `Only ${pct(priorityBlocks)}% of hours contributed to your top priority. Protect that time.`,
-            },
-            {
-              principle: "Make time productive, not just busy",
-              check: pct(plannedBlocks) >= 60,
-              pass: `${pct(plannedBlocks)}% of your time was intentional and planned.`,
-              fail: `${100 - pct(plannedBlocks)}% of your hours were reactive. Plan more; react less.`,
-            },
-            {
-              principle: "Concentrate on few major areas",
-              check: meetingPct <= 25,
-              pass: `Meeting time is ${meetingPct}% — reasonable. You have time for real work.`,
-              fail: `${meetingPct}% in meetings. Consider which meetings to cut, delegate, or shorten.`,
-            },
-            {
-              principle: "Build on strengths (delegate the rest)",
-              check: pct(delegateBlocks) <= 15,
-              pass: `${pct(delegateBlocks)}% of tasks could be delegated. Good use of your unique skills.`,
-              fail: `${pct(delegateBlocks)}% of hours could be delegated. Identify who can take these on.`,
-            },
-          ].map(({ principle, check, pass, fail }) => (
-            <div
-              key={principle}
-              className="flex items-start gap-3 p-3 rounded-lg"
-              style={{ background: "var(--s2)", border: `1px solid ${check ? "#34D39933" : "#F8717133"}` }}
-            >
-              <span className="flex-shrink-0 mt-0.5">{check ? "✅" : "⚠️"}</span>
-              <div>
-                <p style={{ color: "var(--muted)" }} className="text-xs font-bold uppercase tracking-widest">{principle}</p>
-                <p className="text-sm mt-1" style={{ color: check ? "#34D399" : "#F87171" }}>
-                  {check ? pass : fail}
-                </p>
-              </div>
-            </div>
-          ))}
+        {/* Chart 3: Satisfaction & Energy */}
+        <div className="rounded-xl p-5" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+          <h3 className="font-serif text-lg mb-1" style={{ color: "var(--text)" }}>Satisfaction & Energy</h3>
+          <p className="text-xs mb-6" style={{ color: "var(--faint)" }}>1-5 scale based on your logs</p>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={trendData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
+                <XAxis dataKey="date" tick={{ fill: 'var(--faint)', fontSize: 10 }} axisLine={false} tickLine={false} />
+                <YAxis domain={[1, 5]} tick={{ fill: 'var(--faint)', fontSize: 10 }} axisLine={false} tickLine={false} />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: '10px', color: 'var(--faint)' }} />
+                <Line type="monotone" dataKey="Satisfaction" stroke="#A78BFA" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                <Line type="monotone" dataKey="Energy" stroke="#FBBF24" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
-      </Section>
-    </div>
-  );
-}
 
-function ScoreCard({ label, value, sub, color }: {
-  label: string; value: string; sub: string; color: string;
-}) {
-  return (
-    <div
-      className="rounded-xl p-4"
-      style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
-    >
-      <p style={{ color: "var(--faint)" }} className="text-xs uppercase tracking-widest font-bold mb-2">{label}</p>
-      <p className="font-mono text-2xl font-semibold" style={{ color }}>{value}</p>
-      <p style={{ color: "var(--faint)" }} className="text-xs mt-1 leading-tight">{sub}</p>
-    </div>
-  );
-}
+        {/* Chart 4: Daily Targets Met */}
+        <div className="rounded-xl p-5" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+          <h3 className="font-serif text-lg mb-1" style={{ color: "var(--text)" }}>Targets Reached</h3>
+          <p className="text-xs mb-6" style={{ color: "var(--faint)" }}>Number of checkboxes ticked per day</p>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={targetData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorTargets" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#34D399" stopOpacity={0.5}/>
+                    <stop offset="95%" stopColor="#34D399" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="date" tick={{ fill: 'var(--faint)', fontSize: 10 }} axisLine={false} tickLine={false} />
+                <YAxis allowDecimals={false} tick={{ fill: 'var(--faint)', fontSize: 10 }} axisLine={false} tickLine={false} />
+                <Tooltip content={<CustomTooltip />} />
+                <Area type="monotone" dataKey="Targets" stroke="#34D399" strokeWidth={3} fillOpacity={1} fill="url(#colorTargets)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
 
-function Section({ title, subtitle, children }: {
-  title: string; subtitle?: string; children: React.ReactNode;
-}) {
-  return (
-    <div
-      className="rounded-xl p-5 mb-5"
-      style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
-    >
-      <p style={{ color: "var(--text)" }} className="font-serif text-lg mb-0.5">{title}</p>
-      {subtitle && <p style={{ color: "var(--faint)" }} className="text-xs mb-4">{subtitle}</p>}
-      {children}
+      </div>
     </div>
   );
 }
