@@ -4,8 +4,9 @@ import { useState, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import {
   Clock, BarChart2, History, CheckCircle,
-  AlertCircle, Loader2, ExternalLink, BookOpen, RotateCcw, Timer, Target,
+  AlertCircle, Loader2, ExternalLink, BookOpen, RotateCcw, Timer, Target, LogOut
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import {
   DaySetup, EveningReview, TimeBlock, AppData, SyncState,
@@ -45,6 +46,12 @@ export default function App() {
   const [modalHour,     setModalHour]     = useState<number | null>(null);
   const [showEvening,   setShowEvening]   = useState(false);
   const [showReminder,  setShowReminder]  = useState(false);
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
+  };
   const [syncState,     setSyncState]     = useState<SyncState>("idle");
   const [syncMsg,       setSyncMsg]       = useState("");
   const [sheetsReady,   setSheetsReady]   = useState(false);
@@ -283,6 +290,13 @@ export default function App() {
             </a>
           )}
           <ThemeToggle />
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-1 btn-ghost text-xs px-2 py-1 ml-1 text-red-400 hover:text-red-500 hover:bg-red-500/10"
+            title="Log Out"
+          >
+            <LogOut size={12} />
+          </button>
         </div>
       </header>
 
