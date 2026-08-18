@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import {
   Clock, BarChart2, History, CheckCircle,
-  AlertCircle, Loader2, ExternalLink, BookOpen, RotateCcw,
+  AlertCircle, Loader2, ExternalLink, BookOpen, RotateCcw, Timer,
 } from "lucide-react";
 
 import {
@@ -24,6 +24,7 @@ import EveningReviewModal from "@/components/EveningReview";
 import InsightsView    from "@/components/InsightsView";
 import HistoryView     from "@/components/HistoryView";
 import ThemeToggle     from "@/components/ThemeToggle";
+import BreakReminder   from "@/components/BreakReminder";
 
 type Tab = "today" | "history" | "insights";
 
@@ -44,6 +45,7 @@ export default function App() {
   const [appData,       setAppData]       = useState<AppData>({ days: {}, version: "1.0" });
   const [modalHour,     setModalHour]     = useState<number | null>(null);
   const [showEvening,   setShowEvening]   = useState(false);
+  const [showReminder,  setShowReminder]  = useState(false);
   const [syncState,     setSyncState]     = useState<SyncState>("idle");
   const [syncMsg,       setSyncMsg]       = useState("");
   const [sheetsReady,   setSheetsReady]   = useState(false);
@@ -216,6 +218,14 @@ export default function App() {
         {/* Sync status + Theme toggle */}
         <div className="flex items-center gap-2">
           <SyncIndicator state={syncState} msg={syncMsg} />
+          <button
+            onClick={() => setShowReminder(!showReminder)}
+            className="flex items-center gap-1 btn-ghost text-xs px-2 py-1"
+            title="Break Timer"
+          >
+            <Timer size={12} />
+            <span className="hidden sm:inline">Timer</span>
+          </button>
           {process.env.NEXT_PUBLIC_SHEET_URL && (
             <a
               href={process.env.NEXT_PUBLIC_SHEET_URL}
@@ -336,6 +346,8 @@ export default function App() {
           Based on the principles of The Effective Executive · Peter F. Drucker
         </p>
       </footer>
+      {/* ── Break Reminder Widget ─────────────────────────────────────────── */}
+      {showReminder && <BreakReminder onClose={() => setShowReminder(false)} />}
     </div>
   );
 }
