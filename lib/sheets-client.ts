@@ -37,7 +37,7 @@ export async function appendRows(range: string, values: (string | number | boole
     spreadsheetId: SHEET_ID(),
     range,
     valueInputOption: "RAW",
-    insertDataOption: "INSERT_ROWS",
+    insertDataOption: "OVERWRITE",
     requestBody: { values: [values] },
   });
 }
