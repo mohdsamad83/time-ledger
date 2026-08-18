@@ -187,7 +187,7 @@ export default function BlockModal({ hour, block, topPriority, onSave, onClose }
             {/* Top Priority */}
             <div>
               <p style={{ color: "var(--muted)" }} className="text-xs mb-2">
-                Did this contribute to: <span style={{ color: "var(--text)" }} className="italic">"{topPriority || "your top priority"}"</span>?
+                Did this contribute to: <span style={{ color: "var(--text)" }} className="italic">any of your Top 3 Priorities</span>?
               </p>
               <div className="flex gap-2">
                 {[true, false].map((v) => (

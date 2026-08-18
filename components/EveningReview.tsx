@@ -108,9 +108,8 @@ export default function EveningReviewModal({ setup, blocks, review, onSave, onCl
           {/* Top priority accomplished? */}
           <div>
             <p style={{ color: "var(--muted)" }} className="text-xs font-bold uppercase tracking-widest mb-2">
-              Did you accomplish your #1 priority?
+              Did you accomplish your Top Priorities?
             </p>
-            <p style={{ color: "var(--text)" }} className="text-sm italic mb-3">"{setup.topPriority}"</p>
             <div className="flex gap-3">
               {[true, false].map((v) => (
                 <button

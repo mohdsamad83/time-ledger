@@ -26,9 +26,9 @@ const toTime = (h: number) => {
 const nowHour = () => new Date().getHours();
 
 const COMMITMENT_BADGES = [
-  { label: "Must", color: "#F87171", bg: "#4a0d0d" },
-  { label: "Should", color: "#FCD34D", bg: "#4a3800" },
-  { label: "Could", color: "#60A5FA", bg: "#1e3a5f" },
+  { label: "P1", color: "#F87171", bg: "#4a0d0d" },
+  { label: "P2", color: "#FCD34D", bg: "#4a3800" },
+  { label: "P3", color: "#60A5FA", bg: "#1e3a5f" },
 ];
 
 export default function TimelineView({
@@ -102,17 +102,7 @@ export default function TimelineView({
         </button>
       </div>
 
-      {/* Top priority reminder */}
-      <div
-        className="rounded-lg px-4 py-3 mb-3 flex items-start gap-3"
-        style={{ background: "var(--s2)", border: "1px solid var(--dim)" }}
-      >
-        <TrendingUp size={14} style={{ color: "var(--gold)", marginTop: 2, flexShrink: 0 }} />
-        <div>
-          <span style={{ color: "var(--faint)" }} className="text-xs font-bold uppercase tracking-widest">Today's #1 Priority</span>
-          <p style={{ color: "var(--text)" }} className="text-sm mt-0.5">{setup.topPriority}</p>
-        </div>
-      </div>
+
 
       {/* ── Commitments Tracker ────────────────────────────────────────────── */}
       {filledTasks.length > 0 && (
@@ -124,7 +114,7 @@ export default function TimelineView({
             <div className="flex items-center gap-2">
               <CheckSquare size={14} style={{ color: "var(--gold)" }} />
               <span style={{ color: "var(--text)" }} className="text-sm font-serif font-semibold">
-                Today's Commitments
+                Top 3 Priorities
               </span>
             </div>
             <span

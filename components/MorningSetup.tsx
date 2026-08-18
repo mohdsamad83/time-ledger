@@ -18,7 +18,6 @@ export default function MorningSetup({ date, onComplete }: Props) {
   const [step, setStep] = useState(0);
   const [wakeHour,  setWakeHour]  = useState(6);
   const [sleepHour, setSleepHour] = useState(22);
-  const [topPriority,       setTopPriority]       = useState("");
   const [task1, setTask1] = useState("");
   const [task2, setTask2] = useState("");
   const [task3, setTask3] = useState("");
@@ -69,46 +68,14 @@ export default function MorningSetup({ date, onComplete }: Props) {
     },
     {
       icon: <Target size={20} style={{ color: "var(--gold)" }} />,
-      title: "The ONE Thing",
-      subtitle: "Drucker: \"What needs to be done?\" — not what you want, what NEEDS to be done.",
-      content: (
-        <div className="space-y-4">
-          <div>
-            <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-2">
-              If I accomplish only one thing today, it must be…
-            </label>
-            <textarea
-              value={topPriority}
-              onChange={(e) => setTopPriority(e.target.value)}
-              placeholder="Be specific. No vague intentions."
-              rows={3}
-            />
-          </div>
-          <div>
-            <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-2">
-              Drucker question: What NEEDS to be done?
-            </label>
-            <textarea
-              value={druckerFocus}
-              onChange={(e) => setDruckerFocus(e.target.value)}
-              placeholder="Not 'what do I want' — what genuinely needs doing for the organisation / people / mission?"
-              rows={3}
-            />
-          </div>
-        </div>
-      ),
-      canNext: topPriority.trim().length > 0,
-    },
-    {
-      icon: <CheckSquare size={20} className="text-emerald-400" />,
-      title: "Today's Commitments",
+      title: "Top 3 Priorities",
       subtitle: "Drucker: \"Effective executives concentrate on a few major areas — never more than three.\"",
       content: (
         <div className="space-y-4">
           {[
-            { val: task1, set: setTask1, label: "Commitment #1", placeholder: "Must be done today" },
-            { val: task2, set: setTask2, label: "Commitment #2", placeholder: "Should be done today" },
-            { val: task3, set: setTask3, label: "Commitment #3", placeholder: "Would be great to do" },
+            { val: task1, set: setTask1, label: "Priority #1", placeholder: "Must be done today" },
+            { val: task2, set: setTask2, label: "Priority #2", placeholder: "Should be done today" },
+            { val: task3, set: setTask3, label: "Priority #3", placeholder: "Would be great to do" },
           ].map((t, i) => (
             <div key={i}>
               <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-2">
@@ -122,6 +89,17 @@ export default function MorningSetup({ date, onComplete }: Props) {
               />
             </div>
           ))}
+          <div>
+            <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-2 mt-6">
+              Drucker question: What NEEDS to be done?
+            </label>
+            <textarea
+              value={druckerFocus}
+              onChange={(e) => setDruckerFocus(e.target.value)}
+              placeholder="Not 'what do I want' — what genuinely needs doing for the organisation / people / mission?"
+              rows={3}
+            />
+          </div>
         </div>
       ),
       canNext: task1.trim().length > 0,
@@ -154,7 +132,7 @@ export default function MorningSetup({ date, onComplete }: Props) {
       onComplete({
         wakeHour,
         sleepHour,
-        topPriority,
+        topPriority: task1, // Set topPriority to task1 for backward compatibility
         tasks: [task1, task2, task3],
         tasksCompleted: [false, false, false],
         successDefinition,
