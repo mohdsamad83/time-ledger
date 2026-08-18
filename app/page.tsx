@@ -192,6 +192,24 @@ export default function App() {
     );
   };
 
+  const handleExtendDay = async () => {
+    if (!appData) return;
+    const day = getDay(appData, viewDate);
+    if (!day.setup) return;
+    
+    // Add 1 hour to sleepHour, wrap around at 24
+    const newSleepHour = (day.setup.sleepHour + 1) % 24;
+    const newSetup = { ...day.setup, sleepHour: newSleepHour };
+    
+    setAppData(prev => prev ? applySetup(prev, viewDate, newSetup) : prev);
+    
+    await syncToSheets(
+      "/api/sheets/setup",
+      { date: viewDate, setup: newSetup },
+      () => {}
+    );
+  };
+
   const handleUpdateTargets = async (targets: string[]) => {
     if (!appData) return;
     setAppData(prev => prev ? applyTargetsUpdate(prev, targets) : prev);
@@ -352,6 +370,7 @@ export default function App() {
                 hasEveningReview={!!dayData.eveningReview}
                 onToggleTarget={(targetName) => handleToggleTarget(viewDate, targetName)}
                 onUpdateCommitments={handleUpdateCommitments}
+                onExtendDay={handleExtendDay}
               />
             )}
           </>

@@ -15,6 +15,7 @@ interface Props {
   allTargets: string[];
   onToggleTarget: (targetName: string) => void;
   onUpdateCommitments?: (tasks: [string, string, string]) => void;
+  onExtendDay?: () => void;
 }
 
 const toTime = (h: number) => {
@@ -26,7 +27,7 @@ const nowHour = () => new Date().getHours();
 
 export default function TimelineView({
   date, setup, blocks, onLogBlock, onEveningReview, hasEveningReview, 
-  dayTargets, allTargets, onToggleTarget, onUpdateCommitments
+  dayTargets, allTargets, onToggleTarget, onUpdateCommitments, onExtendDay
 }: Props) {
   const hours = Array.from(
     { length: Math.max(1, (setup.sleepHour > setup.wakeHour
@@ -283,6 +284,23 @@ export default function TimelineView({
             );
           })}
         </div>
+
+        {/* Extend Day Button */}
+        {onExtendDay && (
+          <div className="mt-4 flex justify-center">
+            <button
+              onClick={onExtendDay}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-colors"
+              style={{
+                color: "var(--faint)",
+                border: "1px dashed var(--border)",
+              }}
+            >
+              <Plus size={14} />
+              Add Extra Hour
+            </button>
+          </div>
+        )}
 
         {/* Evening Review floating button */}
         {(loggedCount === hours.length || hasEveningReview || currentHour >= 18) && (
