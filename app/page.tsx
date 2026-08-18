@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import {
   Clock, BarChart2, History, CheckCircle,
-  AlertCircle, Loader2, ExternalLink, BookOpen,
+  AlertCircle, Loader2, ExternalLink, BookOpen, RotateCcw,
 } from "lucide-react";
 
 import {
@@ -13,7 +13,7 @@ import {
 import {
   getDay, saveSetup, saveBlock, saveEvening,
   markSetupSynced, markBlockSynced, markEveningSynced,
-  getAllDates, getRawData, toggleTaskCompleted,
+  getAllDates, getRawData, toggleTaskCompleted, resetDay,
 } from "@/lib/storage";
 import { ScheduleTemplate } from "@/lib/templates";
 
@@ -238,10 +238,23 @@ export default function App() {
           className="px-4 md:px-6 py-3 flex items-center justify-between"
           style={{ background: "var(--bg)", borderBottom: "1px solid var(--s2)" }}
         >
-          <div>
+          <div className="flex items-center gap-3">
             <p className="font-mono text-xs" style={{ color: "var(--faint)" }}>
               {format(new Date(viewDate + "T12:00:00"), "EEEE, MMMM d, yyyy")}
             </p>
+            <button
+              onClick={() => {
+                if (window.confirm("Are you sure you want to completely reset this day? This will delete your setup, logs, and evening review locally.")) {
+                  resetDay(viewDate);
+                  refreshDay();
+                }
+              }}
+              className="flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded transition-all hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30"
+              style={{ background: "var(--s2)", color: "var(--muted)", border: "1px solid var(--border)" }}
+              title="Start day over"
+            >
+              <RotateCcw size={10} /> Reset
+            </button>
           </div>
           <p className="text-xs italic hidden md:block font-serif max-w-sm text-right" style={{ color: "var(--faint)" }}>
             {quote}

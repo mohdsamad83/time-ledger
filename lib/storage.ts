@@ -86,3 +86,11 @@ export function getAllDates(): string[] {
 export function getRawData(): AppData {
   return load();
 }
+
+export function resetDay(date: string) {
+  const data = load();
+  if (data.days[date]) {
+    delete data.days[date];
+    persist(data);
+  }
+}
