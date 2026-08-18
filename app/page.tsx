@@ -7,6 +7,7 @@ import {
   AlertCircle, Loader2, ExternalLink, BookOpen, RotateCcw, Timer, Target, LogOut
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 import {
   DaySetup, EveningReview, TimeBlock, AppData, SyncState,
@@ -229,11 +230,8 @@ export default function App() {
       >
         {/* Logo */}
         <div className="flex items-center gap-2.5">
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-            style={{ background: "var(--surface)", border: "1px solid var(--dim)" }}
-          >
-            <Clock size={15} style={{ color: "var(--gold)" }} />
+          <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0" style={{ border: "1px solid var(--dim)" }}>
+            <Image src="/logo.jpg" alt="Logo" width={32} height={32} />
           </div>
           <div className="hidden sm:block">
             <span className="primary-text font-bold text-xl tracking-tight">

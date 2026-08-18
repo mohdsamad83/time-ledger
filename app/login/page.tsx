@@ -1,7 +1,8 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Clock, Lock } from "lucide-react";
+import Image from "next/image";
+import { Lock } from "lucide-react";
 
 export default function LoginPage() {
   const [password, setPassword] = useState("");
@@ -39,11 +40,8 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "var(--bg)" }}>
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
-          <div
-            className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 shadow-lg"
-            style={{ background: "var(--surface)", border: "1px solid var(--dim)" }}
-          >
-            <Clock size={24} style={{ color: "var(--gold)" }} />
+          <div className="mb-4 shadow-lg rounded-2xl overflow-hidden" style={{ border: "1px solid var(--dim)" }}>
+            <Image src="/logo.jpg" alt="Time Ledger Logo" width={64} height={64} priority className="rounded-2xl" />
           </div>
           <h1 className="font-serif text-3xl font-bold" style={{ color: "var(--text)" }}>Time Ledger</h1>
           <p className="text-xs uppercase tracking-widest mt-2 font-bold" style={{ color: "var(--faint)" }}>Private Access</p>
