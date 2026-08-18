@@ -61,7 +61,7 @@ export default function App() {
   // ── Init Google Sheet (once per session) ──────────────────────────────────
   useEffect(() => {
     if (!mounted) return;
-    const key = "sheets-inited-v2";
+    const key = "sheets-inited-v3";
     if (sessionStorage.getItem(key)) { setSheetsReady(true); return; }
     fetch("/api/sheets/init", { method: "POST" })
       .then((r) => r.json())
@@ -138,9 +138,21 @@ export default function App() {
     setAppData(prev => prev ? applyTaskToggle(prev, viewDate, taskIndex) : prev);
   };
 
-  const handleToggleTarget = (targetDate: string, targetName: string) => {
+  const handleToggleTarget = async (targetDate: string, targetName: string) => {
     if (!appData) return;
-    setAppData(prev => prev ? applyTargetToggle(prev, targetDate, targetName) : prev);
+    const nextAppData = applyTargetToggle(appData, targetDate, targetName);
+    setAppData(nextAppData);
+
+    const updatedTargetsObj = nextAppData.days[targetDate]?.targets || {};
+    const completedTargetsList = Object.entries(updatedTargetsObj)
+      .filter(([_, isCompleted]) => isCompleted)
+      .map(([name]) => name);
+
+    await syncToSheets(
+      "/api/sheets/daily-targets",
+      { date: targetDate, targets: completedTargetsList },
+      () => {}
+    );
   };
 
   const handleUpdateTargets = async (targets: string[]) => {

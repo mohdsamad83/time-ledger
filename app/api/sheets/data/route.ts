@@ -21,22 +21,38 @@ export async function GET() {
     const sheets = getSheetsClient();
     const sheetId = SHEET_ID();
 
-    const [logRes, setupRes, eveningRes, targetsRes] = await Promise.all([
+    const [logRes, setupRes, eveningRes, targetsRes, dailyTargetsRes] = await Promise.all([
       sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "📅 Time Log!A2:N" }).catch(() => ({ data: { values: [] } })),
       sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "🌅 Day Setup!A2:K" }).catch(() => ({ data: { values: [] } })),
       sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "🌙 Evening Reviews!A2:L" }).catch(() => ({ data: { values: [] } })),
       sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "🎯 Targets!A2:B" }).catch(() => ({ data: { values: [] } })),
+      sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "✅ Daily Targets!A2:C" }).catch(() => ({ data: { values: [] } })),
     ]);
 
     const logRows = logRes.data.values ?? [];
     const setupRows = setupRes.data.values ?? [];
     const eveningRows = eveningRes.data.values ?? [];
     const targetRows = targetsRes.data.values ?? [];
+    const dailyTargetRows = dailyTargetsRes.data.values ?? [];
 
     const appData: AppData = { days: {}, version: "2.0", targets: [] };
 
     // 1. Parse Targets
     appData.targets = targetRows.map(r => r[0]).filter(Boolean);
+
+    // 1.5 Parse Daily Target Toggles
+    for (const row of dailyTargetRows) {
+      const date = row[0];
+      const completedStr = row[1] ?? "";
+      if (!date) continue;
+      if (!appData.days[date]) appData.days[date] = { date, setup: null, blocks: {}, eveningReview: null, targets: {} };
+      
+      const completedList = completedStr.split(",").map((s: string) => s.trim()).filter(Boolean);
+      appData.days[date].targets = {};
+      completedList.forEach((t: string) => {
+        appData.days[date].targets![t] = true;
+      });
+    }
 
     // 2. Parse Day Setup
     for (const row of setupRows) {

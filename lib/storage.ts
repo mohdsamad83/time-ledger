@@ -79,11 +79,12 @@ export function applyTaskToggle(data: AppData, date: string, taskIndex: number):
 
 export function applyTargetToggle(data: AppData, date: string, targetName: string): AppData {
   const next = structuredClone(data);
-  const day = next.days[date];
-  if (day) {
-    if (!day.targets) day.targets = {};
-    day.targets[targetName] = !day.targets[targetName];
+  if (!next.days[date]) {
+    next.days[date] = { date, setup: null, blocks: {}, eveningReview: null, targets: {} };
   }
+  const day = next.days[date];
+  if (!day.targets) day.targets = {};
+  day.targets[targetName] = !day.targets[targetName];
   return next;
 }
 
