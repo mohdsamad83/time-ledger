@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { format, getDaysInMonth, startOfMonth, addMonths, subMonths } from "date-fns";
 import { AppData } from "@/lib/types";
-import { ChevronLeft, ChevronRight, Target, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Target, X, ChevronDown } from "lucide-react";
 
 interface Props {
   data: AppData;
@@ -82,12 +82,86 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Prop
         
         <div className="flex items-center gap-4">
           {onUpdateTargets && (
-            <button 
-              onClick={() => setIsEditing(!isEditing)} 
-              className="btn-ghost text-xs px-3 py-1.5"
-            >
-              {isEditing ? "Cancel Edit" : "Edit Targets"}
-            </button>
+            <div className="relative">
+              <button 
+                onClick={() => setIsEditing(!isEditing)} 
+                className="btn-ghost text-xs px-3 py-1.5 flex items-center gap-2"
+                style={{ background: isEditing ? "var(--s2)" : "transparent" }}
+              >
+                Edit Targets / Set Priorities
+                <ChevronDown size={14} className={`transition-transform ${isEditing ? "rotate-180" : ""}`} />
+              </button>
+
+              {isEditing && (
+                <div className="absolute right-0 top-full mt-2 w-80 p-5 rounded-xl shadow-2xl z-50 fade-up" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+                  <h3 className="font-bold text-sm uppercase tracking-widest mb-4" style={{ color: "var(--text)" }}>Manage Targets</h3>
+                  
+                  <div className="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1 mb-4">
+                     {localTargets.length === 0 && <span className="text-xs text-[var(--faint)]">No targets added yet.</span>}
+                     {localTargets.map((t, idx) => (
+                        <div key={idx} className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-xs font-semibold" style={{ background: "var(--s2)", border: "1px solid var(--border)" }}>
+                          <span style={{ color: "var(--text)" }} className="truncate">{t}</span>
+                          <button 
+                            onClick={() => setLocalTargets(localTargets.filter((_, i) => i !== idx))} 
+                            className="hover:text-red-400 transition-colors shrink-0"
+                            style={{ color: "var(--faint)" }}
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                     ))}
+                  </div>
+
+                  <div className="flex gap-2 mb-5">
+                    <input 
+                      value={newTarget}
+                      onChange={e => setNewTarget(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === "Enter" && newTarget.trim()) {
+                          if (!localTargets.includes(newTarget.trim())) {
+                            setLocalTargets([...localTargets, newTarget.trim()]);
+                          }
+                          setNewTarget("");
+                        }
+                      }}
+                      placeholder="New Target Name..."
+                      className="px-3 py-2 text-xs rounded-lg border bg-transparent flex-1 focus:outline-none"
+                      style={{ borderColor: "var(--border)", color: "var(--text)" }}
+                    />
+                    <button 
+                       onClick={() => { 
+                         if(newTarget.trim() && !localTargets.includes(newTarget.trim())) { 
+                           setLocalTargets([...localTargets, newTarget.trim()]); 
+                           setNewTarget(""); 
+                         } 
+                       }}
+                       className="btn-gold text-xs px-4 py-2 shrink-0"
+                       disabled={!newTarget.trim()}
+                    >
+                       Add
+                    </button>
+                  </div>
+
+                  <div className="flex gap-2 pt-4 border-t" style={{ borderColor: "var(--border)" }}>
+                    <button 
+                      onClick={() => setIsEditing(false)}
+                      className="btn-ghost flex-1 text-xs py-2.5"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={() => { 
+                        onUpdateTargets?.(localTargets); 
+                        setIsEditing(false); 
+                      }}
+                      className="btn-primary flex-[2] text-xs py-2.5"
+                    >
+                      Save to Ledger ✓
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
 
           <div className="flex items-center gap-4 bg-white/5 p-1 rounded-lg" style={{ border: "1px solid var(--border)" }}>
@@ -111,68 +185,6 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Prop
           </div>
         </div>
       </div>
-
-      {isEditing && (
-        <div className="p-5 rounded-xl space-y-5 fade-up" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-          <h3 className="font-bold text-sm uppercase tracking-widest" style={{ color: "var(--text)" }}>Manage Targets</h3>
-          
-          <div className="flex flex-wrap gap-2">
-             {localTargets.length === 0 && <span className="text-xs text-[var(--faint)]">No targets added yet.</span>}
-             {localTargets.map((t, idx) => (
-                <div key={idx} className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold" style={{ background: "var(--s2)", border: "1px solid var(--border)" }}>
-                  <span style={{ color: "var(--text)" }}>{t}</span>
-                  <button 
-                    onClick={() => setLocalTargets(localTargets.filter((_, i) => i !== idx))} 
-                    className="hover:text-red-400 transition-colors"
-                    style={{ color: "var(--faint)" }}
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-             ))}
-          </div>
-
-          <div className="flex gap-2">
-            <input 
-              value={newTarget}
-              onChange={e => setNewTarget(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === "Enter" && newTarget.trim()) {
-                  setLocalTargets([...localTargets, newTarget.trim()]);
-                  setNewTarget("");
-                }
-              }}
-              placeholder="New Target Name..."
-              className="px-4 py-2 text-sm rounded-lg border bg-transparent flex-1 focus:outline-none"
-              style={{ borderColor: "var(--border)", color: "var(--text)" }}
-            />
-            <button 
-               onClick={() => { 
-                 if(newTarget.trim() && !localTargets.includes(newTarget.trim())) { 
-                   setLocalTargets([...localTargets, newTarget.trim()]); 
-                   setNewTarget(""); 
-                 } 
-               }}
-               className="btn-gold text-sm px-5 py-2"
-               disabled={!newTarget.trim()}
-            >
-               Add
-            </button>
-          </div>
-
-          <div className="pt-2 border-t" style={{ borderColor: "var(--border)" }}>
-            <button 
-              onClick={() => { 
-                onUpdateTargets?.(localTargets); 
-                setIsEditing(false); 
-              }}
-              className="btn-primary w-full py-2.5 mt-2"
-            >
-              Save Targets to Ledger ✓
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
