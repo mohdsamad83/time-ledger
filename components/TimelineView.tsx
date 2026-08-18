@@ -14,7 +14,9 @@ interface Props {
   onLogBlock:    (hour: number) => void;
   onEveningReview: () => void;
   hasEveningReview: boolean;
-  onToggleTask:  (taskIndex: number) => void;
+  dayTargets: Record<string, boolean>;
+  allTargets: string[];
+  onToggleTarget: (targetName: string) => void;
   onApplyTemplate: (template: ScheduleTemplate) => void;
 }
 
@@ -32,7 +34,8 @@ const COMMITMENT_BADGES = [
 ];
 
 export default function TimelineView({
-  date, setup, blocks, syncState, onLogBlock, onEveningReview, hasEveningReview, onToggleTask, onApplyTemplate,
+  date, setup, blocks, syncState, onLogBlock, onEveningReview, hasEveningReview, 
+  dayTargets, allTargets, onToggleTarget, onApplyTemplate,
 }: Props) {
   const [showTemplates, setShowTemplates] = useState(false);
   const hours = Array.from(
@@ -59,9 +62,7 @@ export default function TimelineView({
   const topCatInfo = topCat ? CATEGORIES.find((c) => c.value === topCat[0]) : null;
 
   // Commitment tracking
-  const tasksCompleted = setup.tasksCompleted ?? [false, false, false];
-  const filledTasks = setup.tasks.filter((t) => t.trim().length > 0);
-  const completedCount = filledTasks.reduce((count, _, i) => count + (tasksCompleted[i] ? 1 : 0), 0);
+  const completedTargetsCount = allTargets.reduce((count, t) => count + (dayTargets[t] ? 1 : 0), 0);
 
   return (
     <div className="max-w-3xl mx-auto px-4 pb-16">
@@ -104,82 +105,65 @@ export default function TimelineView({
 
 
 
-      {/* ── Commitments Tracker ────────────────────────────────────────────── */}
-      {filledTasks.length > 0 && (
+      {/* ── Daily Targets Tracker ────────────────────────────────────────────── */}
+      {allTargets.length > 0 && (
         <div
           className="rounded-xl p-4 mb-6"
           style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
         >
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <CheckSquare size={14} style={{ color: "var(--gold)" }} />
-              <span style={{ color: "var(--text)" }} className="text-sm font-serif font-semibold">
-                Top 3 Priorities
+              <CheckSquare size={14} className="primary-text" />
+              <span style={{ color: "var(--text)" }} className="text-sm font-semibold">
+                Daily Targets
               </span>
             </div>
             <span
               className="text-xs font-mono px-2 py-0.5 rounded-full"
               style={{
-                background: completedCount === filledTasks.length ? "#063e2b" : "var(--s2)",
-                color: completedCount === filledTasks.length ? "#34D399" : "var(--faint)",
-                border: `1px solid ${completedCount === filledTasks.length ? "#34D39944" : "var(--border)"}`,
+                background: completedTargetsCount === allTargets.length ? "#063e2b" : "var(--s2)",
+                color: completedTargetsCount === allTargets.length ? "#34D399" : "var(--faint)",
+                border: `1px solid ${completedTargetsCount === allTargets.length ? "#34D39944" : "var(--border)"}`,
               }}
             >
-              {completedCount} / {filledTasks.length} done
+              {completedTargetsCount} / {allTargets.length} done
             </span>
           </div>
-          <p className="drucker-highlight text-xs mb-3" style={{ marginTop: 0 }}>
-            Drucker: "Concentrate on the few major areas where superior performance will produce outstanding results."
-          </p>
-          <div className="space-y-2">
-            {setup.tasks.map((task, i) => {
-              if (!task.trim()) return null;
-              const badge = COMMITMENT_BADGES[i];
-              const done = tasksCompleted[i];
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+            {allTargets.map((target) => {
+              const done = dayTargets[target] || false;
               return (
                 <button
-                  key={i}
-                  onClick={() => onToggleTask(i)}
-                  className="w-full text-left rounded-lg px-3.5 py-3 transition-all flex items-center gap-3 group"
+                  key={target}
+                  onClick={() => onToggleTarget(target)}
+                  className="w-full text-left rounded-lg px-3 py-2 transition-all flex items-center gap-3 group"
                   style={{
-                    background: done ? "#063e2b" : "var(--s2)",
-                    border: `1px solid ${done ? "#34D39944" : "var(--border)"}`,
+                    background: done ? "rgba(52, 211, 153, 0.1)" : "var(--s2)",
+                    border: `1px solid ${done ? "rgba(52, 211, 153, 0.3)" : "var(--border)"}`,
                   }}
                 >
                   {/* Checkbox */}
                   <div
-                    className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0 transition-all"
+                    className="w-4 h-4 rounded flex items-center justify-center flex-shrink-0 transition-all"
                     style={{
                       background: done ? "#34D399" : "transparent",
-                      border: `2px solid ${done ? "#34D399" : "var(--dim)"}`,
+                      border: `1.5px solid ${done ? "#34D399" : "var(--faint)"}`,
                     }}
                   >
                     {done && (
-                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                        <path d="M2.5 6L5 8.5L9.5 3.5" stroke="#063e2b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+                        <path d="M2.5 6L5 8.5L9.5 3.5" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     )}
                   </div>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
-                    <span
-                      className="cat-badge text-[10px]"
-                      style={{ background: `${badge.color}22`, color: badge.color }}
-                    >
-                      {badge.label}
-                    </span>
-                    <span
-                      className="text-sm truncate"
-                      style={{
-                        color: done ? "#34D399" : "var(--text)",
-                        textDecoration: done ? "line-through" : "none",
-                        opacity: done ? 0.7 : 1,
-                      }}
-                    >
-                      {task}
-                    </span>
-                  </div>
+                  <span
+                    className="text-xs truncate font-medium"
+                    style={{
+                      color: done ? "#34D399" : "var(--text)",
+                    }}
+                  >
+                    {target}
+                  </span>
                 </button>
               );
             })}

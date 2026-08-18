@@ -80,10 +80,17 @@ export interface DayData {
   setup:         DaySetup | null;
   blocks:        { [hour: number]: TimeBlock };
   eveningReview: EveningReview | null;
+  targets?:      Record<string, boolean>;   // Tracks which targets were completed on this day
 }
+
+export const DEFAULT_TARGETS = [
+  "Workout", "MLP", "DLGenAI", "FlyRank AI", "Part time", 
+  "Mad - I Project", "Amazon Certification", "Google Arcade", "Gate prep"
+];
 
 export interface AppData {
   days:    { [date: string]: DayData };
+  targets?: string[];                       // Global list of targets to track
   version: string;
 }
 

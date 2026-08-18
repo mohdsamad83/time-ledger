@@ -1,15 +1,17 @@
 "use client";
-import { AppData, DayData, DaySetup, EveningReview, TimeBlock } from "./types";
+import { AppData, DayData, DaySetup, EveningReview, TimeBlock, DEFAULT_TARGETS } from "./types";
 
 const KEY = "time-ledger-v1";
 
 export function load(): AppData {
-  if (typeof window === "undefined") return { days: {}, version: "1.0" };
+  if (typeof window === "undefined") return { days: {}, version: "1.0", targets: DEFAULT_TARGETS };
   try {
     const raw = localStorage.getItem(KEY);
-    return raw ? JSON.parse(raw) : { days: {}, version: "1.0" };
+    const data = raw ? JSON.parse(raw) : { days: {}, version: "1.0" };
+    if (!data.targets) data.targets = [...DEFAULT_TARGETS];
+    return data;
   } catch {
-    return { days: {}, version: "1.0" };
+    return { days: {}, version: "1.0", targets: [...DEFAULT_TARGETS] };
   }
 }
 
@@ -70,13 +72,20 @@ export function toggleTaskCompleted(date: string, taskIndex: number) {
   const data = load();
   const day = data.days[date];
   if (day?.setup) {
-    // Ensure tasksCompleted exists (backwards compat with old data)
     if (!day.setup.tasksCompleted) {
       day.setup.tasksCompleted = [false, false, false];
     }
     day.setup.tasksCompleted[taskIndex] = !day.setup.tasksCompleted[taskIndex];
     persist(data);
   }
+}
+
+export function toggleTarget(date: string, targetName: string) {
+  const data = load();
+  const day = ensureDay(data, date);
+  if (!day.targets) day.targets = {};
+  day.targets[targetName] = !day.targets[targetName];
+  persist(data);
 }
 
 export function getAllDates(): string[] {

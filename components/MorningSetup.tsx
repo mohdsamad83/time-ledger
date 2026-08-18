@@ -5,6 +5,7 @@ import { Sun, Target, CheckSquare, Sparkles } from "lucide-react";
 
 interface Props {
   date: string;
+  targets: string[];
   onComplete: (setup: DaySetup) => void;
 }
 
@@ -14,13 +15,10 @@ const toLabel = (h: number) => {
   return `${h % 12 || 12}:00 ${p}`;
 };
 
-export default function MorningSetup({ date, onComplete }: Props) {
+export default function MorningSetup({ date, targets, onComplete }: Props) {
   const [step, setStep] = useState(0);
   const [wakeHour,  setWakeHour]  = useState(6);
   const [sleepHour, setSleepHour] = useState(22);
-  const [task1, setTask1] = useState("");
-  const [task2, setTask2] = useState("");
-  const [task3, setTask3] = useState("");
   const [successDefinition, setSuccessDefinition] = useState("");
   const [druckerFocus,      setDruckerFocus]      = useState("");
 
@@ -67,42 +65,33 @@ export default function MorningSetup({ date, onComplete }: Props) {
       canNext: true,
     },
     {
-      icon: <Target size={20} style={{ color: "var(--gold)" }} />,
-      title: "Top 3 Priorities",
-      subtitle: "Drucker: \"Effective executives concentrate on a few major areas — never more than three.\"",
+      icon: <Target size={20} className="primary-text" />,
+      title: "Daily Targets & Focus",
+      subtitle: "Review your core targets and define what needs to be done today.",
       content: (
         <div className="space-y-4">
-          {[
-            { val: task1, set: setTask1, label: "Priority #1", placeholder: "Must be done today" },
-            { val: task2, set: setTask2, label: "Priority #2", placeholder: "Should be done today" },
-            { val: task3, set: setTask3, label: "Priority #3", placeholder: "Would be great to do" },
-          ].map((t, i) => (
-            <div key={i}>
-              <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-2">
-                {t.label}
-              </label>
-              <input
-                type="text"
-                value={t.val}
-                onChange={(e) => t.set(e.target.value)}
-                placeholder={t.placeholder}
-              />
+          <div className="p-4 rounded-lg border" style={{ background: "var(--s2)", borderColor: "var(--border)" }}>
+            <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "var(--muted)" }}>Your Daily Targets</p>
+            <div className="flex flex-wrap gap-2">
+              {targets.map(t => (
+                <span key={t} className="cat-badge bg-[var(--surface)] border border-[var(--border)]">{t}</span>
+              ))}
             </div>
-          ))}
+          </div>
           <div>
-            <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-2 mt-6">
+            <label className="block text-xs font-bold uppercase tracking-widest mb-2 mt-4" style={{ color: "var(--muted)" }}>
               Drucker question: What NEEDS to be done?
             </label>
             <textarea
               value={druckerFocus}
               onChange={(e) => setDruckerFocus(e.target.value)}
-              placeholder="Not 'what do I want' — what genuinely needs doing for the organisation / people / mission?"
+              placeholder="Not 'what do I want' — what genuinely needs doing for the organisation / mission?"
               rows={3}
             />
           </div>
         </div>
       ),
-      canNext: task1.trim().length > 0,
+      canNext: druckerFocus.trim().length > 0,
     },
     {
       icon: <Sparkles size={20} className="text-violet-400" />,
@@ -132,9 +121,9 @@ export default function MorningSetup({ date, onComplete }: Props) {
       onComplete({
         wakeHour,
         sleepHour,
-        topPriority: task1, // Set topPriority to task1 for backward compatibility
-        tasks: [task1, task2, task3],
-        tasksCompleted: [false, false, false],
+        topPriority: "", // Deprecated
+        tasks: ["", "", ""], // Deprecated
+        tasksCompleted: [false, false, false], // Deprecated
         successDefinition,
         druckerFocus,
       });
@@ -156,7 +145,7 @@ export default function MorningSetup({ date, onComplete }: Props) {
               className="h-1.5 rounded-full transition-all duration-300"
               style={{
                 width: i === step ? 28 : 8,
-                background: i <= step ? "var(--gold)" : "var(--border)",
+                background: i <= step ? "var(--primary)" : "var(--border)",
               }}
             />
           ))}
@@ -184,7 +173,7 @@ export default function MorningSetup({ date, onComplete }: Props) {
               <div />
             )}
             <button
-              className="btn-gold"
+              className="btn-primary"
               onClick={handleNext}
               disabled={!s.canNext}
               style={{ opacity: s.canNext ? 1 : 0.4 }}

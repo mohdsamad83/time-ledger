@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import {
   Clock, BarChart2, History, CheckCircle,
-  AlertCircle, Loader2, ExternalLink, BookOpen, RotateCcw, Timer,
+  AlertCircle, Loader2, ExternalLink, BookOpen, RotateCcw, Timer, Target,
 } from "lucide-react";
 
 import {
@@ -13,7 +13,7 @@ import {
 import {
   getDay, saveSetup, saveBlock, saveEvening,
   markSetupSynced, markBlockSynced, markEveningSynced,
-  getAllDates, getRawData, toggleTaskCompleted, resetDay,
+  getAllDates, getRawData, toggleTaskCompleted, resetDay, toggleTarget,
 } from "@/lib/storage";
 import { ScheduleTemplate } from "@/lib/templates";
 
@@ -25,8 +25,9 @@ import InsightsView    from "@/components/InsightsView";
 import HistoryView     from "@/components/HistoryView";
 import ThemeToggle     from "@/components/ThemeToggle";
 import BreakReminder   from "@/components/BreakReminder";
+import TargetsTracker  from "@/components/TargetsTracker";
 
-type Tab = "today" | "history" | "insights";
+type Tab = "today" | "targets" | "history" | "insights";
 
 const TODAY = format(new Date(), "yyyy-MM-dd");
 const DRUCKER_QUOTES = [
@@ -144,6 +145,11 @@ export default function App() {
     refreshDay();
   };
 
+  const handleToggleTarget = (targetDate: string, targetName: string) => {
+    toggleTarget(targetDate, targetName);
+    refreshDay();
+  };
+
   const handleApplyTemplate = (template: ScheduleTemplate) => {
     template.blocks.forEach((tb) => {
       const block: TimeBlock = {
@@ -186,7 +192,7 @@ export default function App() {
             <Clock size={15} style={{ color: "var(--gold)" }} />
           </div>
           <div className="hidden sm:block">
-            <span className="gold-text font-serif text-xl font-semibold tracking-wide">
+            <span className="primary-text font-bold text-xl tracking-tight">
               Time Ledger
             </span>
           </div>
@@ -196,6 +202,7 @@ export default function App() {
         <nav className="flex items-center gap-1">
           {([
             { id: "today",    icon: <Clock size={14} />,    label: "Today" },
+            { id: "targets",  icon: <Target size={14} />,   label: "Targets" },
             { id: "history",  icon: <History size={14} />,  label: "History" },
             { id: "insights", icon: <BarChart2 size={14} />,label: "Insights" },
           ] as { id: Tab; icon: React.ReactNode; label: string }[]).map((t) => (
@@ -206,7 +213,7 @@ export default function App() {
               style={{
                 background: tab === t.id ? "var(--surface)" : "transparent",
                 border:     `1px solid ${tab === t.id ? "var(--border)" : "transparent"}`,
-                color:      tab === t.id ? "var(--gold)" : "var(--faint)",
+                color:      tab === t.id ? "var(--primary)" : "var(--faint)",
               }}
             >
               {t.icon}
@@ -266,7 +273,7 @@ export default function App() {
               <RotateCcw size={10} /> Reset
             </button>
           </div>
-          <p className="text-xs italic hidden md:block font-serif max-w-sm text-right" style={{ color: "var(--faint)" }}>
+          <p className="text-xs italic hidden md:block max-w-sm text-right" style={{ color: "var(--faint)" }}>
             {quote}
           </p>
         </div>
@@ -279,21 +286,37 @@ export default function App() {
         {tab === "today" && (
           <>
             {!dayData.setup ? (
-              <MorningSetup date={viewDate} onComplete={handleSetupComplete} />
+              <MorningSetup 
+                date={viewDate} 
+                targets={appData.targets || []} 
+                onComplete={handleSetupComplete} 
+              />
             ) : (
               <TimelineView
                 date={viewDate}
                 setup={dayData.setup}
                 blocks={dayData.blocks}
+                dayTargets={dayData.targets || {}}
+                allTargets={appData.targets || []}
                 syncState={syncState}
                 onLogBlock={(hour) => setModalHour(hour)}
                 onEveningReview={() => setShowEvening(true)}
                 hasEveningReview={!!dayData.eveningReview}
-                onToggleTask={handleToggleTask}
+                onToggleTarget={(targetName) => handleToggleTarget(viewDate, targetName)}
                 onApplyTemplate={handleApplyTemplate}
               />
             )}
           </>
+        )}
+
+        {/* TARGETS ───────────────────────────────────────────────────────── */}
+        {tab === "targets" && (
+          <div className="px-4 pb-16">
+            <TargetsTracker 
+              data={appData}
+              onToggle={handleToggleTarget}
+            />
+          </div>
         )}
 
         {/* HISTORY ────────────────────────────────────────────────────────── */}
