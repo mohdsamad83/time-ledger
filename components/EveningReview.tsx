@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { EveningReview, TimeBlock, DaySetup } from "@/lib/types";
+import { EveningReview, TimeBlock, DaySetup, CATEGORIES } from "@/lib/types";
 import { X, Moon } from "lucide-react";
 
 interface Props {
@@ -58,7 +58,7 @@ export default function EveningReviewModal({ setup, blocks, review, onSave, onCl
   }, [onClose]);
 
   // Auto-calc stats
-  const loggedBlocks = Object.values(blocks);
+  const loggedBlocks = Object.values(blocks).sort((a, b) => a.startHour - b.startHour);
   const plannedPct = loggedBlocks.length > 0
     ? Math.round((loggedBlocks.filter((b) => b.wasPlanned).length / loggedBlocks.length) * 100) : 0;
   const priorityPct = loggedBlocks.length > 0
@@ -81,21 +81,21 @@ export default function EveningReviewModal({ setup, blocks, review, onSave, onCl
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)" }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="w-full md:max-w-2xl max-h-[95vh] overflow-y-auto rounded-t-2xl md:rounded-xl fade-up"
+        className="w-full md:max-w-6xl max-h-[95vh] overflow-hidden flex flex-col rounded-2xl fade-up shadow-2xl"
         style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
       >
         {/* Header */}
         <div
-          className="sticky top-0 z-10 flex items-center justify-between p-5 pb-4"
+          className="flex-shrink-0 flex items-center justify-between p-5 pb-4"
           style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)" }}
         >
           <div className="flex items-center gap-3">
-            <Moon size={18} className="text-violet-400" />
+            <Moon size={22} className="text-violet-400" />
             <div>
               <h3 style={{ color: "var(--text)" }} className="font-serif text-xl flex items-center gap-2">
                 Evening Review
@@ -108,179 +108,209 @@ export default function EveningReviewModal({ setup, blocks, review, onSave, onCl
               <p style={{ color: "var(--faint)" }} className="text-xs">Your daily ledger closing entry</p>
             </div>
           </div>
-          <button onClick={onClose} style={{ color: "var(--faint)" }} className="hover:text-[var(--text)] transition-colors">
-            <X size={20} />
-          </button>
-        </div>
-
-        <div className="p-5 space-y-6">
-
-          {/* Auto-stats */}
-          <div
-            className="rounded-lg p-4 grid grid-cols-2 md:grid-cols-4 gap-4"
-            style={{ background: "var(--s2)", border: "1px solid var(--border)" }}
-          >
-            <div className="text-center">
-              <p style={{ color: "var(--gold)" }} className="text-2xl font-mono font-semibold">{loggedBlocks.length}</p>
-              <p style={{ color: "var(--faint)" }} className="text-xs mt-1">Hours logged</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-mono font-semibold text-[#4ADE80]">{plannedPct}%</p>
-              <p style={{ color: "var(--faint)" }} className="text-xs mt-1">Planned time</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-mono font-semibold text-[#60A5FA]">{priorityPct}%</p>
-              <p style={{ color: "var(--faint)" }} className="text-xs mt-1">On top priority</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-mono font-semibold text-[#A78BFA]">
-                {(setup.tasksCompleted ?? [false, false, false]).filter(Boolean).length} / {setup.tasks.filter((t) => t.trim()).length}
-              </p>
-              <p style={{ color: "var(--faint)" }} className="text-xs mt-1">Commitments done</p>
-            </div>
-          </div>
-
-          {/* Top priority accomplished? */}
-          <div>
-            <p style={{ color: "var(--muted)" }} className="text-xs font-bold uppercase tracking-widest mb-2">
-              Did you accomplish your Top Priorities?
-            </p>
-            <div className="flex gap-3">
-              {[true, false].map((v) => (
-                <button
-                  key={String(v)}
-                  onClick={() => setTopAccomplished(v)}
-                  className="flex-1 py-3 rounded-lg text-sm font-bold transition-all"
-                  style={{
-                    background: topAccomplished === v ? (v ? "#063e2b" : "#4a0d0d") : "var(--s2)",
-                    border: `1px solid ${topAccomplished === v ? (v ? "#34D399" : "#F87171") : "var(--border)"}`,
-                    color: topAccomplished === v ? (v ? "#34D399" : "#F87171") : "var(--faint)",
-                  }}
-                >
-                  {v ? "✓ Yes, done." : "✗ Not fully."}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Accomplishments */}
-          <div>
-            <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-2">
-              What did you actually get done?
-            </label>
-            <p className="drucker-highlight text-xs mb-2">
-              Drucker: "What did I actually accomplish vs. what I intended to do?"
-            </p>
-            <textarea value={accomplishments} onChange={(e) => setAccomplishments(e.target.value)}
-              placeholder="List your real wins, outputs, outcomes…" rows={3} />
-          </div>
-
-          {/* Biggest waste */}
-          <div>
-            <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-2">
-              Biggest time waste today
-            </label>
-            <p className="drucker-highlight text-xs mb-2">
-              Drucker: "Where did my time go that I cannot account for?"
-            </p>
-            <textarea value={biggestWaste} onChange={(e) => setBiggestWaste(e.target.value)}
-              placeholder="Be honest — what stole your time?" rows={2} />
-          </div>
-
-          {/* Stop / Keep */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-widest text-[#F87171] mb-2">
-                🛑 I will STOP doing
-              </label>
-              <textarea value={stopDoing} onChange={(e) => setStopDoing(e.target.value)}
-                placeholder="What drains without creating value?" rows={2} />
-            </div>
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-widest text-[#34D399] mb-2">
-                ✓ I will KEEP doing
-              </label>
-              <textarea value={keepDoing} onChange={(e) => setKeepDoing(e.target.value)}
-                placeholder="What worked brilliantly today?" rows={2} />
-            </div>
-          </div>
-
-          {/* Drucker contribution */}
-          <div>
-            <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-2">
-              The Drucker Contribution Question
-            </label>
-            <p className="drucker-highlight text-xs mb-2">
-              "What is my contribution? What results am I responsible for delivering to make a real difference?"
-            </p>
-            <textarea value={contribution} onChange={(e) => setContribution(e.target.value)}
-              placeholder="What genuine contribution did you make today — to your team, organisation, or the world?" rows={3} />
-          </div>
-
-          {/* Tomorrow priority */}
-          <div>
-            <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-2">
-              Tomorrow's #1 Priority
-            </label>
-            <input type="text" value={tomorrowPri} onChange={(e) => setTomorrowPri(e.target.value)}
-              placeholder="What NEEDS to be done tomorrow?" />
-          </div>
-
-          {/* Day rating + energy */}
-          <div className="grid grid-cols-2 gap-5">
-            <div>
-              <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-3">
-                Day Rating
-              </label>
-              <div className="flex items-center gap-3">
-                <input type="range" min={1} max={10} value={rating}
-                  onChange={(e) => setRating(Number(e.target.value))}
-                  className="flex-1 accent-yellow-500"
-                  style={{ background: "transparent", border: "none", padding: 0 }}
-                />
-                <span style={{ color: "var(--gold)" }} className="font-mono text-xl font-bold w-6">{rating}</span>
-              </div>
-              <div style={{ color: "var(--faint)" }} className="flex justify-between text-xs mt-1">
-                <span>Terrible</span><span>Perfect</span>
-              </div>
-            </div>
-
-            <div>
-              <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-3">
-                Energy at Day's End
-              </label>
-              <div className="flex flex-col gap-2">
-                {(["energized", "neutral", "drained"] as const).map((v) => (
-                  <button key={v} onClick={() => setEnergyEnd(v)}
-                    className="py-2 rounded text-xs font-bold transition-all text-left px-3"
-                    style={{
-                      background: energyEnd === v
-                        ? v === "energized" ? "#063e2b" : v === "neutral" ? "var(--border)" : "#4a0d0d"
-                        : "var(--s2)",
-                      border: `1px solid ${energyEnd === v
-                        ? v === "energized" ? "#34D399" : v === "neutral" ? "var(--dim)" : "#F87171"
-                        : "var(--border)"}`,
-                      color: energyEnd === v
-                        ? v === "energized" ? "#34D399" : v === "neutral" ? "var(--gold)" : "#F87171"
-                        : "var(--faint)",
-                    }}>
-                    {v === "energized" ? "⚡ Energized" : v === "neutral" ? "😐 Neutral" : "😮‍💨 Drained"}
-                  </button>
-                ))}
-              </div>
-            </div>
+          <div className="flex items-center gap-4">
+            <button className="btn-ghost hidden md:block" onClick={onClose}>Cancel</button>
+            <button className="btn-gold shadow-lg" onClick={handleSave}>
+              Close Today's Ledger ✓
+            </button>
+            <button onClick={onClose} style={{ color: "var(--faint)" }} className="md:hidden hover:text-[var(--text)] ml-2">
+              <X size={24} />
+            </button>
           </div>
         </div>
 
-        {/* Footer */}
-        <div
-          className="sticky bottom-0 flex gap-3 p-5 pt-4"
-          style={{ background: "var(--surface)", borderTop: "1px solid var(--border)" }}
-        >
-          <button className="btn-ghost flex-1" onClick={onClose}>Cancel</button>
-          <button className="btn-gold flex-[2]" onClick={handleSave}>
-            Close Today's Ledger ✓
-          </button>
+        {/* Scrollable Body */}
+        <div className="flex-1 overflow-y-auto p-5 md:p-8 custom-scrollbar">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.5fr] gap-10 items-start">
+            
+            {/* LEFT COLUMN: Summary at a glance */}
+            <div className="space-y-8 lg:sticky lg:top-0">
+              {/* Auto-stats */}
+              <div
+                className="rounded-xl p-5 grid grid-cols-2 gap-4"
+                style={{ background: "var(--s2)", border: "1px solid var(--border)" }}
+              >
+                <div className="text-center">
+                  <p style={{ color: "var(--gold)" }} className="text-3xl font-mono font-semibold">{loggedBlocks.length}</p>
+                  <p style={{ color: "var(--faint)" }} className="text-[10px] uppercase tracking-widest mt-1">Hours logged</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-3xl font-mono font-semibold text-[#4ADE80]">{plannedPct}%</p>
+                  <p style={{ color: "var(--faint)" }} className="text-[10px] uppercase tracking-widest mt-1">Planned time</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-3xl font-mono font-semibold text-[#60A5FA]">{priorityPct}%</p>
+                  <p style={{ color: "var(--faint)" }} className="text-[10px] uppercase tracking-widest mt-1">Top priority</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-3xl font-mono font-semibold text-[#A78BFA]">
+                    {(setup.tasksCompleted ?? [false, false, false]).filter(Boolean).length} / {setup.tasks.filter((t) => t.trim()).length}
+                  </p>
+                  <p style={{ color: "var(--faint)" }} className="text-[10px] uppercase tracking-widest mt-1">Commitments done</p>
+                </div>
+              </div>
+
+              {/* Logged blocks breakdown */}
+              <div>
+                <p style={{ color: "var(--muted)" }} className="text-xs font-bold uppercase tracking-widest mb-4">Today's Timeline</p>
+                <div className="space-y-2.5 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
+                  {loggedBlocks.map(b => {
+                    const cat = CATEGORIES.find(c => c.value === b.category);
+                    return (
+                      <div key={b.id} className="text-xs p-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-[var(--surface)]" style={{ background: "var(--s2)", borderLeft: `3px solid ${cat?.color || "var(--faint)"}` }}>
+                        <div className="font-mono text-[11px] w-12 flex-shrink-0" style={{ color: "var(--faint)" }}>
+                          {b.startHour.toString().padStart(2, "0")}:00
+                        </div>
+                        <div className="flex-1 truncate">
+                          <span className="font-bold text-[13px]" style={{ color: "var(--text)" }}>{b.activity || "Unnamed Task"}</span>
+                          <span style={{ color: "var(--muted)" }} className="ml-2 block sm:inline mt-1 sm:mt-0">{cat?.label}</span>
+                        </div>
+                        {((b.contributedPriority && b.contributedPriority !== "None") || b.contributedToTopPriority) ? (
+                          <span className="text-[10px] font-bold px-2 py-1 rounded bg-blue-500/10 text-blue-400 whitespace-nowrap">★ P1</span>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                  {loggedBlocks.length === 0 && <p className="text-sm text-[var(--faint)] italic">No hours logged today.</p>}
+                </div>
+              </div>
+            </div>
+
+            {/* RIGHT COLUMN: The Form */}
+            <div className="space-y-8">
+              {/* Top priority accomplished? */}
+              <div>
+                <p style={{ color: "var(--muted)" }} className="text-xs font-bold uppercase tracking-widest mb-3">
+                  Did you accomplish your Top Priorities?
+                </p>
+                <div className="flex gap-4">
+                  {[true, false].map((v) => (
+                    <button
+                      key={String(v)}
+                      onClick={() => setTopAccomplished(v)}
+                      className="flex-1 py-4 rounded-xl text-sm font-bold transition-all shadow-sm"
+                      style={{
+                        background: topAccomplished === v ? (v ? "#063e2b" : "#4a0d0d") : "var(--s2)",
+                        border: `1px solid ${topAccomplished === v ? (v ? "#34D399" : "#F87171") : "var(--border)"}`,
+                        color: topAccomplished === v ? (v ? "#34D399" : "#F87171") : "var(--faint)",
+                      }}
+                    >
+                      {v ? "✓ Yes, fully done." : "✗ Not quite."}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Accomplishments */}
+              <div>
+                <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-2">
+                  What did you actually get done?
+                </label>
+                <p className="text-[11px] mb-3 italic" style={{ color: "var(--gold)" }}>
+                  Drucker: "What did I actually accomplish vs. what I intended to do?"
+                </p>
+                <textarea value={accomplishments} onChange={(e) => setAccomplishments(e.target.value)}
+                  placeholder="List your real wins, outputs, outcomes…" rows={3} className="rounded-xl" />
+              </div>
+
+              {/* Biggest waste */}
+              <div>
+                <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-2">
+                  Biggest time waste today
+                </label>
+                <p className="text-[11px] mb-3 italic" style={{ color: "var(--gold)" }}>
+                  Drucker: "Where did my time go that I cannot account for?"
+                </p>
+                <textarea value={biggestWaste} onChange={(e) => setBiggestWaste(e.target.value)}
+                  placeholder="Be honest — what stole your time?" rows={2} className="rounded-xl" />
+              </div>
+
+              {/* Stop / Keep */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-[#F87171] mb-2">
+                    🛑 I will STOP doing
+                  </label>
+                  <textarea value={stopDoing} onChange={(e) => setStopDoing(e.target.value)}
+                    placeholder="What drains without creating value?" rows={2} className="rounded-xl" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-[#34D399] mb-2">
+                    ✓ I will KEEP doing
+                  </label>
+                  <textarea value={keepDoing} onChange={(e) => setKeepDoing(e.target.value)}
+                    placeholder="What worked brilliantly today?" rows={2} className="rounded-xl" />
+                </div>
+              </div>
+
+              {/* Drucker contribution */}
+              <div>
+                <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-2">
+                  The Contribution Question
+                </label>
+                <p className="text-[11px] mb-3 italic" style={{ color: "var(--gold)" }}>
+                  "What is my contribution? What results am I responsible for delivering to make a real difference?"
+                </p>
+                <textarea value={contribution} onChange={(e) => setContribution(e.target.value)}
+                  placeholder="What genuine contribution did you make today?" rows={3} className="rounded-xl" />
+              </div>
+
+              {/* Tomorrow priority */}
+              <div>
+                <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-3">
+                  Tomorrow's #1 Priority
+                </label>
+                <input type="text" value={tomorrowPri} onChange={(e) => setTomorrowPri(e.target.value)}
+                  placeholder="What NEEDS to be done tomorrow?" className="rounded-xl" />
+              </div>
+
+              {/* Day rating + energy */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 pt-4" style={{ borderTop: "1px solid var(--border)" }}>
+                <div>
+                  <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-4">
+                    Overall Day Rating
+                  </label>
+                  <div className="flex items-center gap-4">
+                    <input type="range" min={1} max={10} value={rating}
+                      onChange={(e) => setRating(Number(e.target.value))}
+                      className="flex-1 accent-yellow-500"
+                      style={{ background: "transparent", border: "none", padding: 0 }}
+                    />
+                    <span style={{ color: "var(--gold)", background: "var(--s2)" }} className="font-mono text-2xl font-bold w-12 h-12 flex items-center justify-center rounded-xl border border-[var(--border)]">{rating}</span>
+                  </div>
+                  <div style={{ color: "var(--faint)" }} className="flex justify-between text-[10px] mt-2 uppercase tracking-widest">
+                    <span>Terrible</span><span>Perfect</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-4">
+                    Energy at Day's End
+                  </label>
+                  <div className="flex flex-col gap-2.5">
+                    {(["energized", "neutral", "drained"] as const).map((v) => (
+                      <button key={v} onClick={() => setEnergyEnd(v)}
+                        className="py-2.5 rounded-xl text-sm font-bold transition-all text-left px-4"
+                        style={{
+                          background: energyEnd === v
+                            ? v === "energized" ? "#063e2b" : v === "neutral" ? "var(--border)" : "#4a0d0d"
+                            : "var(--s2)",
+                          border: `1px solid ${energyEnd === v
+                            ? v === "energized" ? "#34D399" : v === "neutral" ? "var(--dim)" : "#F87171"
+                            : "var(--border)"}`,
+                          color: energyEnd === v
+                            ? v === "energized" ? "#34D399" : v === "neutral" ? "var(--gold)" : "#F87171"
+                            : "var(--faint)",
+                        }}>
+                        {v === "energized" ? "⚡ Energized" : v === "neutral" ? "😐 Neutral" : "😮‍💨 Drained"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
         </div>
       </div>
     </div>
