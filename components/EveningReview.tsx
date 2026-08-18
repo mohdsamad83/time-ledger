@@ -1,18 +1,19 @@
 "use client";
 import { useState, useEffect } from "react";
 import { EveningReview, TimeBlock, DaySetup, CATEGORIES } from "@/lib/types";
-import { X, Moon } from "lucide-react";
+import { X, Moon, Star, CheckSquare } from "lucide-react";
 
 interface Props {
   date:          string;
   setup:         DaySetup;
   blocks:        { [hour: number]: TimeBlock };
   review:        EveningReview | null;
+  dayTargets:    Record<string, boolean>;
   onSave:        (r: EveningReview) => void;
   onClose:       () => void;
 }
 
-export default function EveningReviewModal({ setup, blocks, review, onSave, onClose }: Props) {
+export default function EveningReviewModal({ setup, blocks, review, dayTargets, onSave, onClose }: Props) {
   const [topAccomplished, setTopAccomplished]   = useState(review?.topPriorityAccomplished ?? false);
   const [accomplishments, setAccomplishments]   = useState(review?.accomplishments ?? "");
   const [biggestWaste,    setBiggestWaste]       = useState(review?.biggestWaste ?? "");
@@ -63,6 +64,11 @@ export default function EveningReviewModal({ setup, blocks, review, onSave, onCl
     ? Math.round((loggedBlocks.filter((b) => b.wasPlanned).length / loggedBlocks.length) * 100) : 0;
   const priorityPct = loggedBlocks.length > 0
     ? Math.round((loggedBlocks.filter((b) => b.contributedPriority ? b.contributedPriority !== "None" : b.contributedToTopPriority).length / loggedBlocks.length) * 100) : 0;
+
+  // Commitments tracked
+  const commitments = (setup.tasks || ["", "", ""]).filter(Boolean);
+  const commitmentsDone = commitments.filter(c => dayTargets[c]).length;
+  const commitmentsTotal = commitments.length;
 
   const handleSave = () => {
     onSave({
@@ -125,9 +131,72 @@ export default function EveningReviewModal({ setup, blocks, review, onSave, onCl
             
             {/* LEFT COLUMN: Summary at a glance */}
             <div className="space-y-8 lg:sticky lg:top-0">
+              
+              {/* Commitments Tracking */}
+              {commitments.length > 0 && (
+                <div
+                  className="rounded-xl p-5 shadow-sm"
+                  style={{ background: "var(--s2)", border: "1px solid var(--border)" }}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <Star size={16} className="text-yellow-500" />
+                      <span style={{ color: "var(--text)" }} className="text-sm font-semibold uppercase tracking-widest">
+                        Today's Commitments
+                      </span>
+                    </div>
+                    <span
+                      className="text-[10px] font-mono px-2 py-0.5 rounded-full font-bold"
+                      style={{
+                        background: commitmentsDone === commitmentsTotal ? "#063e2b" : "transparent",
+                        color: commitmentsDone === commitmentsTotal ? "#34D399" : "var(--faint)",
+                        border: `1px solid ${commitmentsDone === commitmentsTotal ? "#34D39944" : "var(--border)"}`,
+                      }}
+                    >
+                      {commitmentsDone} / {commitmentsTotal} done
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {commitments.map((target) => {
+                      const done = dayTargets[target];
+                      return (
+                        <div
+                          key={target}
+                          className="w-full text-left rounded-lg px-3 py-2.5 flex items-center gap-3"
+                          style={{
+                            background: done ? "rgba(52, 211, 153, 0.1)" : "var(--surface)",
+                            border: `1px solid ${done ? "rgba(52, 211, 153, 0.3)" : "var(--border)"}`,
+                          }}
+                        >
+                          <div
+                            className="w-4 h-4 rounded flex items-center justify-center flex-shrink-0"
+                            style={{
+                              background: done ? "#34D399" : "transparent",
+                              border: `1.5px solid ${done ? "#34D399" : "var(--faint)"}`,
+                            }}
+                          >
+                            {done && (
+                              <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+                                <path d="M2.5 6L5 8.5L9.5 3.5" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            )}
+                          </div>
+                          <span
+                            className="text-xs truncate font-medium flex-1"
+                            style={{ color: done ? "#34D399" : "var(--text)" }}
+                          >
+                            {target}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Auto-stats */}
               <div
-                className="rounded-xl p-5 grid grid-cols-2 gap-4"
+                className="rounded-xl p-5 grid grid-cols-3 gap-4"
                 style={{ background: "var(--s2)", border: "1px solid var(--border)" }}
               >
                 <div className="text-center">
@@ -142,18 +211,12 @@ export default function EveningReviewModal({ setup, blocks, review, onSave, onCl
                   <p className="text-3xl font-mono font-semibold text-[#60A5FA]">{priorityPct}%</p>
                   <p style={{ color: "var(--faint)" }} className="text-[10px] uppercase tracking-widest mt-1">Top priority</p>
                 </div>
-                <div className="text-center">
-                  <p className="text-3xl font-mono font-semibold text-[#A78BFA]">
-                    {(setup.tasksCompleted ?? [false, false, false]).filter(Boolean).length} / {setup.tasks.filter((t) => t.trim()).length}
-                  </p>
-                  <p style={{ color: "var(--faint)" }} className="text-[10px] uppercase tracking-widest mt-1">Commitments done</p>
-                </div>
               </div>
 
               {/* Logged blocks breakdown */}
               <div>
                 <p style={{ color: "var(--muted)" }} className="text-xs font-bold uppercase tracking-widest mb-4">Today's Timeline</p>
-                <div className="space-y-2.5 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
+                <div className="space-y-2.5 max-h-[35vh] overflow-y-auto pr-2 custom-scrollbar">
                   {loggedBlocks.map(b => {
                     const cat = CATEGORIES.find(c => c.value === b.category);
                     return (
@@ -181,7 +244,7 @@ export default function EveningReviewModal({ setup, blocks, review, onSave, onCl
               {/* Top priority accomplished? */}
               <div>
                 <p style={{ color: "var(--muted)" }} className="text-xs font-bold uppercase tracking-widest mb-3">
-                  Did you accomplish your Top Priorities?
+                  Did you accomplish your Commitments?
                 </p>
                 <div className="flex gap-4">
                   {[true, false].map((v) => (

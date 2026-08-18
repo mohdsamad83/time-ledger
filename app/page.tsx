@@ -15,7 +15,6 @@ import {
   applySetupSynced, applyBlockSynced, applyEveningSynced,
   applyTaskToggle, applyResetDay, applyTargetToggle, applyTargetsUpdate
 } from "@/lib/storage";
-import { ScheduleTemplate } from "@/lib/templates";
 
 import MorningSetup    from "@/components/MorningSetup";
 import TimelineView    from "@/components/TimelineView";
@@ -170,6 +169,21 @@ export default function App() {
     );
   };
 
+  const handleUpdateCommitments = async (commitments: [string, string, string]) => {
+    if (!appData) return;
+    const day = getDay(appData, viewDate);
+    if (!day.setup) return;
+    
+    const newSetup = { ...day.setup, tasks: commitments };
+    setAppData(prev => prev ? applySetup(prev, viewDate, newSetup) : prev);
+    
+    await syncToSheets(
+      "/api/sheets/setup",
+      { date: viewDate, setup: newSetup },
+      () => {}
+    );
+  };
+
   const handleUpdateTargets = async (targets: string[]) => {
     if (!appData) return;
     setAppData(prev => prev ? applyTargetsUpdate(prev, targets) : prev);
@@ -180,27 +194,7 @@ export default function App() {
     );
   };
 
-  const handleApplyTemplate = (template: ScheduleTemplate) => {
-    if (!appData) return;
-    template.blocks.forEach((tb) => {
-      const block: TimeBlock = {
-        id:                      `${tb.startHour}-template-${Date.now()}`,
-        startHour:               tb.startHour,
-        activity:                tb.activity,
-        category:                tb.category,
-        energy:                  tb.energy,
-        wasPlanned:              tb.wasPlanned,
-        contributedToTopPriority: tb.contributedToTopPriority,
-        contributedPriority:     tb.contributedPriority,
-        couldDelegate:           tb.couldDelegate,
-        satisfaction:            tb.satisfaction,
-        contribution:            tb.contribution,
-        notes:                   tb.notes,
-        syncedAt:                null,
-      };
-      setAppData(prev => prev ? applyBlock(prev, viewDate, block) : prev);
-    });
-  };
+
 
   if (!mounted) return null;
 
@@ -345,7 +339,7 @@ export default function App() {
                 onEveningReview={() => setShowEvening(true)}
                 hasEveningReview={!!dayData.eveningReview}
                 onToggleTarget={(targetName) => handleToggleTarget(viewDate, targetName)}
-                onApplyTemplate={handleApplyTemplate}
+                onUpdateCommitments={handleUpdateCommitments}
               />
             )}
           </>
@@ -390,13 +384,13 @@ export default function App() {
         />
       )}
 
-      {/* ── Evening Review Modal ───────────────────────────────────────────── */}
       {showEvening && dayData.setup && (
         <EveningReviewModal
           date={viewDate}
           setup={dayData.setup}
           blocks={dayData.blocks}
           review={dayData.eveningReview}
+          dayTargets={dayData.targets || {}}
           onSave={handleEveningSave}
           onClose={() => setShowEvening(false)}
         />
