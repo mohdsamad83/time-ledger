@@ -1,15 +1,11 @@
 // ─── Category ────────────────────────────────────────────────────────────────
 export type Category =
   | "deep-work"
-  | "meetings"
-  | "admin"
-  | "learning"
-  | "health"
-  | "personal"
-  | "creative"
-  | "strategic"
-  | "firefighting"
-  | "break";
+  | "shallow-work"
+  | "collaboration"
+  | "growth"
+  | "recharge"
+  | string; // allow legacy strings from old saves
 
 export const CATEGORIES: {
   value: Category;
@@ -18,16 +14,11 @@ export const CATEGORIES: {
   bg: string;
   emoji: string;
 }[] = [
-  { value: "deep-work",    label: "Deep Work",         color: "#60A5FA", bg: "#1e3a5f", emoji: "🎯" },
-  { value: "meetings",     label: "Meetings & Calls",  color: "#A78BFA", bg: "#2d1f5e", emoji: "🤝" },
-  { value: "admin",        label: "Email & Admin",     color: "#FCD34D", bg: "#4a3800", emoji: "📋" },
-  { value: "learning",     label: "Learning",          color: "#34D399", bg: "#063e2b", emoji: "📚" },
-  { value: "health",       label: "Health & Exercise", color: "#4ADE80", bg: "#063b14", emoji: "💪" },
-  { value: "personal",     label: "Personal & Family", color: "#F472B6", bg: "#4a0d2b", emoji: "❤️" },
-  { value: "creative",     label: "Creative Work",     color: "#FB923C", bg: "#4a1d00", emoji: "✨" },
-  { value: "strategic",    label: "Strategic Planning",color: "#818CF8", bg: "#1e1f5e", emoji: "🗺️" },
-  { value: "firefighting", label: "Fire-fighting",     color: "#F87171", bg: "#4a0d0d", emoji: "🚒" },
-  { value: "break",        label: "Break & Rest",      color: "#9CA3AF", bg: "#1f2937", emoji: "☕" },
+  { value: "deep-work",    label: "Deep Work",         color: "#60A5FA", bg: "rgba(96, 165, 250, 0.1)", emoji: "🎯" },
+  { value: "shallow-work", label: "Shallow & Admin",   color: "#FCD34D", bg: "rgba(252, 211, 77, 0.1)", emoji: "⚡" },
+  { value: "collaboration",label: "Collaboration",     color: "#A78BFA", bg: "rgba(167, 139, 250, 0.1)",emoji: "🤝" },
+  { value: "growth",       label: "Learning & Growth", color: "#34D399", bg: "rgba(52, 211, 153, 0.1)", emoji: "🌱" },
+  { value: "recharge",     label: "Life & Recharge",   color: "#F472B6", bg: "rgba(244, 114, 182, 0.1)", emoji: "🔋" },
 ];
 
 // ─── Core models ─────────────────────────────────────────────────────────────

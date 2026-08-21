@@ -1,5 +1,5 @@
 "use client";
-import { TimeBlock, DaySetup, CATEGORIES } from "@/lib/types";
+import { TimeBlock, DaySetup, CATEGORIES, Category } from "@/lib/types";
 import { Plus, Edit2, Moon, CheckSquare, Star } from "lucide-react";
 import { SyncState } from "@/lib/types";
 
@@ -199,7 +199,13 @@ export default function TimelineView({
             const block = blocks[hour];
             const isPast  = isToday && hour < currentHour;
             const isCurrent = isToday && hour === currentHour;
-            const cat   = block ? CATEGORIES.find((c) => c.value === block.category)! : null;
+            const cat = block ? (CATEGORIES.find((c) => c.value === block.category) || {
+              value: block.category as Category,
+              label: block.category,
+              color: "var(--text)",
+              bg: "var(--s2)",
+              emoji: "📌",
+            }) : null;
 
             return (
               <div key={hour} className="flex gap-4 items-stretch">
