@@ -28,7 +28,7 @@ export default function InsightsView({ data }: Props) {
 
   const processedData = useMemo(() => {
     let totalHours = 0;
-    let deepWorkHours = 0;
+    let productiveHours = 0;
     let totalSatisfaction = 0;
     let totalEnergy = 0;
     let loggedDaysCount = 0;
@@ -46,7 +46,7 @@ export default function InsightsView({ data }: Props) {
         loggedDaysCount++;
         blocks.forEach(b => {
           totalHours++;
-          if (b.category === "deep-work") deepWorkHours++;
+          if (["working", "coding", "learning"].includes(b.category)) productiveHours++;
           totalSatisfaction += b.satisfaction;
           totalEnergy += b.energy === "high" ? 5 : b.energy === "medium" ? 3 : 1;
           
@@ -86,7 +86,7 @@ export default function InsightsView({ data }: Props) {
 
     return {
       totalHours,
-      deepWorkRatio: totalHours > 0 ? Math.round((deepWorkHours / totalHours) * 100) : 0,
+      productivityRatio: totalHours > 0 ? Math.round((productiveHours / totalHours) * 100) : 0,
       avgSat: loggedDaysCount > 0 ? (totalSatisfaction / totalHours).toFixed(1) : "0.0",
       targetHitRatio: possibleTargets > 0 ? Math.round((targetsHit / possibleTargets) * 100) : 0,
       timeData,
@@ -167,9 +167,9 @@ export default function InsightsView({ data }: Props) {
         <div className="p-5 rounded-xl" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
           <div className="flex items-center gap-2 mb-2">
             <Zap size={16} className="text-amber-500" />
-            <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--muted)" }}>Deep Work Ratio</span>
+            <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--muted)" }}>Productivity Ratio</span>
           </div>
-          <p className="text-3xl font-bold" style={{ color: "var(--text)" }}>{processedData.deepWorkRatio}%</p>
+          <p className="text-3xl font-bold" style={{ color: "var(--text)" }}>{processedData.productivityRatio}%</p>
         </div>
         <div className="p-5 rounded-xl" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
           <div className="flex items-center gap-2 mb-2">
@@ -194,7 +194,7 @@ export default function InsightsView({ data }: Props) {
         <div className="lg:col-span-2 rounded-xl p-5" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
           <div className="mb-6">
             <h3 className="font-bold text-lg" style={{ color: "var(--text)" }}>Where Time Goes</h3>
-            <p className="text-xs" style={{ color: "var(--faint)" }}>Hours logged by the 5 Core Pillars</p>
+            <p className="text-xs" style={{ color: "var(--faint)" }}>Hours logged by category</p>
           </div>
           <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">

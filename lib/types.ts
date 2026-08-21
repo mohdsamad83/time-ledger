@@ -1,10 +1,16 @@
-// ─── Category ────────────────────────────────────────────────────────────────
 export type Category =
-  | "deep-work"
-  | "shallow-work"
-  | "collaboration"
-  | "growth"
-  | "recharge"
+  | "sleep"
+  | "routine"
+  | "working"
+  | "coding"
+  | "learning"
+  | "eating"
+  | "family"
+  | "friends"
+  | "entertainment"
+  | "roaming"
+  | "wasting"
+  | "social-media"
   | string; // allow legacy strings from old saves
 
 export const CATEGORIES: {
@@ -14,11 +20,18 @@ export const CATEGORIES: {
   bg: string;
   emoji: string;
 }[] = [
-  { value: "deep-work",    label: "Deep Work",         color: "#60A5FA", bg: "rgba(96, 165, 250, 0.1)", emoji: "🎯" },
-  { value: "shallow-work", label: "Shallow & Admin",   color: "#FCD34D", bg: "rgba(252, 211, 77, 0.1)", emoji: "⚡" },
-  { value: "collaboration",label: "Collaboration",     color: "#A78BFA", bg: "rgba(167, 139, 250, 0.1)",emoji: "🤝" },
-  { value: "growth",       label: "Learning & Growth", color: "#34D399", bg: "rgba(52, 211, 153, 0.1)", emoji: "🌱" },
-  { value: "recharge",     label: "Life & Recharge",   color: "#F472B6", bg: "rgba(244, 114, 182, 0.1)", emoji: "🔋" },
+  { value: "sleep",        label: "Sleep",           color: "#818CF8", bg: "rgba(129, 140, 248, 0.1)", emoji: "💤" },
+  { value: "routine",      label: "Woke up/Routine", color: "#FCD34D", bg: "rgba(252, 211, 77, 0.1)",  emoji: "🌅" },
+  { value: "working",      label: "Working",         color: "#60A5FA", bg: "rgba(96, 165, 250, 0.1)",  emoji: "💼" },
+  { value: "coding",       label: "Coding",          color: "#34D399", bg: "rgba(52, 211, 153, 0.1)",  emoji: "💻" },
+  { value: "learning",     label: "Learning",        color: "#A78BFA", bg: "rgba(167, 139, 250, 0.1)", emoji: "📚" },
+  { value: "eating",       label: "Eating",          color: "#F472B6", bg: "rgba(244, 114, 182, 0.1)", emoji: "🍽️" },
+  { value: "family",       label: "Family Time",     color: "#FB923C", bg: "rgba(251, 146, 60, 0.1)",  emoji: "❤️" },
+  { value: "friends",      label: "Friends Time",    color: "#FBBF24", bg: "rgba(251, 191, 36, 0.1)",  emoji: "🍻" },
+  { value: "entertainment",label: "Entertainment",   color: "#C084FC", bg: "rgba(192, 132, 252, 0.1)", emoji: "🍿" },
+  { value: "roaming",      label: "Roaming",         color: "#9CA3AF", bg: "rgba(156, 163, 175, 0.1)", emoji: "🚶" },
+  { value: "wasting",      label: "Wasting Time",    color: "#F87171", bg: "rgba(248, 113, 113, 0.1)", emoji: "🫠" },
+  { value: "social-media", label: "Social Media",    color: "#38BDF8", bg: "rgba(56, 189, 248, 0.1)",  emoji: "📱" },
 ];
 
 // ─── Core models ─────────────────────────────────────────────────────────────
