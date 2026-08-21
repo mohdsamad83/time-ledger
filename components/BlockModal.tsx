@@ -1,12 +1,13 @@
 "use client";
 import { useState, useEffect } from "react";
-import { TimeBlock, CATEGORIES, Category, EnergyLevel, DelegateOpt, PriorityTag } from "@/lib/types";
+import { TimeBlock, Category, EnergyLevel, DelegateOpt, PriorityTag, CustomCategory } from "@/lib/types";
 import { X, Zap, Battery, BatteryLow, HelpCircle } from "lucide-react";
 
 interface Props {
   hour:        number;
   block:       TimeBlock | null;
   targets:     string[];
+  categories:  CustomCategory[];
   onSave:      (block: TimeBlock) => void;
   onClose:     () => void;
 }
@@ -22,9 +23,9 @@ const ENERGY_OPTIONS: { value: EnergyLevel; label: string; icon: React.ReactNode
   { value: "low",    label: "Low",    icon: <BatteryLow size={14} />, color: "#F87171" },
 ];
 
-export default function BlockModal({ hour, block, targets, onSave, onClose }: Props) {
+export default function BlockModal({ hour, block, targets, categories, onSave, onClose }: Props) {
   const [activity,     setActivity]     = useState(block?.activity     ?? "");
-  const [category,     setCategory]     = useState<Category>(block?.category     ?? "deep-work");
+  const [category,     setCategory]     = useState<Category>(block?.category     ?? categories[0]?.value ?? "");
   const [energy,       setEnergy]       = useState<EnergyLevel>(block?.energy   ?? "medium");
   const [wasPlanned,   setWasPlanned]   = useState(block?.wasPlanned   ?? true);
   const [contributedPriority, setContributedPriority] = useState<PriorityTag>(
@@ -42,7 +43,7 @@ export default function BlockModal({ hour, block, targets, onSave, onClose }: Pr
     return () => window.removeEventListener("keydown", fn);
   }, [onClose]);
 
-  const selCat = CATEGORIES.find((c) => c.value === category)!;
+  const selCat = categories.find((c) => c.value === category) || categories[0];
 
   const handleSave = () => {
     if (!activity.trim()) return;
@@ -112,19 +113,19 @@ export default function BlockModal({ hour, block, targets, onSave, onClose }: Pr
               Category
             </label>
             <div className="grid grid-cols-2 gap-2">
-              {CATEGORIES.map((cat) => (
+              {categories.map((c) => (
                 <button
-                  key={cat.value}
-                  onClick={() => setCategory(cat.value)}
+                  key={c.value}
+                  onClick={() => setCategory(c.value)}
                   className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-left transition-all"
                   style={{
-                    background: category === cat.value ? cat.bg : "var(--s2)",
-                    border: `1px solid ${category === cat.value ? cat.color : "var(--border)"}`,
-                    color: category === cat.value ? cat.color : "var(--muted)",
+                    background: category === c.value ? c.bg : "var(--s2)",
+                    border: `1px solid ${category === c.value ? c.color : "var(--border)"}`,
+                    color: category === c.value ? c.color : "var(--muted)",
                   }}
                 >
-                  <span className="text-base">{cat.emoji}</span>
-                  <span className="text-xs font-bold">{cat.label}</span>
+                  <span className="text-base">{c.emoji}</span>
+                  <span className="font-semibold text-xs truncate">{c.label}</span>
                 </button>
               ))}
             </div>

@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { EveningReview, TimeBlock, DaySetup, CATEGORIES } from "@/lib/types";
+import { EveningReview, TimeBlock, DaySetup, DEFAULT_CATEGORIES } from "@/lib/types";
 import { X, Moon, Star, CheckSquare } from "lucide-react";
 
 interface Props {
@@ -218,7 +218,7 @@ export default function EveningReviewModal({ setup, blocks, review, dayTargets, 
                 <p style={{ color: "var(--muted)" }} className="text-xs font-bold uppercase tracking-widest mb-4">Today's Timeline</p>
                 <div className="space-y-2.5 max-h-[35vh] overflow-y-auto pr-2 custom-scrollbar">
                   {loggedBlocks.map(b => {
-                    const cat = CATEGORIES.find(c => c.value === b.category);
+                    const cat = DEFAULT_CATEGORIES.find(c => c.value === b.category);
                     return (
                       <div key={b.id} className="text-xs p-3 rounded-lg flex items-center gap-3 transition-colors hover:bg-[var(--surface)]" style={{ background: "var(--s2)", borderLeft: `3px solid ${cat?.color || "var(--faint)"}` }}>
                         <div className="font-mono text-[11px] w-12 flex-shrink-0" style={{ color: "var(--faint)" }}>

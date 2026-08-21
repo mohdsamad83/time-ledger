@@ -1,6 +1,6 @@
 "use client";
 import { useState, useMemo } from "react";
-import { AppData, CATEGORIES, Category } from "@/lib/types";
+import { AppData, CustomCategory } from "@/lib/types";
 import { parseISO, format } from "date-fns";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
@@ -8,10 +8,10 @@ import {
 } from "recharts";
 import { Target, Zap, Clock, Star } from "lucide-react";
 
-interface Props { data: AppData }
+interface Props { data: AppData; categories: CustomCategory[] }
 type TimeRange = 7 | 30 | 9999;
 
-export default function InsightsView({ data }: Props) {
+export default function InsightsView({ data, categories }: Props) {
   const [timeRange, setTimeRange] = useState<TimeRange>(7);
 
   const allDates = Object.keys(data.days).sort().reverse();
@@ -46,11 +46,15 @@ export default function InsightsView({ data }: Props) {
         loggedDaysCount++;
         blocks.forEach(b => {
           totalHours++;
-          if (["working", "coding", "learning"].includes(b.category)) productiveHours++;
+          // A bit hacky: check if category label or value indicates productive work
+          const cat = categories.find(c => c.value === b.category);
+          const isProductive = cat && ["working", "coding", "learning"].some(kw => cat.value.includes(kw) || cat.label.toLowerCase().includes(kw));
+          if (isProductive) productiveHours++;
           totalSatisfaction += b.satisfaction;
           totalEnergy += b.energy === "high" ? 5 : b.energy === "medium" ? 3 : 1;
           
-          obj[b.category] = (obj[b.category] || 0) + 1;
+          const categoryLabel = cat ? cat.label : b.category;
+          obj[categoryLabel] = (obj[categoryLabel] || 0) + 1;
 
           // Drucker Split
           const hasPriority = b.contributedPriority ? b.contributedPriority !== "None" : b.contributedToTopPriority;
@@ -98,7 +102,7 @@ export default function InsightsView({ data }: Props) {
         { name: "Reactive / Distraction", value: reactive, color: "#F87171" } // Red
       ].filter(d => d.value > 0)
     };
-  }, [selectedDates, data]);
+  }, [selectedDates, data, categories]);
 
   // Custom Tooltip component for better styling
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -107,12 +111,9 @@ export default function InsightsView({ data }: Props) {
         <div style={{ background: "var(--surface)", border: "1px solid var(--border)" }} className="p-3 rounded-lg shadow-xl text-xs font-mono">
           <p className="font-bold mb-2" style={{ color: "var(--text)" }}>{label}</p>
           {payload.map((entry: any, i: number) => {
-            // Find category to map to real label if needed
-            const cat = CATEGORIES.find(c => c.value === entry.name);
-            const name = cat ? cat.label : entry.name;
             return (
               <div key={i} className="flex justify-between gap-4 mb-1">
-                <span style={{ color: entry.color }}>{name}</span>
+                <span style={{ color: entry.color }}>{entry.name}</span>
                 <span style={{ color: "var(--text)" }} className="font-bold">{entry.value}</span>
               </div>
             );
@@ -201,9 +202,12 @@ export default function InsightsView({ data }: Props) {
               <BarChart data={processedData.timeData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                 <XAxis dataKey="date" tick={{ fill: 'var(--faint)', fontSize: 10 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: 'var(--faint)', fontSize: 10 }} axisLine={false} tickLine={false} />
-                <Tooltip content={<CustomTooltip />} />
-                {CATEGORIES.map(cat => (
-                  <Bar key={cat.value} dataKey={cat.value} name={cat.label} stackId="a" fill={cat.color} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: "var(--surface)", borderColor: "var(--border)", color: "var(--text)", borderRadius: "8px" }}
+                />
+                <Legend wrapperStyle={{ fontSize: "12px", paddingTop: "10px" }} />
+                {categories.map(c => (
+                  <Bar key={c.value} dataKey={c.label} stackId="a" fill={c.color.startsWith("var") ? "#60A5FA" : c.color} radius={[2,2,2,2]} />
                 ))}
               </BarChart>
             </ResponsiveContainer>

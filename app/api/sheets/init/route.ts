@@ -52,6 +52,11 @@ const SHEETS_CONFIG = [
     headers: ["Date", "Completed Targets", "Synced At"],
     color: { red: 0.1, green: 0.8, blue: 0.1 },
   },
+  {
+    title: "🏷️ Categories",
+    headers: ["Value", "Label", "Color", "Background", "Emoji"],
+    color: { red: 0.1, green: 0.5, blue: 0.8 },
+  },
 ];
 
 export async function POST() {

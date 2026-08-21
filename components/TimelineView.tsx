@@ -1,5 +1,5 @@
 "use client";
-import { TimeBlock, DaySetup, CATEGORIES, Category } from "@/lib/types";
+import { TimeBlock, DaySetup, Category, CustomCategory } from "@/lib/types";
 import { Plus, Edit2, Moon, CheckSquare, Star } from "lucide-react";
 import { SyncState } from "@/lib/types";
 
@@ -13,6 +13,7 @@ interface Props {
   hasEveningReview: boolean;
   dayTargets: Record<string, boolean>;
   allTargets: string[];
+  categories: CustomCategory[];
   onToggleTarget: (targetName: string) => void;
   onUpdateCommitments?: (tasks: [string, string, string]) => void;
   onExtendDay?: () => void;
@@ -27,7 +28,7 @@ const nowHour = () => new Date().getHours();
 
 export default function TimelineView({
   date, setup, blocks, onLogBlock, onEveningReview, hasEveningReview, 
-  dayTargets, allTargets, onToggleTarget, onUpdateCommitments, onExtendDay
+  dayTargets, allTargets, categories, onToggleTarget, onUpdateCommitments, onExtendDay
 }: Props) {
   const hours = Array.from(
     { length: Math.max(1, (setup.sleepHour > setup.wakeHour
@@ -199,7 +200,7 @@ export default function TimelineView({
             const block = blocks[hour];
             const isPast  = isToday && hour < currentHour;
             const isCurrent = isToday && hour === currentHour;
-            const cat = block ? (CATEGORIES.find((c) => c.value === block.category) || {
+            const cat = block ? (categories.find((c) => c.value === block.category) || {
               value: block.category as Category,
               label: block.category,
               color: "var(--text)",

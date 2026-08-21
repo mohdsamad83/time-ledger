@@ -1,8 +1,8 @@
 "use client";
-import { AppData, DayData, DaySetup, EveningReview, TimeBlock, DEFAULT_TARGETS } from "./types";
+import { AppData, DayData, DaySetup, EveningReview, TimeBlock, DEFAULT_TARGETS, DEFAULT_CATEGORIES, CustomCategory } from "./types";
 
 export async function fetchAppData(): Promise<AppData> {
-  if (typeof window === "undefined") return { days: {}, version: "2.0", targets: DEFAULT_TARGETS };
+  if (typeof window === "undefined") return { days: {}, version: "2.0", targets: DEFAULT_TARGETS, categories: DEFAULT_CATEGORIES };
   
   try {
     const res = await fetch("/api/sheets/data");
@@ -11,11 +11,14 @@ export async function fetchAppData(): Promise<AppData> {
       if (!json.data.targets || json.data.targets.length === 0) {
         json.data.targets = [...DEFAULT_TARGETS];
       }
+      if (!json.data.categories || json.data.categories.length === 0) {
+        json.data.categories = [...DEFAULT_CATEGORIES];
+      }
       return json.data;
     }
-    return { days: {}, version: "2.0", targets: DEFAULT_TARGETS };
+    return { days: {}, version: "2.0", targets: DEFAULT_TARGETS, categories: DEFAULT_CATEGORIES };
   } catch {
-    return { days: {}, version: "2.0", targets: DEFAULT_TARGETS };
+    return { days: {}, version: "2.0", targets: DEFAULT_TARGETS, categories: DEFAULT_CATEGORIES };
   }
 }
 
@@ -110,4 +113,18 @@ export function applyTargetsUpdate(data: AppData, targets: string[]): AppData {
 export function getAllDates(data: AppData | null): string[] {
   if (!data) return [];
   return Object.keys(data.days).sort().reverse();
+}
+
+export async function saveCategories(categories: CustomCategory[]): Promise<boolean> {
+  try {
+    const res = await fetch("/api/sheets/categories", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ categories }),
+    });
+    return res.ok;
+  } catch (err) {
+    console.error("Failed to sync categories:", err);
+    return false;
+  }
 }

@@ -13,13 +13,15 @@ export type Category =
   | "social-media"
   | string; // allow legacy strings from old saves
 
-export const CATEGORIES: {
-  value: Category;
+export interface CustomCategory {
+  value: string;
   label: string;
   color: string;
   bg: string;
   emoji: string;
-}[] = [
+}
+
+export const DEFAULT_CATEGORIES: CustomCategory[] = [
   { value: "sleep",        label: "Sleep",           color: "#818CF8", bg: "rgba(129, 140, 248, 0.1)", emoji: "💤" },
   { value: "routine",      label: "Woke up/Routine", color: "#FCD34D", bg: "rgba(252, 211, 77, 0.1)",  emoji: "🌅" },
   { value: "working",      label: "Working",         color: "#60A5FA", bg: "rgba(96, 165, 250, 0.1)",  emoji: "💼" },
@@ -95,6 +97,7 @@ export const DEFAULT_TARGETS = [
 export interface AppData {
   days:    { [date: string]: DayData };
   targets?: string[];                       // Global list of targets to track
+  categories?: CustomCategory[];            // Custom dynamic categories
   version: string;
 }
 

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import {
   Clock, BarChart2, History, CheckCircle,
-  AlertCircle, Loader2, ExternalLink, BookOpen, RotateCcw, Timer, Target, LogOut
+  AlertCircle, Loader2, ExternalLink, BookOpen, RotateCcw, Timer, Target, LogOut, Settings
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -27,8 +27,10 @@ import HistoryView     from "@/components/HistoryView";
 import ThemeToggle     from "@/components/ThemeToggle";
 import BreakReminder   from "@/components/BreakReminder";
 import TargetsTracker  from "@/components/TargetsTracker";
+import SettingsView    from "@/components/SettingsView";
+import { DEFAULT_CATEGORIES } from "@/lib/types";
 
-type Tab = "today" | "targets" | "history" | "insights";
+type Tab = "today" | "targets" | "history" | "insights" | "settings";
 
 const TODAY = format(new Date(), "yyyy-MM-dd");
 const DRUCKER_QUOTES = [
@@ -237,6 +239,7 @@ export default function App() {
 
   const dayData = getDay(appData, viewDate);
   const isToday = viewDate === TODAY;
+  const activeCategories = appData.categories || DEFAULT_CATEGORIES;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -265,6 +268,7 @@ export default function App() {
             { id: "targets",  icon: <Target size={14} />,   label: "Targets" },
             { id: "history",  icon: <History size={14} />,  label: "History" },
             { id: "insights", icon: <BarChart2 size={14} />,label: "Insights" },
+            { id: "settings", icon: <Settings size={14} />, label: "Settings" },
           ] as { id: Tab; icon: React.ReactNode; label: string }[]).map((t) => (
             <button
               key={t.id}
@@ -364,6 +368,7 @@ export default function App() {
                 blocks={dayData.blocks}
                 dayTargets={dayData.targets || {}}
                 allTargets={appData.targets || []}
+                categories={activeCategories}
                 syncState={syncState}
                 onLogBlock={(hour) => setModalHour(hour)}
                 onEveningReview={() => setShowEvening(true)}
@@ -400,7 +405,17 @@ export default function App() {
 
         {/* INSIGHTS ───────────────────────────────────────────────────────── */}
         {tab === "insights" && (
-          <InsightsView data={appData} />
+          <InsightsView data={appData} categories={activeCategories} />
+        )}
+
+        {/* SETTINGS ───────────────────────────────────────────────────────── */}
+        {tab === "settings" && (
+          <SettingsView
+            initialCategories={activeCategories}
+            onUpdate={(newCategories) => {
+              setAppData(prev => prev ? { ...prev, categories: newCategories } : prev);
+            }}
+          />
         )}
       </main>
 
@@ -410,6 +425,7 @@ export default function App() {
           hour={modalHour}
           block={dayData.blocks[modalHour] ?? null}
           targets={appData.targets || []}
+          categories={activeCategories}
           onSave={handleBlockSave}
           onClose={() => setModalHour(null)}
         />

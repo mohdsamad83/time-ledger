@@ -1,5 +1,5 @@
 "use client";
-import { AppData, CATEGORIES } from "@/lib/types";
+import { AppData, DEFAULT_CATEGORIES } from "@/lib/types";
 import { format, parseISO } from "date-fns";
 
 interface Props {
@@ -38,7 +38,7 @@ export default function HistoryView({ data, onSelectDate }: Props) {
           const topCats = Object.entries(catCounts)
             .sort((a, b) => b[1] - a[1])
             .slice(0, 3)
-            .map(([cat]) => CATEGORIES.find((c) => c.value === cat)!);
+            .map(([cat]) => DEFAULT_CATEGORIES.find((c) => c.value === cat)!);
 
           const dayOfWeek  = format(parseISO(date), "EEEE");
           const dateLabel  = format(parseISO(date), "MMMM d, yyyy");

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSheetsClient, SHEET_ID, appendRows } from "@/lib/sheets-client";
-import { TimeBlock, CATEGORIES } from "@/lib/types";
+import { TimeBlock, DEFAULT_CATEGORIES } from "@/lib/types";
 import { format, parseISO } from "date-fns";
 
 function toTime(h: number) {
@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     const { date, block }: { date: string; block: TimeBlock } = await req.json();
 
     const dayName  = format(parseISO(date), "EEEE");
-    const catLabel = CATEGORIES.find((c) => c.value === block.category)?.label ?? block.category;
+    const catLabel = DEFAULT_CATEGORIES.find((c: any) => c.value === block.category)?.label || block.category;
     const syncedAt = new Date().toISOString();
 
     const row = [

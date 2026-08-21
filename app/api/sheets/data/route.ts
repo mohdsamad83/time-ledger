@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSheetsClient, SHEET_ID } from "@/lib/sheets-client";
-import { AppData, DayData, TimeBlock, DaySetup, EveningReview, Category, CATEGORIES, EnergyLevel, DelegateOpt } from "@/lib/types";
+import { AppData, DayData, TimeBlock, DaySetup, EveningReview, Category, DEFAULT_CATEGORIES, EnergyLevel, DelegateOpt } from "@/lib/types";
 
 // Helper to parse "AM/PM" string into a 24-hour integer
 function parseTimeStr(timeStr: string): number {
@@ -21,12 +21,13 @@ export async function GET() {
     const sheets = getSheetsClient();
     const sheetId = SHEET_ID();
 
-    const [logRes, setupRes, eveningRes, targetsRes, dailyTargetsRes] = await Promise.all([
+    const [logRes, setupRes, eveningRes, targetsRes, dailyTargetsRes, categoriesRes] = await Promise.all([
       sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "📅 Time Log!A2:N" }).catch(() => ({ data: { values: [] } })),
       sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "🌅 Day Setup!A2:K" }).catch(() => ({ data: { values: [] } })),
       sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "🌙 Evening Reviews!A2:L" }).catch(() => ({ data: { values: [] } })),
       sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "🎯 Targets!A2:B" }).catch(() => ({ data: { values: [] } })),
       sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "✅ Daily Targets!A2:C" }).catch(() => ({ data: { values: [] } })),
+      sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "🏷️ Categories!A2:E" }).catch(() => ({ data: { values: [] } })),
     ]);
 
     const logRows = logRes.data.values ?? [];
@@ -34,10 +35,20 @@ export async function GET() {
     const eveningRows = eveningRes.data.values ?? [];
     const targetRows = targetsRes.data.values ?? [];
     const dailyTargetRows = dailyTargetsRes.data.values ?? [];
+    const categoryRows = categoriesRes.data.values ?? [];
 
-    const appData: AppData = { days: {}, version: "2.0", targets: [] };
+    const appData: AppData = { days: {}, version: "2.0", targets: [], categories: [] };
 
-    // 1. Parse Targets
+    // 0. Parse Categories
+    if (categoryRows.length > 0) {
+      appData.categories = categoryRows.map(r => ({
+        value: r[0] || "",
+        label: r[1] || "",
+        color: r[2] || "",
+        bg: r[3] || "",
+        emoji: r[4] || "",
+      })).filter(c => c.value);
+    }
     appData.targets = targetRows.map(r => r[0]).filter(Boolean);
 
     // 1.5 Parse Daily Target Toggles
@@ -102,7 +113,7 @@ export async function GET() {
 
       const startHour = parseInt(row[2] ?? "0", 10);
       const catLabel = row[5];
-      const category = CATEGORIES.find(c => c.label === catLabel)?.value ?? "deep-work";
+      const category = DEFAULT_CATEGORIES.find(c => c.label === catLabel)?.value ?? "deep-work";
       
       const priorityVal = row[8];
       let contributedPriority = priorityVal;
