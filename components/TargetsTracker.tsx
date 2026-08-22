@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { format, getDaysInMonth, startOfMonth, addMonths, subMonths } from "date-fns";
+import { format, getDaysInMonth, startOfMonth, addMonths, subMonths, isSameMonth, isBefore } from "date-fns";
 import { AppData } from "@/lib/types";
 import { ChevronLeft, ChevronRight, Target, X, ChevronDown } from "lucide-react";
 
@@ -35,6 +35,14 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Prop
   });
 
   // Calculate row stats
+  const now = new Date();
+  let elapsedDays = 0;
+  if (isSameMonth(currentMonth, now)) {
+    elapsedDays = now.getDate();
+  } else if (isBefore(currentMonth, now)) {
+    elapsedDays = daysInMonth;
+  }
+
   const rowStats = targets.map(target => {
     let completed = 0;
     days.forEach(dateStr => {
@@ -43,7 +51,7 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Prop
         completed++;
       }
     });
-    return { target, completed, percent: Math.round((completed / daysInMonth) * 100) };
+    return { target, completed, percent: Math.round((completed / daysInMonth) * 100), expected: elapsedDays };
   });
 
   // Calculate column stats
@@ -215,6 +223,9 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Prop
               <th className="p-2 border font-medium text-left min-w-[150px]" style={{ borderColor: "var(--border)", color: "var(--muted)", background: "var(--s2)" }}>
                 Targets
               </th>
+              <th className="p-2 border font-medium w-16" title="Ideal completion by today" style={{ borderColor: "var(--border)", color: "var(--muted)", background: "var(--s2)" }}>
+                Ideal
+              </th>
               <th className="p-2 border font-medium w-16" style={{ borderColor: "var(--border)", color: "var(--muted)", background: "var(--s2)" }}>
                 %
               </th>
@@ -228,7 +239,7 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Prop
           <tbody>
             {targets.length === 0 && (
                <tr>
-                 <td colSpan={days.length + 2} className="p-8 text-center text-[var(--faint)]">
+                 <td colSpan={days.length + 3} className="p-8 text-center text-[var(--faint)]">
                    No targets configured. Click "Edit Targets" to add some!
                  </td>
                </tr>
@@ -239,6 +250,9 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Prop
                 <tr key={target} className="hover:bg-white/5 transition-colors">
                   <td className="p-2 border font-semibold text-left text-xs truncate" style={{ borderColor: "var(--border)", color: "var(--text)" }}>
                     {target}
+                  </td>
+                  <td className="p-2 border text-xs font-bold text-[var(--faint)]" style={{ borderColor: "var(--border)" }}>
+                    {stat.expected}
                   </td>
                   <td className="p-2 border text-xs font-bold" style={{ borderColor: "var(--border)", color: "var(--primary)" }}>
                     {stat.percent}%
@@ -273,7 +287,7 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Prop
           <tfoot>
             {/* Progress % */}
             <tr>
-              <td colSpan={2} className="p-2 border font-medium text-right text-xs" style={{ borderColor: "var(--border)", color: "var(--muted)", background: "var(--s2)" }}>Progress %</td>
+              <td colSpan={3} className="p-2 border font-medium text-right text-xs" style={{ borderColor: "var(--border)", color: "var(--muted)", background: "var(--s2)" }}>Progress %</td>
               {colStats.map((stat, i) => (
                 <td key={i} className="p-1 border text-[10px] font-bold" style={{ borderColor: "var(--border)", color: "var(--primary)", background: "var(--s2)" }}>
                   {stat.percent}%
@@ -282,7 +296,7 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Prop
             </tr>
             {/* Complete */}
             <tr>
-              <td colSpan={2} className="p-2 border font-medium text-right text-xs" style={{ borderColor: "var(--border)", color: "var(--muted)", background: "var(--s2)" }}>Complete</td>
+              <td colSpan={3} className="p-2 border font-medium text-right text-xs" style={{ borderColor: "var(--border)", color: "var(--muted)", background: "var(--s2)" }}>Complete</td>
               {colStats.map((stat, i) => (
                 <td key={i} className="p-1 border text-[10px]" style={{ borderColor: "var(--border)", color: "var(--text)" }}>
                   {stat.completed}
@@ -291,7 +305,7 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Prop
             </tr>
             {/* Incomplete */}
             <tr>
-              <td colSpan={2} className="p-2 border font-medium text-right text-xs" style={{ borderColor: "var(--border)", color: "var(--muted)", background: "var(--s2)" }}>Incomplete</td>
+              <td colSpan={3} className="p-2 border font-medium text-right text-xs" style={{ borderColor: "var(--border)", color: "var(--muted)", background: "var(--s2)" }}>Incomplete</td>
               {colStats.map((stat, i) => (
                 <td key={i} className="p-1 border text-[10px]" style={{ borderColor: "var(--border)", color: "var(--faint)" }}>
                   {stat.incomplete}
