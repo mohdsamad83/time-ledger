@@ -10,12 +10,13 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 
 import {
-  DaySetup, EveningReview, TimeBlock, AppData, SyncState,
+  DaySetup, EveningReview, TimeBlock, AppData, SyncState, TargetMeta
 } from "@/lib/types";
 import {
   fetchAppData, getDay, applySetup, applyBlock, applyEvening,
   applySetupSynced, applyBlockSynced, applyEveningSynced,
-  applyTaskToggle, applyResetDay, applyTargetToggle, applyTargetsUpdate
+  applyTaskToggle, applyResetDay, applyTargetToggle,
+  applyMonthlyTargetsUpdate
 } from "@/lib/storage";
 
 import MorningSetup    from "@/components/MorningSetup";
@@ -212,12 +213,12 @@ export default function App() {
     );
   };
 
-  const handleUpdateTargets = async (targets: string[]) => {
+  const handleUpdateTargets = async (monthlyTargets: Record<string, TargetMeta[]>) => {
     if (!appData) return;
-    setAppData(prev => prev ? applyTargetsUpdate(prev, targets) : prev);
+    setAppData(prev => prev ? applyMonthlyTargetsUpdate(prev, monthlyTargets) : prev);
     await syncToSheets(
       "/api/sheets/targets",
-      { targets },
+      { monthlyTargets },
       () => {}
     );
   };
@@ -241,8 +242,13 @@ export default function App() {
   const isToday = viewDate === TODAY;
   const activeCategories = appData.categories || DEFAULT_CATEGORIES;
 
+  // Monthly targets for active view
+  const currentMonthStr = viewDate.substring(0, 7);
+  const currentTargets = appData.monthlyTargets?.[currentMonthStr]?.map(t => t.name) || 
+    (appData.targets && appData.targets.length > 0 ? appData.targets : []);
+
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ background: "var(--bg)", color: "var(--text)" }}>
 
       {/* ── Top Nav ────────────────────────────────────────────────────────── */}
       <header
@@ -358,7 +364,7 @@ export default function App() {
             {!dayData.setup ? (
               <MorningSetup 
                 date={viewDate} 
-                targets={appData.targets || []} 
+                targets={currentTargets} 
                 onComplete={handleSetupComplete} 
               />
             ) : (
@@ -367,7 +373,7 @@ export default function App() {
                 setup={dayData.setup}
                 blocks={dayData.blocks}
                 dayTargets={dayData.targets || {}}
-                allTargets={appData.targets || []}
+                allTargets={currentTargets}
                 categories={activeCategories}
                 syncState={syncState}
                 onLogBlock={(hour) => setModalHour(hour)}
@@ -424,7 +430,7 @@ export default function App() {
         <BlockModal
           hour={modalHour}
           block={dayData.blocks[modalHour] ?? null}
-          targets={appData.targets || []}
+          targets={currentTargets}
           categories={activeCategories}
           onSave={handleBlockSave}
           onClose={() => setModalHour(null)}

@@ -25,7 +25,7 @@ export async function GET() {
       sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "📅 Time Log!A2:N" }).catch(() => ({ data: { values: [] } })),
       sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "🌅 Day Setup!A2:K" }).catch(() => ({ data: { values: [] } })),
       sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "🌙 Evening Reviews!A2:L" }).catch(() => ({ data: { values: [] } })),
-      sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "🎯 Targets!A2:B" }).catch(() => ({ data: { values: [] } })),
+      sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "🎯 Targets!A2:D" }).catch(() => ({ data: { values: [] } })),
       sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "✅ Daily Targets!A2:C" }).catch(() => ({ data: { values: [] } })),
       sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "🏷️ Categories!A2:E" }).catch(() => ({ data: { values: [] } })),
     ]);
@@ -49,7 +49,21 @@ export async function GET() {
         emoji: r[4] || "",
       })).filter(c => c.value);
     }
-    appData.targets = targetRows.map(r => r[0]).filter(Boolean);
+    appData.monthlyTargets = {};
+    
+    targetRows.forEach(r => {
+      // Check if row[0] is a Month (YYYY-MM)
+      if (r[0] && /^\d{4}-\d{2}$/.test(r[0])) {
+        const month = r[0];
+        const name = r[1];
+        const accomplishedAt = r[2] || null;
+        if (!appData.monthlyTargets![month]) appData.monthlyTargets![month] = [];
+        if (name) appData.monthlyTargets![month].push({ name, accomplishedAt });
+      } else if (r[0]) {
+        // Legacy target
+        appData.targets!.push(r[0]);
+      }
+    });
 
     // 1.5 Parse Daily Target Toggles
     for (const row of dailyTargetRows) {

@@ -2,7 +2,7 @@
 import { AppData, DayData, DaySetup, EveningReview, TimeBlock, DEFAULT_TARGETS, DEFAULT_CATEGORIES, CustomCategory } from "./types";
 
 export async function fetchAppData(): Promise<AppData> {
-  if (typeof window === "undefined") return { days: {}, version: "2.0", targets: DEFAULT_TARGETS, categories: DEFAULT_CATEGORIES };
+  if (typeof window === "undefined") return { days: {}, version: "2.0", targets: DEFAULT_TARGETS, categories: DEFAULT_CATEGORIES, monthlyTargets: {} };
   
   try {
     const res = await fetch("/api/sheets/data");
@@ -14,11 +14,14 @@ export async function fetchAppData(): Promise<AppData> {
       if (!json.data.categories || json.data.categories.length === 0) {
         json.data.categories = [...DEFAULT_CATEGORIES];
       }
+      if (!json.data.monthlyTargets) {
+        json.data.monthlyTargets = {};
+      }
       return json.data;
     }
-    return { days: {}, version: "2.0", targets: DEFAULT_TARGETS, categories: DEFAULT_CATEGORIES };
+    return { days: {}, version: "2.0", targets: DEFAULT_TARGETS, categories: DEFAULT_CATEGORIES, monthlyTargets: {} };
   } catch {
-    return { days: {}, version: "2.0", targets: DEFAULT_TARGETS, categories: DEFAULT_CATEGORIES };
+    return { days: {}, version: "2.0", targets: DEFAULT_TARGETS, categories: DEFAULT_CATEGORIES, monthlyTargets: {} };
   }
 }
 
@@ -104,9 +107,11 @@ export function applyResetDay(data: AppData, date: string): AppData {
   return next;
 }
 
-export function applyTargetsUpdate(data: AppData, targets: string[]): AppData {
+import { TargetMeta } from "./types";
+
+export function applyMonthlyTargetsUpdate(data: AppData, monthlyTargets: Record<string, TargetMeta[]>): AppData {
   const next = structuredClone(data);
-  next.targets = targets;
+  next.monthlyTargets = monthlyTargets;
   return next;
 }
 

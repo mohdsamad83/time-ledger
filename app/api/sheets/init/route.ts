@@ -44,7 +44,7 @@ const SHEETS_CONFIG = [
   },
   {
     title: "🎯 Targets",
-    headers: ["Target Name", "Added At"],
+    headers: ["Month", "Target Name", "Accomplished Date", "Last Synced"],
     color: { red: 0.05, green: 0.08, blue: 0.09 },
   },
   {

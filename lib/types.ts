@@ -94,9 +94,15 @@ export const DEFAULT_TARGETS = [
   "Mad - I Project", "Amazon Certification", "Google Arcade", "Gate prep"
 ];
 
+export interface TargetMeta {
+  name: string;
+  accomplishedAt?: string | null; // "YYYY-MM-DD"
+}
+
 export interface AppData {
   days:    { [date: string]: DayData };
-  targets?: string[];                       // Global list of targets to track
+  targets?: string[];                       // [DEPRECATED] Legacy global list
+  monthlyTargets?: Record<string, TargetMeta[]>; // Keyed by month "YYYY-MM"
   categories?: CustomCategory[];            // Custom dynamic categories
   version: string;
 }
