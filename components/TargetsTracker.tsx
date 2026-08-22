@@ -51,7 +51,7 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Prop
         completed++;
       }
     });
-    return { target, completed, percent: Math.round((completed / daysInMonth) * 100), expected: elapsedDays };
+    return { target, completed, percent: Math.round((completed / daysInMonth) * 100), expected: Math.round((elapsedDays / daysInMonth) * 100) + "%" };
   });
 
   // Calculate column stats
@@ -75,7 +75,7 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Prop
   const lostLevel = totalPossible > 0 ? (100 - parseFloat(currentLevel)).toFixed(2) : "0.00";
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 fade-up">
+    <div className="w-full px-4 mx-auto space-y-6 fade-up">
       {/* Header & Month Navigation */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
