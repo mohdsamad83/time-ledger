@@ -35,10 +35,12 @@ export default function HistoryView({ data, onSelectDate }: Props) {
           // Category pills (top 3)
           const catCounts: { [k: string]: number } = {};
           blocks.forEach((b) => { catCounts[b.category] = (catCounts[b.category] ?? 0) + 1; });
-          const topCats = Object.entries(catCounts)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 3)
-            .map(([cat]) => DEFAULT_CATEGORIES.find((c) => c.value === cat)!);
+            const fallbackCat = { label: "Unknown", color: "#9CA3AF", emoji: "📦", value: "unknown", bg: "rgba(156, 163, 175, 0.1)" };
+            const activeCats = data.categories || DEFAULT_CATEGORIES;
+            const topCats = Object.entries(catCounts)
+              .sort((a, b) => b[1] - a[1])
+              .slice(0, 3)
+              .map(([cat]) => activeCats.find((c) => c.value === cat) || { ...fallbackCat, label: cat });
 
           const dayOfWeek  = format(parseISO(date), "EEEE");
           const dateLabel  = format(parseISO(date), "MMMM d, yyyy");
