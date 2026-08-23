@@ -30,10 +30,10 @@ export default function BlockModal({ hour, block, targets, categories: categorie
   );
   const [energy,       setEnergy]       = useState<EnergyLevel>(block?.energy   ?? "medium");
   const [wasPlanned,   setWasPlanned]   = useState(block?.wasPlanned   ?? true);
-  const [contributedPriority, setContributedPriority] = useState<PriorityTag>(
-    block?.contributedPriority ?? (block?.contributedToTopPriority ? "P1" : "None")
+  const [contributedTargets, setContributedTargets] = useState<{name: string, percentage: number}[]>(
+    block?.contributedTargets ?? (block?.contributedPriority && block.contributedPriority !== "None" ? [{ name: block.contributedPriority, percentage: 100 }] : [])
   );
-  const [couldDel,     setCouldDel]     = useState<DelegateOpt>(block?.couldDelegate ?? "no");
+  const [couldDel,     setCouldDel]     = useState<DelegateOpt>(block?.couldDelegate   ?? "na");
   const [satisfaction, setSatisfaction] = useState(block?.satisfaction ?? 3);
   const [contribution, setContribution] = useState(block?.contribution ?? "");
   const [notes,        setNotes]        = useState(block?.notes        ?? "");
@@ -54,8 +54,9 @@ export default function BlockModal({ hour, block, targets, categories: categorie
       categories,
       energy,
       wasPlanned,
-      contributedToTopPriority: contributedPriority !== "None",
-      contributedPriority,
+      contributedToTopPriority: contributedTargets.length > 0,
+      contributedPriority: contributedTargets.length > 0 ? contributedTargets[0].name : "None",
+      contributedTargets,
       couldDelegate:           couldDel,
       satisfaction,
       contribution:            contribution.trim(),
@@ -201,25 +202,54 @@ export default function BlockModal({ hour, block, targets, categories: categorie
               <p style={{ color: "var(--muted)" }} className="text-xs mb-2">
                 Did this contribute to: <span style={{ color: "var(--text)" }} className="italic">any of your Targets</span>?
               </p>
-              <div className="flex flex-col gap-2 mt-2">
-                {[...targets, "None"].map((v) => {
-                  const isSelected = contributedPriority === v;
+              <div className="flex flex-col gap-3 mt-3">
+                {targets.length === 0 && <span className="text-xs text-[var(--faint)]">No targets added for this month yet.</span>}
+                {targets.map((v) => {
+                  const targetObj = contributedTargets.find(t => t.name === v);
+                  const isSelected = !!targetObj;
                   return (
-                    <button
-                      key={v}
-                      onClick={() => setContributedPriority(v)}
-                      className="px-4 py-2 rounded text-xs font-bold transition-all text-left flex items-center gap-2"
-                      style={{
-                        background: isSelected ? (v === "None" ? "#4a0d0d" : "#063e2b") : "var(--s2)",
-                        border: `1px solid ${isSelected ? (v === "None" ? "#F87171" : "#34D399") : "var(--border)"}`,
-                        color: isSelected ? (v === "None" ? "#F87171" : "#34D399") : "var(--faint)",
-                      }}
-                    >
-                      <span className="w-8 flex-shrink-0">{v === "None" ? "✗" : `✓`}</span>
-                      <span className="truncate font-normal" style={{ color: isSelected ? "inherit" : "var(--text)" }}>
-                        {v === "None" ? "Did not contribute to a target" : v}
-                      </span>
-                    </button>
+                    <div key={v} className="flex flex-col gap-2">
+                      <button
+                        onClick={() => {
+                          if (isSelected) {
+                            setContributedTargets(contributedTargets.filter(t => t.name !== v));
+                          } else {
+                            setContributedTargets([...contributedTargets, { name: v, percentage: 50 }]);
+                          }
+                        }}
+                        className="px-4 py-2 rounded text-xs font-bold transition-all text-left flex items-center gap-2"
+                        style={{
+                          background: isSelected ? "#063e2b" : "var(--s2)",
+                          border: `1px solid ${isSelected ? "#34D399" : "var(--border)"}`,
+                          color: isSelected ? "#34D399" : "var(--faint)",
+                        }}
+                      >
+                        <span className="w-8 flex-shrink-0">✓</span>
+                        <span className="truncate font-normal" style={{ color: isSelected ? "inherit" : "var(--text)" }}>
+                          {v}
+                        </span>
+                      </button>
+                      
+                      {isSelected && (
+                        <div className="pl-12 flex items-center gap-4 fade-up">
+                          <input 
+                            type="range" 
+                            min="5" 
+                            max="100" 
+                            step="5" 
+                            value={targetObj.percentage}
+                            onChange={(e) => {
+                              const newPct = parseInt(e.target.value, 10);
+                              setContributedTargets(contributedTargets.map(t => t.name === v ? { ...t, percentage: newPct } : t));
+                            }}
+                            className="flex-1 accent-emerald-500 h-1.5 bg-[var(--border)] rounded-lg appearance-none cursor-pointer"
+                          />
+                          <span className="text-xs font-mono font-bold w-12 text-right" style={{ color: "var(--primary)" }}>
+                            {targetObj.percentage}%
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
               </div>

@@ -25,7 +25,9 @@ export async function POST(req: NextRequest) {
       categoriesStr,
       block.energy,
       block.wasPlanned ? "Yes" : "No",
-      block.contributedPriority ? (block.contributedPriority === "None" ? "No" : block.contributedPriority) : (block.contributedToTopPriority ? "P1" : "No"),
+      block.contributedTargets && block.contributedTargets.length > 0
+        ? block.contributedTargets.map(t => `${t.name}:${t.percentage}%`).join(", ")
+        : "No",
       block.couldDelegate === "na" ? "N/A" : block.couldDelegate === "yes" ? "Yes" : "No",
       block.satisfaction,
       block.contribution,

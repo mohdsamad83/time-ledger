@@ -44,10 +44,18 @@ export function applyBlock(data: AppData, date: string, block: TimeBlock): AppDa
   if (!next.days[date]) next.days[date] = { date, setup: null, blocks: {}, eveningReview: null, targets: {} };
   next.days[date].blocks[block.startHour] = block;
 
-  if (block.contributedPriority && block.contributedPriority !== "None") {
-    if (!next.days[date].targets) next.days[date].targets = {};
-    next.days[date].targets![block.contributedPriority] = true;
-  }
+  if (!next.days[date].targets) next.days[date].targets = {};
+  
+  const targetProgress: Record<string, number> = {};
+  Object.values(next.days[date].blocks).forEach(b => {
+    b.contributedTargets?.forEach(t => {
+      targetProgress[t.name] = (targetProgress[t.name] || 0) + t.percentage;
+    });
+  });
+
+  Object.entries(targetProgress).forEach(([tName, pct]) => {
+    next.days[date].targets![tName] = pct >= 100;
+  });
   return next;
 }
 

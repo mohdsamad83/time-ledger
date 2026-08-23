@@ -49,8 +49,9 @@ export interface TimeBlock {
   categories:              string[];        // Array of category values
   energy:                  EnergyLevel;
   wasPlanned:              boolean;
-  contributedToTopPriority: boolean; // deprecated, use contributedPriority
-  contributedPriority?:    PriorityTag;
+  contributedToTopPriority: boolean; // [DEPRECATED] 
+  contributedPriority?:    PriorityTag; // [DEPRECATED]
+  contributedTargets?:     { name: string; percentage: number }[];
   couldDelegate:           DelegateOpt;
   satisfaction:            number;          // 1–5
   contribution:            string;          // Drucker Q: "What did I contribute?"

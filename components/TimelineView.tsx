@@ -42,13 +42,22 @@ export default function TimelineView({
   const isToday = date === localDate;
   const currentHour = nowHour();
   const loggedCount  = Object.keys(blocks).length;
+  // Compute cumulative target progress for the day
+  const targetProgress: Record<string, number> = {};
+  Object.values(blocks).forEach(b => {
+    b.contributedTargets?.forEach(t => {
+      targetProgress[t.name] = Math.min((targetProgress[t.name] || 0) + t.percentage, 100);
+    });
+  });
+
+  const completedTargetsCount = allTargets.filter(t => targetProgress[t] >= 100).length;
   const plannedCount = Object.values(blocks).filter((b) => b.wasPlanned).length;
   const priorityCount = Object.values(blocks).filter((b) => b.contributedPriority ? b.contributedPriority !== "None" : b.contributedToTopPriority).length;
   const avgSat = loggedCount > 0
     ? (Object.values(blocks).reduce((a, b) => a + b.satisfaction, 0) / loggedCount).toFixed(1)
     : "—";
 
-  const completedTargetsCount = allTargets.reduce((count, t) => count + (dayTargets[t] ? 1 : 0), 0);
+
   const commitments = setup.tasks || ["", "", ""];
   
   const handleSelectCommitment = (index: number, value: string) => {
@@ -88,24 +97,24 @@ export default function TimelineView({
                   ))}
                 </select>
                 {commitments[i] && (
-                  <div className="mt-2 ml-1.5 flex items-center gap-2 text-xs">
-                    <button 
-                      onClick={() => onToggleTarget(commitments[i])}
-                      className="w-4 h-4 flex items-center justify-center rounded border transition-colors"
-                      style={{
-                        background: dayTargets[commitments[i]] ? "#34D399" : "transparent",
-                        borderColor: dayTargets[commitments[i]] ? "#34D399" : "var(--faint)"
-                      }}
-                    >
-                      {dayTargets[commitments[i]] && (
-                        <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
-                          <path d="M2.5 6L5 8.5L9.5 3.5" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      )}
-                    </button>
-                    <span style={{ color: dayTargets[commitments[i]] ? "#34D399" : "var(--muted)" }}>
-                      {dayTargets[commitments[i]] ? "Completed" : "Mark as completed"}
-                    </span>
+                  <div className="mt-2 text-xs">
+                    <div className="flex justify-between items-center mb-1">
+                      <span style={{ color: targetProgress[commitments[i]] >= 100 ? "#34D399" : "var(--muted)" }}>
+                        {targetProgress[commitments[i]] >= 100 ? "Completed" : "Progress"}
+                      </span>
+                      <span className="font-mono font-bold" style={{ color: "var(--text)" }}>
+                        {targetProgress[commitments[i]] || 0}%
+                      </span>
+                    </div>
+                    <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: "var(--border)" }}>
+                      <div 
+                        className="h-full transition-all duration-500 ease-out" 
+                        style={{ 
+                          width: `${targetProgress[commitments[i]] || 0}%`,
+                          background: targetProgress[commitments[i]] >= 100 ? "#34D399" : "var(--primary)"
+                        }} 
+                      />
+                    </div>
                   </div>
                 )}
               </div>
@@ -139,41 +148,54 @@ export default function TimelineView({
             </div>
             <div className="flex flex-col gap-2">
               {allTargets.map((target) => {
-                const done = dayTargets[target] || false;
+                const progress = targetProgress[target] || 0;
+                const done = progress >= 100;
                 const isCommitment = commitments.includes(target);
                 return (
-                  <button
+                  <div
                     key={target}
-                    onClick={() => onToggleTarget(target)}
-                    className="w-full text-left rounded-lg px-3 py-2.5 transition-all flex items-center gap-3 group"
+                    className="w-full text-left rounded-lg px-3 py-2.5 transition-all flex flex-col gap-2 group"
                     style={{
                       background: done ? "rgba(52, 211, 153, 0.1)" : "var(--s2)",
                       border: `1px solid ${done ? "rgba(52, 211, 153, 0.3)" : "var(--border)"}`,
                     }}
                   >
-                    <div
-                      className="w-4 h-4 rounded flex items-center justify-center flex-shrink-0 transition-all"
-                      style={{
-                        background: done ? "#34D399" : "transparent",
-                        border: `1.5px solid ${done ? "#34D399" : "var(--faint)"}`,
-                      }}
-                    >
-                      {done && (
-                        <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
-                          <path d="M2.5 6L5 8.5L9.5 3.5" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-4 h-4 rounded flex items-center justify-center flex-shrink-0 transition-all"
+                        style={{
+                          background: done ? "#34D399" : "transparent",
+                          border: `1.5px solid ${done ? "#34D399" : "var(--faint)"}`,
+                        }}
+                      >
+                        {done && (
+                          <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+                            <path d="M2.5 6L5 8.5L9.5 3.5" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        )}
+                      </div>
+                      <span
+                        className="text-xs truncate font-medium flex-1"
+                        style={{ color: done ? "#34D399" : "var(--text)" }}
+                      >
+                        {target}
+                      </span>
+                      {isCommitment && (
+                        <Star size={12} className="text-yellow-500 opacity-50" />
                       )}
                     </div>
-                    <span
-                      className="text-xs truncate font-medium flex-1"
-                      style={{ color: done ? "#34D399" : "var(--text)" }}
-                    >
-                      {target}
-                    </span>
-                    {isCommitment && (
-                      <Star size={12} className="text-yellow-500 opacity-50" />
+                    {progress > 0 && !done && (
+                      <div className="w-full pl-7">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-[10px]" style={{ color: "var(--faint)" }}>Progress</span>
+                          <span className="text-[10px] font-mono font-bold" style={{ color: "var(--primary)" }}>{progress}%</span>
+                        </div>
+                        <div className="w-full h-1 rounded-full overflow-hidden" style={{ background: "var(--border)" }}>
+                          <div className="h-full" style={{ width: `${progress}%`, background: "var(--primary)" }} />
+                        </div>
+                      </div>
                     )}
-                  </button>
+                  </div>
                 );
               })}
             </div>
@@ -240,17 +262,11 @@ export default function TimelineView({
                                 Reactive
                               </span>
                             )}
-                            {(block.contributedPriority && block.contributedPriority !== "None") ? (
-                              <span className="cat-badge" style={{ background: "#063e2b", color: "#34D399" }}>
-                                ✓ {block.contributedPriority}
+                            {(block.contributedTargets || []).map((t, idx) => (
+                              <span key={idx} className="cat-badge" style={{ background: "#063e2b", color: "#34D399" }}>
+                                ✓ {t.name} ({t.percentage}%)
                               </span>
-                            ) : (
-                              block.contributedToTopPriority && (
-                                <span className="cat-badge" style={{ background: "#063e2b", color: "#34D399" }}>
-                                  ✓ P1
-                                </span>
-                              )
-                            )}
+                            ))}
                           </div>
                           <p style={{ color: "var(--text)" }} className="text-base leading-snug truncate font-medium">{block.activity}</p>
                           {block.contribution && (

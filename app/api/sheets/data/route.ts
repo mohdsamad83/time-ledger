@@ -141,13 +141,26 @@ export async function GET() {
       }
       if (categories.length === 0) categories.push("deep-work");
       
-      const priorityVal = row[8];
+      const priorityVal = row[8] || "";
       let contributedPriority = priorityVal;
       let contributedToTopPriority = false;
+      const contributedTargets: { name: string; percentage: number }[] = [];
+
       if (priorityVal === "No" || !priorityVal) {
         contributedPriority = "None";
       } else if (priorityVal === "P1") {
         contributedToTopPriority = true;
+      } else {
+        // Parse "TargetName: 20%, OtherTarget: 50%" or legacy "TargetName"
+        const tParts = priorityVal.split(",");
+        for (const pt of tParts) {
+           const [name, pctStr] = pt.split(":");
+           if (name && pctStr) {
+             contributedTargets.push({ name: name.trim(), percentage: parseInt(pctStr, 10) || 100 });
+           } else if (name) {
+             contributedTargets.push({ name: name.trim(), percentage: 100 });
+           }
+        }
       }
 
       const delegateVal = row[9];
@@ -164,6 +177,7 @@ export async function GET() {
         wasPlanned: row[7] === "Yes",
         contributedToTopPriority,
         contributedPriority,
+        contributedTargets,
         couldDelegate,
         satisfaction: parseInt(row[10] ?? "3", 10),
         contribution: row[11] ?? "",
