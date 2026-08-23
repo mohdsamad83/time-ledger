@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { format, getDaysInMonth, startOfMonth, addMonths, subMonths, isSameMonth, isBefore } from "date-fns";
 import { AppData, TargetMeta } from "@/lib/types";
+import { AreaChart, Area, ResponsiveContainer } from "recharts";
 import { ChevronLeft, ChevronRight, Target, X, ChevronDown, Trophy, CheckCircle2 } from "lucide-react";
 
 interface Props {
@@ -384,6 +385,35 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Prop
             })}
           </tbody>
           <tfoot>
+            {/* ECG Trendline Row */}
+            <tr>
+              <td colSpan={4} className="p-2 border font-medium text-right text-xs" style={{ borderColor: "var(--border)", color: "var(--muted)", background: "var(--s2)" }}>
+                Trend
+              </td>
+              <td colSpan={days.length} className="p-0 border relative" style={{ borderColor: "var(--border)", background: "var(--s2)" }}>
+                <div className="w-full h-12 opacity-80 mt-1">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={colStats.map((s, i) => ({ day: i + 1, percent: s.percent }))} margin={{ top: 5, right: 16, left: 16, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorPercent" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="var(--primary)" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <Area 
+                        type="monotone" 
+                        dataKey="percent" 
+                        stroke="var(--primary)" 
+                        fillOpacity={1} 
+                        fill="url(#colorPercent)" 
+                        strokeWidth={2}
+                        isAnimationActive={false}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </td>
+            </tr>
             {/* Progress % */}
             <tr>
               <td colSpan={4} className="p-2 border font-medium text-right text-xs" style={{ borderColor: "var(--border)", color: "var(--muted)", background: "var(--s2)" }}>Progress %</td>
