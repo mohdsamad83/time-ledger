@@ -126,8 +126,20 @@ export async function GET() {
       if (!appData.days[date]) appData.days[date] = { date, setup: null, blocks: {}, eveningReview: null };
 
       const startHour = parseInt(row[2] ?? "0", 10);
-      const catLabel = row[5];
-      const category = DEFAULT_CATEGORIES.find(c => c.label === catLabel)?.value ?? "deep-work";
+      const catRaw = row[5] || "";
+      const categories: string[] = [];
+      const parts = catRaw.split(",").map((s: string) => s.trim()).filter(Boolean);
+      for (const part of parts) {
+        // Try to match as a label first (legacy fallback)
+        const legacyMatch = DEFAULT_CATEGORIES.find(c => c.label === part);
+        if (legacyMatch) {
+          categories.push(legacyMatch.value);
+        } else {
+          // Assume it's a value
+          categories.push(part);
+        }
+      }
+      if (categories.length === 0) categories.push("deep-work");
       
       const priorityVal = row[8];
       let contributedPriority = priorityVal;
@@ -147,8 +159,8 @@ export async function GET() {
         id: `${startHour}-${Date.now()}-${Math.random()}`,
         startHour,
         activity: row[4] ?? "",
-        category,
-        energy: (row[6] as EnergyLevel) ?? "medium",
+        categories,
+        energy: (row[6] as any) ?? "medium",
         wasPlanned: row[7] === "Yes",
         contributedToTopPriority,
         contributedPriority,

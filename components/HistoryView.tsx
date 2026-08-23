@@ -34,8 +34,13 @@ export default function HistoryView({ data, onSelectDate }: Props) {
 
           // Category pills (top 3)
           const catCounts: { [k: string]: number } = {};
-          blocks.forEach((b) => { catCounts[b.category] = (catCounts[b.category] ?? 0) + 1; });
-            const fallbackCat = { label: "Unknown", color: "#9CA3AF", emoji: "📦", value: "unknown", bg: "rgba(156, 163, 175, 0.1)" };
+          blocks.forEach((b) => { 
+            const cats = b.categories || (b.category ? [b.category] : []);
+            cats.forEach(c => {
+              if (c) catCounts[c] = (catCounts[c] ?? 0) + 1; 
+            });
+          });
+          const fallbackCat = { label: "Unknown", color: "#9CA3AF", emoji: "📦", value: "unknown", bg: "rgba(156, 163, 175, 0.1)" };
             const activeCats = data.categories || DEFAULT_CATEGORIES;
             const topCats = Object.entries(catCounts)
               .sort((a, b) => b[1] - a[1])

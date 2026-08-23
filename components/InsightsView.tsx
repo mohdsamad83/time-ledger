@@ -46,15 +46,22 @@ export default function InsightsView({ data, categories }: Props) {
         loggedDaysCount++;
         blocks.forEach(b => {
           totalHours++;
-          // A bit hacky: check if category label or value indicates productive work
-          const cat = categories.find(c => c.value === b.category);
-          const isProductive = cat && ["working", "coding", "learning"].some(kw => cat.value.includes(kw) || cat.label.toLowerCase().includes(kw));
+          const blockCategories = b.categories || (b.category ? [b.category] : []);
+          let isProductive = false;
+
+          blockCategories.forEach(cVal => {
+             const cat = categories.find(c => c.value === cVal);
+             const prod = cat && ["working", "coding", "learning"].some(kw => cat.value.includes(kw) || cat.label.toLowerCase().includes(kw));
+             if (prod) isProductive = true;
+             
+             const categoryLabel = cat ? cat.label : cVal;
+             // Split the hour if there are multiple categories
+             obj[categoryLabel] = (obj[categoryLabel] || 0) + (1 / blockCategories.length);
+          });
+
           if (isProductive) productiveHours++;
           totalSatisfaction += b.satisfaction;
           totalEnergy += b.energy === "high" ? 5 : b.energy === "medium" ? 3 : 1;
-          
-          const categoryLabel = cat ? cat.label : b.category;
-          obj[categoryLabel] = (obj[categoryLabel] || 0) + 1;
 
           // Drucker Split
           const hasPriority = b.contributedPriority ? b.contributedPriority !== "None" : b.contributedToTopPriority;

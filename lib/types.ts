@@ -45,7 +45,8 @@ export interface TimeBlock {
   id:                      string;
   startHour:               number;          // 0–23
   activity:                string;
-  category:                Category;
+  category?:               Category;        // [DEPRECATED] Legacy
+  categories:              string[];        // Array of category values
   energy:                  EnergyLevel;
   wasPlanned:              boolean;
   contributedToTopPriority: boolean; // deprecated, use contributedPriority

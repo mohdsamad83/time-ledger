@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     const { date, block }: { date: string; block: TimeBlock } = await req.json();
 
     const dayName  = format(parseISO(date), "EEEE");
-    const catLabel = DEFAULT_CATEGORIES.find((c: any) => c.value === block.category)?.label || block.category;
+    const categoriesStr = block.categories ? block.categories.join(",") : (block.category || "deep-work");
     const syncedAt = new Date().toISOString();
 
     const row = [
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       block.startHour,
       `${toTime(block.startHour)} – ${toTime(block.startHour + 1)}`,
       block.activity,
-      catLabel,
+      categoriesStr,
       block.energy,
       block.wasPlanned ? "Yes" : "No",
       block.contributedPriority ? (block.contributedPriority === "None" ? "No" : block.contributedPriority) : (block.contributedToTopPriority ? "P1" : "No"),

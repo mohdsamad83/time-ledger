@@ -200,13 +200,11 @@ export default function TimelineView({
             const block = blocks[hour];
             const isPast  = isToday && hour < currentHour;
             const isCurrent = isToday && hour === currentHour;
-            const cat = block ? (categories.find((c) => c.value === block.category) || {
-              value: block.category as Category,
-              label: block.category,
-              color: "var(--text)",
-              bg: "var(--s2)",
-              emoji: "📌",
-            }) : null;
+            
+            // Get all mapped categories for the block
+            const mappedCats = (block?.categories || []).map(cVal => categories.find((c) => c.value === cVal)).filter(Boolean) as typeof categories;
+            // Fallback for background styling
+            const mainCat = mappedCats[0];
 
             return (
               <div key={hour} className="flex gap-4 items-stretch">
@@ -225,16 +223,18 @@ export default function TimelineView({
                       onClick={() => onLogBlock(hour)}
                       className="w-full text-left rounded-xl p-4 transition-all group hover:shadow-md"
                       style={{
-                        background: cat?.bg ?? "var(--s2)",
-                        border: `1px solid ${cat?.color ?? "var(--border)"}22`,
+                        background: mainCat?.bg ?? "var(--s2)",
+                        border: `1px solid ${mainCat?.color ?? "var(--border)"}22`,
                       }}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-2 flex-wrap">
-                            <span className="cat-badge" style={{ background: `${cat?.color}22`, color: cat?.color }}>
-                              {cat?.emoji} {cat?.label}
-                            </span>
+                            {mappedCats.map((mc, idx) => (
+                              <span key={idx} className="cat-badge" style={{ background: `${mc?.color}22`, color: mc?.color }}>
+                                {mc?.emoji} {mc?.label}
+                              </span>
+                            ))}
                             {!block.wasPlanned && (
                               <span className="cat-badge" style={{ background: "#4a0d0d", color: "#F87171" }}>
                                 Reactive

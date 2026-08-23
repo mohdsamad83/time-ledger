@@ -23,9 +23,11 @@ const ENERGY_OPTIONS: { value: EnergyLevel; label: string; icon: React.ReactNode
   { value: "low",    label: "Low",    icon: <BatteryLow size={14} />, color: "#F87171" },
 ];
 
-export default function BlockModal({ hour, block, targets, categories, onSave, onClose }: Props) {
+export default function BlockModal({ hour, block, targets, categories: categoriesList, onSave, onClose }: Props) {
   const [activity,     setActivity]     = useState(block?.activity     ?? "");
-  const [category,     setCategory]     = useState<Category>(block?.category     ?? categories[0]?.value ?? "");
+  const [categories, setCategories] = useState<string[]>(
+    block?.categories ?? (block?.category ? [block.category] : ["deep-work"])
+  );
   const [energy,       setEnergy]       = useState<EnergyLevel>(block?.energy   ?? "medium");
   const [wasPlanned,   setWasPlanned]   = useState(block?.wasPlanned   ?? true);
   const [contributedPriority, setContributedPriority] = useState<PriorityTag>(
@@ -43,15 +45,13 @@ export default function BlockModal({ hour, block, targets, categories, onSave, o
     return () => window.removeEventListener("keydown", fn);
   }, [onClose]);
 
-  const selCat = categories.find((c) => c.value === category) || categories[0];
-
   const handleSave = () => {
     if (!activity.trim()) return;
     onSave({
       id:                      block?.id ?? `${hour}-${Date.now()}`,
       startHour:               hour,
       activity:                activity.trim(),
-      category,
+      categories,
       energy,
       wasPlanned,
       contributedToTopPriority: contributedPriority !== "None",
@@ -113,21 +113,29 @@ export default function BlockModal({ hour, block, targets, categories, onSave, o
               Category
             </label>
             <div className="grid grid-cols-2 gap-2">
-              {categories.map((c) => (
-                <button
-                  key={c.value}
-                  onClick={() => setCategory(c.value)}
-                  className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-left transition-all"
-                  style={{
-                    background: category === c.value ? c.bg : "var(--s2)",
-                    border: `1px solid ${category === c.value ? c.color : "var(--border)"}`,
-                    color: category === c.value ? c.color : "var(--muted)",
-                  }}
-                >
+              {categoriesList.map((c) => {
+                const isSelected = categories.includes(c.value);
+                return (
+                  <button
+                    key={c.value}
+                    onClick={() => {
+                      if (isSelected && categories.length > 1) {
+                        setCategories(categories.filter(val => val !== c.value));
+                      } else if (!isSelected) {
+                        setCategories([...categories, c.value]);
+                      }
+                    }}
+                    className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-left transition-all"
+                    style={{
+                      background: isSelected ? c.bg : "var(--s2)",
+                      border: `1px solid ${isSelected ? c.color : "var(--border)"}`,
+                      color: isSelected ? c.color : "var(--muted)",
+                    }}
+                  >
                   <span className="text-base">{c.emoji}</span>
                   <span className="font-semibold text-xs truncate">{c.label}</span>
                 </button>
-              ))}
+              )})}
             </div>
           </div>
 
