@@ -14,7 +14,9 @@ type TimeRange = 7 | 30 | 9999;
 export default function InsightsView({ data, categories }: Props) {
   const [timeRange, setTimeRange] = useState<TimeRange>(7);
 
-  const allDates = Object.keys(data.days).sort().reverse();
+  const now = new Date();
+  const localDateStr = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
+  const allDates = Object.keys(data.days).filter(d => d <= localDateStr).sort().reverse();
   const selectedDates = useMemo(() => allDates.slice(0, timeRange), [allDates, timeRange]);
 
   if (selectedDates.length === 0) {

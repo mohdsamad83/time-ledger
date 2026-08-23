@@ -8,7 +8,9 @@ interface Props {
 }
 
 export default function HistoryView({ data, onSelectDate }: Props) {
-  const dates = Object.keys(data.days).sort().reverse();
+  const now = new Date();
+  const localDateStr = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
+  const dates = Object.keys(data.days).filter(d => d <= localDateStr).sort().reverse();
 
   if (dates.length === 0) {
     return (
