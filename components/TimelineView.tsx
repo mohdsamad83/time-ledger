@@ -1,5 +1,5 @@
 "use client";
-import { TimeBlock, DaySetup, Category, CustomCategory } from "@/lib/types";
+import { TimeBlock, DaySetup, Category, CustomCategory, RoutineItem } from "@/lib/types";
 import { Plus, Edit2, Moon, CheckSquare, Star } from "lucide-react";
 import { SyncState } from "@/lib/types";
 
@@ -7,6 +7,7 @@ interface Props {
   date:          string;
   setup:         DaySetup;
   blocks:        { [hour: number]: TimeBlock };
+  routine:       RoutineItem[];
   syncState:     SyncState;
   onLogBlock:    (hour: number) => void;
   onEveningReview: () => void;
@@ -24,10 +25,32 @@ const toTime = (h: number) => {
   return `${h % 12 || 12}:00`;
 };
 
+function getRoutineForHour(hour: number, routine: RoutineItem[]): RoutineItem | null {
+  const hourStart = hour * 60;
+  const hourEnd = (hour + 1) * 60;
+  
+  for (const item of routine) {
+    if (!item.startTime || !item.endTime) continue;
+    let [sHr, sMin] = item.startTime.split(':').map(Number);
+    let [eHr, eMin] = item.endTime.split(':').map(Number);
+    let start = sHr * 60 + (sMin || 0);
+    let end = eHr * 60 + (eMin || 0);
+    
+    if (end < start) {
+      if (hourStart < end || hourEnd > start) return item;
+    } else {
+      if (Math.max(hourStart, start) < Math.min(hourEnd, end)) {
+         return item;
+      }
+    }
+  }
+  return null;
+}
+
 const nowHour = () => new Date().getHours();
 
 export default function TimelineView({
-  date, setup, blocks, onLogBlock, onEveningReview, hasEveningReview, 
+  date, setup, blocks, routine, onLogBlock, onEveningReview, hasEveningReview, 
   dayTargets, allTargets, categories, onToggleTarget, onUpdateCommitments, onExtendDay
 }: Props) {
   const hours = Array.from(
@@ -227,14 +250,30 @@ export default function TimelineView({
             const mappedCats = (block?.categories || []).map(cVal => categories.find((c) => c.value === cVal)).filter(Boolean) as typeof categories;
             // Fallback for background styling
             const mainCat = mappedCats[0];
+            const routineItem = getRoutineForHour(hour, routine);
 
             return (
               <div key={hour} className="flex gap-4 items-stretch">
-                {/* Time label */}
-                <div className="w-14 flex-shrink-0 flex flex-col items-end justify-start pt-3">
-                  <span style={{ color: "var(--faint)" }} className="font-mono text-xs">{toTime(hour)}</span>
-                  {isCurrent && (
-                    <span className="w-2 h-2 rounded-full mt-2 animate-pulse shadow-sm shadow-[var(--primary)] inline-block" style={{ background: "var(--primary)" }} />
+                {/* Time label & Routine column */}
+                <div 
+                  className="w-16 md:w-20 flex-shrink-0 flex flex-col items-end justify-start pt-3 pr-3"
+                  style={{ 
+                    borderRight: `2px solid ${routineItem ? "var(--primary)" : "var(--border)"}`,
+                    opacity: routineItem ? 1 : 0.6
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    {isCurrent && (
+                      <span className="w-2 h-2 rounded-full animate-pulse shadow-sm shadow-[var(--primary)] inline-block" style={{ background: "var(--primary)" }} />
+                    )}
+                    <span style={{ color: routineItem ? "var(--primary)" : "var(--text)" }} className="font-mono text-xs font-bold">
+                      {toTime(hour)}
+                    </span>
+                  </div>
+                  {routineItem && (
+                    <span className="text-[9px] uppercase font-bold text-right mt-1.5 leading-tight tracking-wider" style={{ color: "var(--text)" }}>
+                      {routineItem.activity}
+                    </span>
                   )}
                 </div>
 

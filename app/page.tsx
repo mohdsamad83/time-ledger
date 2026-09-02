@@ -382,6 +382,7 @@ export default function App() {
                 date={viewDate}
                 setup={dayData.setup}
                 blocks={dayData.blocks}
+                routine={appData.routine || []}
                 dayTargets={dayData.targets || {}}
                 allTargets={currentTargets}
                 categories={activeCategories}
