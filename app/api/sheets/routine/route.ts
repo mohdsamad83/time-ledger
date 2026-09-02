@@ -16,10 +16,37 @@ export async function POST(req: Request) {
     const rows = routine.map((r) => [r.activity, r.startTime, r.endTime]);
 
     // Clear existing data (keeping header)
-    await sheets.spreadsheets.values.clear({
-      spreadsheetId: sheetId,
-      range: "⏱️ Routine!A2:C",
-    });
+    try {
+      await sheets.spreadsheets.values.clear({
+        spreadsheetId: sheetId,
+        range: "⏱️ Routine!A2:C",
+      });
+    } catch (clearErr: any) {
+      if (clearErr.message?.includes("Unable to parse range")) {
+        // Sheet doesn't exist, create it
+        await sheets.spreadsheets.batchUpdate({
+          spreadsheetId: sheetId,
+          requestBody: {
+            requests: [
+              {
+                addSheet: {
+                  properties: { title: "⏱️ Routine" }
+                }
+              }
+            ]
+          }
+        });
+        // Add headers
+        await sheets.spreadsheets.values.append({
+          spreadsheetId: sheetId,
+          range: "⏱️ Routine!A1",
+          valueInputOption: "USER_ENTERED",
+          requestBody: { values: [["Activity", "Start Time", "End Time"]] },
+        });
+      } else {
+        throw clearErr;
+      }
+    }
 
     // Write new data
     if (rows.length > 0) {
