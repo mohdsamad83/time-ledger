@@ -21,13 +21,14 @@ export async function GET() {
     const sheets = getSheetsClient();
     const sheetId = SHEET_ID();
 
-    const [logRes, setupRes, eveningRes, targetsRes, dailyTargetsRes, categoriesRes] = await Promise.all([
+    const [logRes, setupRes, eveningRes, targetsRes, dailyTargetsRes, categoriesRes, routineRes] = await Promise.all([
       sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "📅 Time Log!A2:N" }).catch(() => ({ data: { values: [] } })),
       sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "🌅 Day Setup!A2:K" }).catch(() => ({ data: { values: [] } })),
       sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "🌙 Evening Reviews!A2:L" }).catch(() => ({ data: { values: [] } })),
       sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "🎯 Targets!A2:D" }).catch(() => ({ data: { values: [] } })),
       sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "✅ Daily Targets!A2:C" }).catch(() => ({ data: { values: [] } })),
       sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "🏷️ Categories!A2:E" }).catch(() => ({ data: { values: [] } })),
+      sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "⏱️ Routine!A2:C" }).catch(() => ({ data: { values: [] } })),
     ]);
 
     const logRows = logRes.data.values ?? [];
@@ -36,8 +37,18 @@ export async function GET() {
     const targetRows = targetsRes.data.values ?? [];
     const dailyTargetRows = dailyTargetsRes.data.values ?? [];
     const categoryRows = categoriesRes.data.values ?? [];
+    const routineRows = routineRes?.data?.values ?? [];
 
-    const appData: AppData = { days: {}, version: "2.0", targets: [], categories: [] };
+    const appData: AppData = { days: {}, version: "2.0", targets: [], categories: [], routine: [] };
+
+    // 0. Parse Routine
+    if (routineRows.length > 0) {
+      appData.routine = routineRows.map((r: any) => ({
+        activity: r[0] || "",
+        startTime: r[1] || "",
+        endTime: r[2] || "",
+      })).filter((c: any) => c.activity);
+    }
 
     // 0. Parse Categories
     if (categoryRows.length > 0) {

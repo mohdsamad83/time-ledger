@@ -4,13 +4,13 @@ import { useState, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import {
   Clock, BarChart2, History, CheckCircle,
-  AlertCircle, Loader2, ExternalLink, BookOpen, RotateCcw, Timer, Target, LogOut, Settings
+  AlertCircle, Loader2, ExternalLink, BookOpen, RotateCcw, Timer, Target, LogOut, Settings, CalendarDays
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
 import {
-  DaySetup, EveningReview, TimeBlock, AppData, SyncState, TargetMeta
+  DaySetup, EveningReview, TimeBlock, AppData, SyncState, TargetMeta, RoutineItem
 } from "@/lib/types";
 import {
   fetchAppData, getDay, applySetup, applyBlock, applyEvening,
@@ -29,9 +29,10 @@ import ThemeToggle     from "@/components/ThemeToggle";
 import BreakReminder   from "@/components/BreakReminder";
 import TargetsTracker  from "@/components/TargetsTracker";
 import SettingsView    from "@/components/SettingsView";
+import RoutineView     from "@/components/RoutineView";
 import { DEFAULT_CATEGORIES } from "@/lib/types";
 
-type Tab = "today" | "targets" | "history" | "insights" | "settings";
+type Tab = "today" | "targets" | "routine" | "history" | "insights" | "settings";
 
 const TODAY = format(new Date(), "yyyy-MM-dd");
 const DRUCKER_QUOTES = [
@@ -222,7 +223,15 @@ export default function App() {
       () => {}
     );
   };
-
+  const handleSaveRoutine = async (routine: RoutineItem[]) => {
+    if (!appData) return;
+    setAppData(prev => prev ? { ...prev, routine } : prev);
+    await syncToSheets(
+      "/api/sheets/routine",
+      { routine },
+      () => {}
+    );
+  };
 
 
   if (!mounted) return null;
@@ -272,6 +281,7 @@ export default function App() {
           {([
             { id: "today",    icon: <Clock size={14} />,    label: "Today" },
             { id: "targets",  icon: <Target size={14} />,   label: "Targets" },
+            { id: "routine",  icon: <CalendarDays size={14} />, label: "Routine" },
             { id: "history",  icon: <History size={14} />,  label: "History" },
             { id: "insights", icon: <BarChart2 size={14} />,label: "Insights" },
             { id: "settings", icon: <Settings size={14} />, label: "Settings" },
@@ -412,6 +422,11 @@ export default function App() {
         {/* INSIGHTS ───────────────────────────────────────────────────────── */}
         {tab === "insights" && (
           <InsightsView data={appData} categories={activeCategories} />
+        )}
+
+        {/* ROUTINE ────────────────────────────────────────────────────────── */}
+        {tab === "routine" && (
+          <RoutineView routine={appData.routine || []} onSave={handleSaveRoutine} />
         )}
 
         {/* SETTINGS ───────────────────────────────────────────────────────── */}

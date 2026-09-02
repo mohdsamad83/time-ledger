@@ -101,11 +101,18 @@ export interface TargetMeta {
   accomplishedAt?: string | null; // "YYYY-MM-DD"
 }
 
+export interface RoutineItem {
+  activity: string;
+  startTime: string; // e.g., "05:30"
+  endTime: string;   // e.g., "07:30"
+}
+
 export interface AppData {
   days:    { [date: string]: DayData };
   targets?: string[];                       // [DEPRECATED] Legacy global list
   monthlyTargets?: Record<string, TargetMeta[]>; // Keyed by month "YYYY-MM"
   categories?: CustomCategory[];            // Custom dynamic categories
+  routine?: RoutineItem[];                  // Custom routine table
   version: string;
 }
 
