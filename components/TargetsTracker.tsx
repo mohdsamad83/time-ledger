@@ -386,7 +386,9 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Prop
                   {days.map((dateStr, colIdx) => {
                     const dayNum = colIdx + 1;
                     const isCompleted = data.days[dateStr]?.targets?.[targetMeta.name] || false;
-                    const isDisabled = isAccomplished && dayNum > accomplishedDay && accomplishedDay !== -1;
+                    const todayStr = format(now, "yyyy-MM-dd");
+                    const isFuture = dateStr > todayStr;
+                    const isDisabled = isFuture || (isAccomplished && dayNum > accomplishedDay && accomplishedDay !== -1);
 
                     return (
                       <td key={colIdx} className={`p-0 border relative ${isDisabled ? "bg-[var(--s2)] opacity-30" : ""}`} style={{ borderColor: "var(--border)" }}>
