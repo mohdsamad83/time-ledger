@@ -17,9 +17,15 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Prop
   const [isEditing, setIsEditing] = useState(false);
   const [localTargets, setLocalTargets] = useState<TargetMeta[]>([]);
   const [newTarget, setNewTarget] = useState("");
+  const [rewardTarget, setRewardTarget] = useState("");
 
   const daysInMonth = getDaysInMonth(currentMonth);
   const monthStr = format(currentMonth, "yyyy-MM");
+
+  useEffect(() => {
+    const saved = localStorage.getItem(`reward_target_${monthStr}`);
+    setRewardTarget(saved || "");
+  }, [monthStr]);
 
   // Calculate currentMonthlyTargets (aggregate unachieved targets from past + current month targets)
   let currentMonthlyTargets: TargetMeta[] = [];
@@ -229,8 +235,16 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Prop
     totalCompleted += r.completed;
   });
   
-  const currentLevel = totalPossible > 0 ? ((totalCompleted / totalPossible) * 100).toFixed(2) : "0.00";
-  const lostLevel = totalPossible > 0 ? (100 - parseFloat(currentLevel)).toFixed(2) : "0.00";
+  const currentLevelNum = totalPossible > 0 ? (totalCompleted / totalPossible) * 100 : 0;
+  const currentLevel = currentLevelNum.toFixed(2);
+  
+  let rankStr = "E";
+  let rankColor = "text-red-400";
+  let rankLabel = "Needs Work";
+  if (currentLevelNum >= 90) { rankStr = "S"; rankColor = "text-amber-500"; rankLabel = "Legendary"; }
+  else if (currentLevelNum >= 80) { rankStr = "A"; rankColor = "text-purple-500"; rankLabel = "Elite"; }
+  else if (currentLevelNum >= 70) { rankStr = "B"; rankColor = "text-blue-500"; rankLabel = "Solid"; }
+  else if (currentLevelNum >= 50) { rankStr = "C"; rankColor = "text-emerald-500"; rankLabel = "Average"; }
 
   return (
     <div className="w-full px-4 mx-auto space-y-6 fade-up">
@@ -354,14 +368,24 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Prop
           <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--faint)" }}>Current Level</p>
           <p className="text-3xl font-bold text-emerald-500">{currentLevel}%</p>
         </div>
-        <div className="p-4 rounded-xl text-center space-y-1" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-          <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--faint)" }}>What You Have Lost</p>
-          <p className="text-3xl font-bold text-red-400">{lostLevel}%</p>
+        <div className="p-4 rounded-xl flex items-center justify-center gap-4" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+          <div className="flex items-center justify-center w-12 h-12 rounded-xl font-black text-2xl" style={{ backgroundColor: "var(--s2)", border: `1px solid var(--border)` }}>
+            <span className={rankColor}>{rankStr}</span>
+          </div>
+          <div className="text-left">
+            <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--faint)" }}>Rank Status</p>
+            <p className={`font-bold ${rankColor}`}>{rankLabel}</p>
+          </div>
         </div>
         <div className="p-4 rounded-xl text-center space-y-1 flex flex-col justify-center" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
           <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--faint)" }}>Reward Target</p>
           <input 
             type="text" 
+            value={rewardTarget}
+            onChange={(e) => {
+              setRewardTarget(e.target.value);
+              localStorage.setItem(`reward_target_${monthStr}`, e.target.value);
+            }}
             placeholder="e.g. Vacation 🌴 4 Days"
             className="text-center font-bold bg-transparent border-none focus:ring-0 w-full mt-1"
             style={{ color: "var(--text)", outline: "none" }}
