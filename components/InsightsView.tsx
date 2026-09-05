@@ -1,7 +1,7 @@
 "use client";
 import { useState, useMemo } from "react";
 import { AppData, CustomCategory } from "@/lib/types";
-import { parseISO, format } from "date-fns";
+import { parseISO, format, getDaysInMonth, startOfMonth, isSameMonth, isAfter, isBefore } from "date-fns";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
   LineChart, Line, PieChart, Pie, Cell, AreaChart, Area
@@ -86,25 +86,103 @@ export default function InsightsView({ data, categories }: Props) {
       };
     });
 
-    const targetData = [...selectedDates].reverse().map(d => {
-      const t = data.days[d].targets || {};
-      const count = Object.values(t).filter(Boolean).length;
-      targetsHit += count;
-      possibleTargets += (data.targets?.length || 9); // Fallback to 9 if empty
-      return {
-        date: format(parseISO(d), "MMM d"),
-        Targets: count
-      };
+    // Advanced Target Gamification Logic
+    const allMonths = Array.from(new Set(selectedDates.map(d => d.substring(0, 7)))).sort();
+    const overallTargetMap = new Map<string, { completed: number, activeDays: number }>();
+    const monthGraphData: { month: string; performance: number }[] = [];
+
+    allMonths.forEach(monthStr => {
+      const currentMonth = parseISO(`${monthStr}-01`);
+      const daysInMonth = getDaysInMonth(currentMonth);
+      const startOfCurrentMonth = startOfMonth(currentMonth);
+      const endOfCurrentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), daysInMonth);
+      
+      const monthlyTargetsArr = data.monthlyTargets?.[monthStr] || [];
+      
+      let monthCompleted = 0;
+      let monthActiveDays = 0;
+      
+      monthlyTargetsArr.forEach(t => {
+        let startDay = 1;
+        if (t.createdAt) {
+          const createdDate = new Date(t.createdAt);
+          if (isSameMonth(createdDate, currentMonth)) startDay = createdDate.getDate();
+          else if (isAfter(createdDate, endOfCurrentMonth)) startDay = daysInMonth + 1; 
+        }
+        
+        let endDay = daysInMonth;
+        if (t.accomplishedAt) {
+          if (t.accomplishedAt === "dropped") endDay = 0;
+          else {
+            const accDate = new Date(t.accomplishedAt);
+            if (isSameMonth(accDate, currentMonth)) endDay = accDate.getDate();
+            else if (isBefore(accDate, startOfCurrentMonth)) endDay = 0;
+          }
+        }
+        
+        let activeDaysInSelection = 0;
+        let completed = 0;
+        
+        for (let d = startDay; d <= endDay; d++) {
+          const dateStr = `${monthStr}-${d.toString().padStart(2, "0")}`;
+          if (selectedDates.includes(dateStr) && dateStr <= localDateStr) {
+            activeDaysInSelection++;
+            if (data.days[dateStr]?.targets?.[t.name]) {
+              completed++;
+            }
+          }
+        }
+        
+        if (activeDaysInSelection > 0) {
+          monthActiveDays += activeDaysInSelection;
+          monthCompleted += completed;
+          
+          const existing = overallTargetMap.get(t.name) || { completed: 0, activeDays: 0 };
+          overallTargetMap.set(t.name, {
+            completed: existing.completed + completed,
+            activeDays: existing.activeDays + activeDaysInSelection
+          });
+        }
+      });
+      
+      if (monthActiveDays > 0) {
+        monthGraphData.push({
+          month: format(currentMonth, "MMM yyyy"),
+          performance: Math.round((monthCompleted / monthActiveDays) * 100)
+        });
+      }
+    });
+
+    const rankedTargets = Array.from(overallTargetMap.entries()).map(([name, stats]) => {
+      const percent = Math.round((stats.completed / Math.max(1, stats.activeDays)) * 100);
+      let rank = "D";
+      let rankColor = "#EF4444"; // Red
+      let rankName = "Underperforming";
+      
+      if (percent >= 90) { rank = "S"; rankColor = "#F59E0B"; rankName = "Legendary"; }
+      else if (percent >= 80) { rank = "A"; rankColor = "#8B5CF6"; rankName = "Elite"; }
+      else if (percent >= 70) { rank = "B"; rankColor = "#3B82F6"; rankName = "Solid"; }
+      else if (percent >= 50) { rank = "C"; rankColor = "#10B981"; rankName = "Average"; }
+      
+      return { name, percent, rank, rankColor, rankName };
+    }).sort((a, b) => b.percent - a.percent);
+
+    let calculatedTargetsHit = 0;
+    let calculatedPossibleTargets = 0;
+    Array.from(overallTargetMap.values()).forEach(v => {
+       calculatedTargetsHit += v.completed;
+       calculatedPossibleTargets += v.activeDays;
     });
 
     return {
       totalHours,
       productivityRatio: totalHours > 0 ? Math.round((productiveHours / totalHours) * 100) : 0,
       avgSat: loggedDaysCount > 0 ? (totalSatisfaction / totalHours).toFixed(1) : "0.0",
-      targetHitRatio: possibleTargets > 0 ? Math.round((targetsHit / possibleTargets) * 100) : 0,
+      targetHitRatio: calculatedPossibleTargets > 0 ? Math.round((calculatedTargetsHit / calculatedPossibleTargets) * 100) : 0,
       timeData,
       trendData,
-      targetData,
+      monthGraphData,
+      rankedTargets,
       donutData: [
         { name: "Focused Contribution", value: focused, color: "#34D399" }, // Emerald
         { name: "Planned Routine", value: maintenance, color: "#60A5FA" }, // Blue
@@ -268,30 +346,59 @@ export default function InsightsView({ data, categories }: Props) {
           </div>
         </div>
 
-        {/* Chart 4: Daily Targets Met */}
-        <div className="rounded-xl p-5" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+        {/* Chart 4: Target Gamification Leaderboard */}
+        <div className="rounded-xl p-5 flex flex-col" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
           <div className="mb-6">
-            <h3 className="font-bold text-lg" style={{ color: "var(--text)" }}>Target Consistency</h3>
-            <p className="text-xs" style={{ color: "var(--faint)" }}>Number of daily habits ticked per day</p>
+            <h3 className="font-bold text-lg" style={{ color: "var(--text)" }}>Target Leaderboard</h3>
+            <p className="text-xs" style={{ color: "var(--faint)" }}>Ranked by hit rate in timeframe</p>
           </div>
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={processedData.targetData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorTargets" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#34D399" stopOpacity={0.6}/>
-                    <stop offset="95%" stopColor="#34D399" stopOpacity={0.05}/>
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="date" tick={{ fill: 'var(--faint)', fontSize: 10 }} axisLine={false} tickLine={false} />
-                <YAxis allowDecimals={false} tick={{ fill: 'var(--faint)', fontSize: 10 }} axisLine={false} tickLine={false} />
-                <Tooltip content={<CustomTooltip />} />
-                <Area type="monotone" dataKey="Targets" stroke="#34D399" strokeWidth={3} fillOpacity={1} fill="url(#colorTargets)" />
-              </AreaChart>
-            </ResponsiveContainer>
+          <div className="flex-1 overflow-y-auto pr-2 space-y-3" style={{ maxHeight: "250px" }}>
+            {processedData.rankedTargets.map(target => (
+              <div key={target.name} className="flex items-center justify-between p-3 rounded-lg transition-transform hover:scale-[1.02]" style={{ background: "var(--s2)", border: "1px solid var(--border)" }}>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-9 h-9 rounded-xl font-black text-sm" style={{ backgroundColor: target.rankColor + "20", color: target.rankColor, border: `1px solid ${target.rankColor}40` }}>
+                    {target.rank}
+                  </div>
+                  <div>
+                    <p className="font-bold text-sm truncate max-w-[150px]" style={{ color: "var(--text)" }}>{target.name}</p>
+                    <p className="text-xs font-semibold" style={{ color: target.rankColor }}>{target.rankName}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="font-bold text-xl" style={{ color: "var(--text)" }}>{target.percent}%</p>
+                </div>
+              </div>
+            ))}
+            {processedData.rankedTargets.length === 0 && (
+              <p className="text-sm text-center" style={{ color: "var(--faint)" }}>No targets evaluated.</p>
+            )}
           </div>
         </div>
 
+      </div>
+
+      {/* Month-by-Month Target Trend */}
+      <div className="rounded-xl p-5 mb-6" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+        <div className="mb-6">
+          <h3 className="font-bold text-lg" style={{ color: "var(--text)" }}>Month-by-Month Targets Trend</h3>
+          <p className="text-xs" style={{ color: "var(--faint)" }}>Overall hit rate percentage across all active targets</p>
+        </div>
+        <div className="h-64 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={processedData.monthGraphData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
+              <defs>
+                <linearGradient id="colorMonth" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.6}/>
+                  <stop offset="95%" stopColor="#F59E0B" stopOpacity={0.05}/>
+                </linearGradient>
+              </defs>
+              <XAxis dataKey="month" tick={{ fill: 'var(--faint)', fontSize: 10 }} axisLine={false} tickLine={false} />
+              <YAxis domain={[0, 100]} tick={{ fill: 'var(--faint)', fontSize: 10 }} axisLine={false} tickLine={false} />
+              <Tooltip content={<CustomTooltip />} />
+              <Area type="monotone" dataKey="performance" name="Hit Rate %" stroke="#F59E0B" strokeWidth={3} fillOpacity={1} fill="url(#colorMonth)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
       </div>
     </div>
   );
