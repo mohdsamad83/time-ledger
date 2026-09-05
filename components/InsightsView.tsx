@@ -159,10 +159,11 @@ export default function InsightsView({ data, categories }: Props) {
       let rankColor = "#EF4444"; // Red
       let rankName = "Underperforming";
       
-      if (percent >= 90) { rank = "S"; rankColor = "#F59E0B"; rankName = "Legendary"; }
-      else if (percent >= 80) { rank = "A"; rankColor = "#8B5CF6"; rankName = "Elite"; }
-      else if (percent >= 70) { rank = "B"; rankColor = "#3B82F6"; rankName = "Solid"; }
-      else if (percent >= 50) { rank = "C"; rankColor = "#10B981"; rankName = "Average"; }
+      if (percent >= 90) { rank = "S"; rankColor = "#F59E0B"; rankName = "Rank S: Legendary"; }
+      else if (percent >= 80) { rank = "A"; rankColor = "#8B5CF6"; rankName = "Rank A: Elite"; }
+      else if (percent >= 70) { rank = "B"; rankColor = "#3B82F6"; rankName = "Rank B: Solid"; }
+      else if (percent >= 50) { rank = "C"; rankColor = "#10B981"; rankName = "Rank C: Average"; }
+      else { rank = "D"; rankColor = "#EF4444"; rankName = "Rank D: Underperforming"; }
       
       return { name, percent, rank, rankColor, rankName };
     }).sort((a, b) => b.percent - a.percent);
