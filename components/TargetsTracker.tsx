@@ -194,7 +194,8 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Prop
       targetMeta, 
       completed, 
       percent: Math.round((completed / (activeDaysCount || 1)) * 100), 
-      expected: Math.round((targetElapsedDays / (activeDaysCount || 1)) * 100) + "%" 
+      expected: Math.round((targetElapsedDays / (activeDaysCount || 1)) * 100) + "%",
+      targetElapsedDays
     };
   });
 
@@ -225,12 +226,14 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Prop
   });
 
   // Overall stats
-  let totalPercentSum = 0;
+  let totalElapsedDays = 0;
+  let totalCompleted = 0;
   rowStats.forEach(r => {
-    totalPercentSum += r.percent;
+    totalElapsedDays += r.targetElapsedDays;
+    totalCompleted += r.completed;
   });
   
-  const currentLevelNum = rowStats.length > 0 ? (totalPercentSum / rowStats.length) : 0;
+  const currentLevelNum = totalElapsedDays > 0 ? (totalCompleted / totalElapsedDays) * 100 : 0;
   const currentLevel = currentLevelNum.toFixed(2);
   
   let rankStr = "E";
