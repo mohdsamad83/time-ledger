@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { format } from "date-fns";
+import { format, isBefore, startOfMonth } from "date-fns";
 import {
   Clock, BarChart2, History, CheckCircle,
   AlertCircle, Loader2, ExternalLink, BookOpen, RotateCcw, Timer, Target, LogOut, Settings, CalendarDays
@@ -253,8 +253,27 @@ export default function App() {
 
   // Monthly targets for active view
   const currentMonthStr = viewDate.substring(0, 7);
-  const currentTargets = appData.monthlyTargets?.[currentMonthStr]?.map(t => t.name) || 
-    (appData.targets && appData.targets.length > 0 ? appData.targets : []);
+  let currentTargets: string[] = [];
+  
+  if (appData.monthlyTargets) {
+    const targetMap = new Map<string, boolean>();
+    const viewedMonthStart = startOfMonth(new Date(viewDate));
+
+    Object.keys(appData.monthlyTargets).sort().forEach(m => {
+      if (m <= currentMonthStr) {
+        for (const t of appData.monthlyTargets![m]) {
+          if (t.accomplishedAt) {
+            const accDate = new Date(t.accomplishedAt);
+            if (isBefore(accDate, viewedMonthStart)) continue;
+          }
+          targetMap.set(t.name, true);
+        }
+      }
+    });
+    currentTargets = Array.from(targetMap.keys());
+  } else if (appData.targets && appData.targets.length > 0) {
+    currentTargets = appData.targets;
+  }
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "var(--bg)", color: "var(--text)" }}>
