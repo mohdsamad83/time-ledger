@@ -56,32 +56,67 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Prop
   });
 
   const handleAccomplishToggle = (target: TargetMeta) => {
-    if (!onUpdateTargets) return;
+    if (!onUpdateTargets || !data.monthlyTargets) return;
     
-    // Create updated list
-    const updated = currentMonthlyTargets.map(t => {
-      if (t.name === target.name) {
-        if (t.accomplishedAt) {
-          return { ...t, accomplishedAt: null }; // Un-accomplish
-        } else {
-          // Default to today if it's the current month, else the last day of that month
-          const now = new Date();
-          const accomplishDate = isSameMonth(currentMonth, now) 
-            ? format(now, "yyyy-MM-dd") 
-            : `${monthStr}-${daysInMonth.toString().padStart(2, "0")}`;
-          return { ...t, accomplishedAt: accomplishDate };
+    const newMap = { ...data.monthlyTargets };
+    let updated = false;
+    
+    Object.keys(newMap).forEach(m => {
+      newMap[m] = newMap[m].map(t => {
+        if (t.name === target.name && !updated) {
+          updated = true;
+          if (t.accomplishedAt) {
+            return { ...t, accomplishedAt: null }; // Un-accomplish
+          } else {
+            const now = new Date();
+            const accomplishDate = isSameMonth(currentMonth, now) 
+              ? format(now, "yyyy-MM-dd") 
+              : `${monthStr}-${daysInMonth.toString().padStart(2, "0")}`;
+            return { ...t, accomplishedAt: accomplishDate };
+          }
         }
-      }
-      return t;
+        return t;
+      });
     });
 
-    const newMap = { ...data.monthlyTargets, [monthStr]: updated };
     onUpdateTargets(newMap);
   };
 
   const handleSaveEdit = () => {
-    if (!onUpdateTargets) return;
-    const newMap = { ...data.monthlyTargets, [monthStr]: localTargets };
+    if (!onUpdateTargets || !data.monthlyTargets) return;
+    
+    const newMap = { ...data.monthlyTargets };
+    
+    // 1. Identify and remove deleted targets across all months
+    const deletedNames = currentMonthlyTargets
+      .filter(orig => !localTargets.some(lt => lt.name === orig.name))
+      .map(orig => orig.name);
+      
+    deletedNames.forEach(name => {
+      Object.keys(newMap).forEach(m => {
+        newMap[m] = newMap[m].filter(t => t.name !== name);
+      });
+    });
+
+    // 2. Identify new or current-month targets
+    const currentMonthSavedTargets: TargetMeta[] = [];
+    localTargets.forEach(lt => {
+      let foundInPrevious = false;
+      Object.keys(newMap).forEach(m => {
+        if (m < monthStr) {
+          if (newMap[m].some(t => t.name === lt.name)) {
+            foundInPrevious = true;
+          }
+        }
+      });
+      
+      if (!foundInPrevious) {
+        currentMonthSavedTargets.push(lt);
+      }
+    });
+
+    newMap[monthStr] = currentMonthSavedTargets;
+    
     onUpdateTargets(newMap);
     setIsEditing(false);
   };
