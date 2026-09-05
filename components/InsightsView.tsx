@@ -9,10 +9,10 @@ import {
 import { Target, Zap, Clock, Star } from "lucide-react";
 
 interface Props { data: AppData; categories: CustomCategory[] }
-type TimeRange = 7 | 30 | 9999;
+type TimeRange = 30 | 9999;
 
 export default function InsightsView({ data, categories }: Props) {
-  const [timeRange, setTimeRange] = useState<TimeRange>(7);
+  const [timeRange, setTimeRange] = useState<TimeRange>(30);
 
   const now = new Date();
   const localDateStr = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
@@ -224,7 +224,6 @@ export default function InsightsView({ data, categories }: Props) {
         
         <div className="flex items-center p-1 rounded-lg" style={{ background: "var(--s2)", border: "1px solid var(--border)" }}>
           {[
-            { label: "7 Days", value: 7 },
             { label: "30 Days", value: 30 },
             { label: "All Time", value: 9999 }
           ].map(opt => (
