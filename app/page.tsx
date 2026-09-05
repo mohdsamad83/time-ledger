@@ -262,6 +262,10 @@ export default function App() {
     Object.keys(appData.monthlyTargets).sort().forEach(m => {
       if (m <= currentMonthStr) {
         for (const t of appData.monthlyTargets![m]) {
+          if (t.accomplishedAt === "dropped") {
+            targetMap.delete(t.name);
+            continue;
+          }
           if (t.accomplishedAt) {
             const accDate = new Date(t.accomplishedAt);
             if (isBefore(accDate, viewedMonthStart)) continue;

@@ -30,7 +30,10 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Prop
     Object.keys(data.monthlyTargets).sort().forEach(m => {
       if (m <= monthStr) {
         for (const t of data.monthlyTargets![m]) {
-          // Skip if accomplished BEFORE this month
+          if (t.accomplishedAt === "dropped") {
+            targetMap.delete(t.name);
+            continue;
+          }
           if (t.accomplishedAt) {
              const accDate = new Date(t.accomplishedAt);
              if (isBefore(accDate, viewedMonthStart)) continue;
@@ -86,34 +89,47 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Prop
     if (!onUpdateTargets || !data.monthlyTargets) return;
     
     const newMap = { ...data.monthlyTargets };
-    
-    // 1. Identify and remove deleted targets across all months
-    const deletedNames = currentMonthlyTargets
-      .filter(orig => !localTargets.some(lt => lt.name === orig.name))
-      .map(orig => orig.name);
-      
-    deletedNames.forEach(name => {
-      Object.keys(newMap).forEach(m => {
-        newMap[m] = newMap[m].filter(t => t.name !== name);
-      });
+    const viewedMonthStart = startOfMonth(currentMonth);
+
+    // Find targets active in previous months
+    const previousActiveMap = new Map<string, TargetMeta>();
+    Object.keys(newMap).sort().forEach(m => {
+      if (m < monthStr) {
+        for (const t of newMap[m]) {
+          if (t.accomplishedAt === "dropped") {
+            previousActiveMap.delete(t.name);
+            continue;
+          }
+          if (t.accomplishedAt) {
+             const accDate = new Date(t.accomplishedAt);
+             if (isBefore(accDate, viewedMonthStart)) continue;
+          }
+          previousActiveMap.set(t.name, t);
+        }
+      }
     });
 
-    // 2. Identify new or current-month targets
     const currentMonthSavedTargets: TargetMeta[] = [];
+    
+    // 1. Handle surviving and new targets
     localTargets.forEach(lt => {
-      let foundInPrevious = false;
-      Object.keys(newMap).forEach(m => {
-        if (m < monthStr) {
-          if (newMap[m].some(t => t.name === lt.name)) {
-            foundInPrevious = true;
-          }
-        }
-      });
-      
-      if (!foundInPrevious) {
+      if (!previousActiveMap.has(lt.name)) {
+        // It's a new target for this month (or re-added)
         currentMonthSavedTargets.push(lt);
       }
     });
+
+    // 2. Handle deletions of carried-over targets
+    previousActiveMap.forEach((prevTarget, name) => {
+      if (!localTargets.some(lt => lt.name === name)) {
+        // User deleted it this month, so we drop it
+        currentMonthSavedTargets.push({ name, accomplishedAt: "dropped", createdAt: prevTarget.createdAt });
+      }
+    });
+
+    // 3. Keep any target that originated THIS month and was preserved in localTargets
+    // Wait, the step 1 already covers this because they aren't in previousActiveMap!
+    // So step 1 perfectly preserves localTargets that are unique to this month.
 
     newMap[monthStr] = currentMonthSavedTargets;
     
@@ -387,7 +403,7 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Prop
             )}
             {currentMonthlyTargets.map((targetMeta, rowIdx) => {
               const stat = rowStats[rowIdx];
-              const isAccomplished = !!targetMeta.accomplishedAt;
+              const isAccomplished = !!targetMeta.accomplishedAt && targetMeta.accomplishedAt !== "dropped" && targetMeta.accomplishedAt <= `${monthStr}-31`;
               let accomplishedDay = -1;
               if (isAccomplished && targetMeta.accomplishedAt?.startsWith(monthStr)) {
                 accomplishedDay = parseInt(targetMeta.accomplishedAt.split("-")[2], 10);
