@@ -68,7 +68,11 @@ export async function GET() {
         const month = r[0];
         const name = r[1];
         const accomplishedAt = r[2] || null;
-        const createdAt = r[3] || null;
+        let createdAt = r[3] || null;
+        if (createdAt && createdAt.includes("T")) {
+          // Legacy syncedAt timestamp. Reset to null.
+          createdAt = null;
+        }
         if (!appData.monthlyTargets![month]) appData.monthlyTargets![month] = [];
         if (name) appData.monthlyTargets![month].push({ name, accomplishedAt, createdAt });
       } else if (r[0]) {

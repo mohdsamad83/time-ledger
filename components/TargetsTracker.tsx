@@ -95,37 +95,41 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Prop
     const startOfCurrentMonth = startOfMonth(currentMonth);
     const endOfCurrentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), daysInMonth);
     
-    let targetStart = startOfCurrentMonth;
+    let startDay = 1;
     if (targetMeta.createdAt) {
-       const createdDate = new Date(targetMeta.createdAt);
-       targetStart = isAfter(createdDate, startOfCurrentMonth) ? createdDate : startOfCurrentMonth;
+      const createdDate = new Date(targetMeta.createdAt);
+      if (isSameMonth(createdDate, currentMonth)) {
+        startDay = createdDate.getDate();
+      } else if (isAfter(createdDate, endOfCurrentMonth)) {
+        startDay = daysInMonth + 1; 
+      }
     }
     
-    let targetEnd = endOfCurrentMonth;
+    let endDay = daysInMonth;
     if (targetMeta.accomplishedAt) {
-       const accDate = new Date(targetMeta.accomplishedAt);
-       if (isBefore(accDate, endOfCurrentMonth)) targetEnd = accDate;
+      const accDate = new Date(targetMeta.accomplishedAt);
+      if (isSameMonth(accDate, currentMonth)) {
+        endDay = accDate.getDate();
+      } else if (isBefore(accDate, startOfCurrentMonth)) {
+        endDay = 0;
+      }
     }
     
     // Now total days in THIS month that are active for this target:
-    const timeDiffActive = targetEnd.getTime() - targetStart.getTime();
-    const activeDaysCount = Math.max(1, Math.round(timeDiffActive / (1000 * 3600 * 24)) + 1);
+    const activeDaysCount = Math.max(1, endDay - startDay + 1);
     
     // And elapsed days in THIS month for this target:
-    const elapsedEnd = isBefore(now, targetEnd) ? now : targetEnd;
-    let targetElapsedDays = 0;
-    if (!isBefore(elapsedEnd, targetStart)) {
-        const timeDiffElapsed = elapsedEnd.getTime() - targetStart.getTime();
-        targetElapsedDays = Math.round(timeDiffElapsed / (1000 * 3600 * 24)) + 1;
-    }
+    let elapsedEndDay = isSameMonth(now, currentMonth) ? now.getDate() : (isAfter(now, endOfCurrentMonth) ? daysInMonth : 0);
+    elapsedEndDay = Math.min(elapsedEndDay, endDay);
+    const targetElapsedDays = Math.max(0, elapsedEndDay - startDay + 1);
 
     days.forEach((dateStr, idx) => {
       const dayData = data.days[dateStr];
       const dayNum = idx + 1;
-      // We only count completions up to the accomplished date if it is accomplished.
-      // Actually, if it's accomplished, they can't check days after it anyway.
-      if (dayData?.targets?.[target]) {
-        completed++;
+      if (dayNum >= startDay && dayNum <= endDay) {
+        if (dayData?.targets?.[target]) {
+          completed++;
+        }
       }
     });
 
