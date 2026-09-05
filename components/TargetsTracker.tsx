@@ -225,17 +225,12 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Prop
   });
 
   // Overall stats
-  let totalPossible = 0;
-  let totalCompleted = 0;
+  let totalPercentSum = 0;
   rowStats.forEach(r => {
-    const activeDays = r.targetMeta.accomplishedAt && r.targetMeta.accomplishedAt.startsWith(monthStr)
-      ? parseInt(r.targetMeta.accomplishedAt.split("-")[2], 10) 
-      : daysInMonth;
-    totalPossible += activeDays;
-    totalCompleted += r.completed;
+    totalPercentSum += r.percent;
   });
   
-  const currentLevelNum = totalPossible > 0 ? (totalCompleted / totalPossible) * 100 : 0;
+  const currentLevelNum = rowStats.length > 0 ? (totalPercentSum / rowStats.length) : 0;
   const currentLevel = currentLevelNum.toFixed(2);
   
   let rankStr = "E";
