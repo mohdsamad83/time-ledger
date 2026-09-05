@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { format, getDaysInMonth, startOfMonth, addMonths, subMonths, isSameMonth, isBefore } from "date-fns";
+import { format, getDaysInMonth, startOfMonth, addMonths, subMonths, isSameMonth, isBefore, isAfter } from "date-fns";
 import { AppData, TargetMeta } from "@/lib/types";
 import { AreaChart, Area, ResponsiveContainer } from "recharts";
 import { ChevronLeft, ChevronRight, Target, X, ChevronDown, Trophy, CheckCircle2 } from "lucide-react";
@@ -21,9 +21,28 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Prop
   const daysInMonth = getDaysInMonth(currentMonth);
   const monthStr = format(currentMonth, "yyyy-MM");
 
-  // Get current month's targets, fallback to legacy global targets if none configured for this month
-  const currentMonthlyTargets: TargetMeta[] = data.monthlyTargets?.[monthStr] || 
-    (data.targets && data.targets.length > 0 ? data.targets.map(t => ({ name: t })) : []);
+  // Calculate currentMonthlyTargets (aggregate unachieved targets from past + current month targets)
+  let currentMonthlyTargets: TargetMeta[] = [];
+  if (data.monthlyTargets) {
+    const targetMap = new Map<string, TargetMeta>();
+    const viewedMonthStart = startOfMonth(currentMonth);
+    
+    Object.keys(data.monthlyTargets).sort().forEach(m => {
+      if (m <= monthStr) {
+        for (const t of data.monthlyTargets![m]) {
+          // Skip if accomplished BEFORE this month
+          if (t.accomplishedAt) {
+             const accDate = new Date(t.accomplishedAt);
+             if (isBefore(accDate, viewedMonthStart)) continue;
+          }
+          targetMap.set(t.name, t);
+        }
+      }
+    });
+    currentMonthlyTargets = Array.from(targetMap.values());
+  } else if (data.targets && data.targets.length > 0) {
+    currentMonthlyTargets = data.targets.map(t => ({ name: t }));
+  }
   
   useEffect(() => {
     if (isEditing) {
@@ -67,30 +86,37 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Prop
     setIsEditing(false);
   };
 
-  // Stats calculation
   const now = new Date();
-  let baseElapsedDays = 0;
-  if (isSameMonth(currentMonth, now)) {
-    baseElapsedDays = now.getDate();
-  } else if (isBefore(currentMonth, now)) {
-    baseElapsedDays = daysInMonth;
-  }
-
+  
   const rowStats = currentMonthlyTargets.map(targetMeta => {
     const target = targetMeta.name;
     let completed = 0;
-    
-    // Determine active days for this target
-    let activeDaysCount = daysInMonth;
-    let targetElapsedDays = baseElapsedDays;
-    let accomplishedDay = -1;
 
-    if (targetMeta.accomplishedAt && targetMeta.accomplishedAt.startsWith(monthStr)) {
-      accomplishedDay = parseInt(targetMeta.accomplishedAt.split("-")[2], 10);
-      activeDaysCount = accomplishedDay; // Only require days up to the accomplishment
-      if (targetElapsedDays > accomplishedDay) {
-        targetElapsedDays = accomplishedDay;
-      }
+    const startOfCurrentMonth = startOfMonth(currentMonth);
+    const endOfCurrentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), daysInMonth);
+    
+    let targetStart = startOfCurrentMonth;
+    if (targetMeta.createdAt) {
+       const createdDate = new Date(targetMeta.createdAt);
+       targetStart = isAfter(createdDate, startOfCurrentMonth) ? createdDate : startOfCurrentMonth;
+    }
+    
+    let targetEnd = endOfCurrentMonth;
+    if (targetMeta.accomplishedAt) {
+       const accDate = new Date(targetMeta.accomplishedAt);
+       if (isBefore(accDate, endOfCurrentMonth)) targetEnd = accDate;
+    }
+    
+    // Now total days in THIS month that are active for this target:
+    const timeDiffActive = targetEnd.getTime() - targetStart.getTime();
+    const activeDaysCount = Math.max(1, Math.round(timeDiffActive / (1000 * 3600 * 24)) + 1);
+    
+    // And elapsed days in THIS month for this target:
+    const elapsedEnd = isBefore(now, targetEnd) ? now : targetEnd;
+    let targetElapsedDays = 0;
+    if (!isBefore(elapsedEnd, targetStart)) {
+        const timeDiffElapsed = elapsedEnd.getTime() - targetStart.getTime();
+        targetElapsedDays = Math.round(timeDiffElapsed / (1000 * 3600 * 24)) + 1;
     }
 
     days.forEach((dateStr, idx) => {
@@ -204,7 +230,7 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Prop
                       onKeyDown={e => {
                         if (e.key === "Enter" && newTarget.trim()) {
                           if (!localTargets.find(t => t.name === newTarget.trim())) {
-                            setLocalTargets([...localTargets, { name: newTarget.trim() }]);
+                            setLocalTargets([...localTargets, { name: newTarget.trim(), createdAt: format(new Date(), "yyyy-MM-dd") }]);
                           }
                           setNewTarget("");
                         }
@@ -216,7 +242,7 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Prop
                     <button 
                        onClick={() => { 
                          if (newTarget.trim() && !localTargets.find(t => t.name === newTarget.trim())) {
-                           setLocalTargets([...localTargets, { name: newTarget.trim() }]);
+                           setLocalTargets([...localTargets, { name: newTarget.trim(), createdAt: format(new Date(), "yyyy-MM-dd") }]);
                            setNewTarget("");
                          }
                        }}

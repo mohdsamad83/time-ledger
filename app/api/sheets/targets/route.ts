@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     if (monthlyTargets) {
       for (const [month, metaList] of Object.entries(monthlyTargets)) {
         for (const meta of metaList) {
-          values.push([month, meta.name, meta.accomplishedAt || "", syncedAt]);
+          values.push([month, meta.name, meta.accomplishedAt || "", meta.createdAt || ""]);
         }
       }
     } else if (targets) {

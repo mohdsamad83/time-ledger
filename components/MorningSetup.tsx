@@ -1,11 +1,12 @@
 "use client";
 import { useState } from "react";
-import { DaySetup } from "@/lib/types";
+import { DaySetup, RoutineItem } from "@/lib/types";
 import { Sun, Target, CheckSquare, Sparkles } from "lucide-react";
 
 interface Props {
   date: string;
   targets: string[];
+  routine: RoutineItem[];
   onComplete: (setup: DaySetup) => void;
 }
 
@@ -15,55 +16,12 @@ const toLabel = (h: number) => {
   return `${h % 12 || 12}:00 ${p}`;
 };
 
-export default function MorningSetup({ date, targets, onComplete }: Props) {
+export default function MorningSetup({ date, targets, routine, onComplete }: Props) {
   const [step, setStep] = useState(0);
-  const [wakeHour,  setWakeHour]  = useState(6);
-  const [sleepHour, setSleepHour] = useState(22);
   const [successDefinition, setSuccessDefinition] = useState("");
   const [druckerFocus,      setDruckerFocus]      = useState("");
 
   const steps = [
-    {
-      icon: <Sun size={20} className="text-amber-400" />,
-      title: "Set Your Day Boundaries",
-      subtitle: "Drucker: \"Know where your time goes — it starts with intent.\"",
-      content: (
-        <div className="space-y-5">
-          <div>
-            <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-2">
-              I wake up at
-            </label>
-            <select
-              value={wakeHour}
-              onChange={(e) => setWakeHour(Number(e.target.value))}
-            >
-              {HOURS.slice(3, 14).map((h) => (
-                <option key={h} value={h}>{toLabel(h)}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label style={{ color: "var(--muted)" }} className="block text-xs font-bold uppercase tracking-widest mb-2">
-              I plan to sleep by
-            </label>
-            <select
-              value={sleepHour}
-              onChange={(e) => setSleepHour(Number(e.target.value))}
-            >
-              {HOURS.slice(18, 25).concat([0, 1, 2]).map((h) => (
-                <option key={h} value={h}>{toLabel(h)}</option>
-              ))}
-            </select>
-          </div>
-          <p style={{ color: "var(--faint)" }} className="text-sm font-mono">
-            {sleepHour > wakeHour
-              ? `${sleepHour - wakeHour} hours in your ledger today`
-              : `${24 - wakeHour + sleepHour} hours in your ledger today`}
-          </p>
-        </div>
-      ),
-      canNext: true,
-    },
     {
       icon: <Target size={20} className="primary-text" />,
       title: "Daily Targets & Focus",
@@ -118,12 +76,28 @@ export default function MorningSetup({ date, targets, onComplete }: Props) {
 
   const handleNext = () => {
     if (isLast) {
+      let finalWake = 6;
+      let finalSleep = 22;
+
+      if (routine && routine.length > 0) {
+        let minH = 24, maxH = 0;
+        for (const item of routine) {
+          if (!item.startTime || !item.endTime) continue;
+          const sH = parseInt(item.startTime.split(":")[0], 10);
+          const eH = parseInt(item.endTime.split(":")[0], 10);
+          if (!isNaN(sH)) minH = Math.min(minH, sH);
+          if (!isNaN(eH)) maxH = Math.max(maxH, eH);
+        }
+        if (minH < 24) finalWake = minH;
+        if (maxH > 0) finalSleep = maxH;
+      }
+
       onComplete({
-        wakeHour,
-        sleepHour,
-        topPriority: "", // Deprecated
-        tasks: ["", "", ""], // Deprecated
-        tasksCompleted: [false, false, false], // Deprecated
+        wakeHour: finalWake,
+        sleepHour: finalSleep,
+        topPriority: "",
+        tasks: ["", "", ""],
+        tasksCompleted: [false, false, false],
         successDefinition,
         druckerFocus,
       });

@@ -99,6 +99,7 @@ export const DEFAULT_TARGETS = [
 export interface TargetMeta {
   name: string;
   accomplishedAt?: string | null; // "YYYY-MM-DD"
+  createdAt?: string;             // "YYYY-MM-DD"
 }
 
 export interface RoutineItem {

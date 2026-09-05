@@ -374,7 +374,8 @@ export default function App() {
             {!dayData.setup ? (
               <MorningSetup 
                 date={viewDate} 
-                targets={currentTargets} 
+                targets={currentTargets}
+                routine={appData.routine || []}
                 onComplete={handleSetupComplete} 
               />
             ) : (
