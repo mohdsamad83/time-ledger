@@ -19,7 +19,6 @@ import {
   applyMonthlyTargetsUpdate
 } from "@/lib/storage";
 
-import MorningSetup    from "@/components/MorningSetup";
 import TimelineView    from "@/components/TimelineView";
 import BlockModal      from "@/components/BlockModal";
 import EveningReviewModal from "@/components/EveningReview";
@@ -248,6 +247,37 @@ export default function App() {
   }
 
   const dayData = getDay(appData, viewDate);
+
+  // Auto-initialize day setup if it doesn't exist
+  useEffect(() => {
+    if (!dayData.setup && tab === "today") {
+      let finalWake = 6;
+      let finalSleep = 22;
+      const routine = appData.routine || [];
+      if (routine.length > 0) {
+        let minH = 24, maxH = 0;
+        for (const item of routine) {
+          if (!item.startTime || !item.endTime) continue;
+          const sH = parseInt(item.startTime.split(":")[0], 10);
+          const eH = parseInt(item.endTime.split(":")[0], 10);
+          if (!isNaN(sH)) minH = Math.min(minH, sH);
+          if (!isNaN(eH)) maxH = Math.max(maxH, eH);
+        }
+        if (minH < 24) finalWake = minH;
+        if (maxH > 0) finalSleep = maxH;
+      }
+      handleSetupComplete({
+        wakeHour: finalWake,
+        sleepHour: finalSleep,
+        topPriority: "",
+        tasks: ["", "", ""],
+        tasksCompleted: [false, false, false],
+        successDefinition: "",
+        druckerFocus: "",
+        syncedAt: null
+      });
+    }
+  }, [dayData.setup, tab, viewDate, appData.routine]);
   const isToday = viewDate === TODAY;
   const activeCategories = appData.categories || DEFAULT_CATEGORIES;
 
@@ -395,12 +425,10 @@ export default function App() {
         {tab === "today" && (
           <>
             {!dayData.setup ? (
-              <MorningSetup 
-                date={viewDate} 
-                targets={currentTargets}
-                routine={appData.routine || []}
-                onComplete={handleSetupComplete} 
-              />
+              <div className="flex flex-col items-center justify-center mt-20 gap-4 text-[var(--faint)]">
+                <Loader2 className="spin-slow" size={32} />
+                <p className="text-sm font-bold uppercase tracking-widest">Initializing Today's Ledger...</p>
+              </div>
             ) : (
               <TimelineView
                 date={viewDate}
