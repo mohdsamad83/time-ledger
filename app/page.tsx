@@ -232,25 +232,11 @@ export default function App() {
     );
   };
 
-
-  if (!mounted) return null;
-
-  if (!appData) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4 text-[var(--faint)]">
-          <Loader2 className="spin-slow" size={32} />
-          <p className="text-sm uppercase tracking-widest font-bold">Syncing from Sheets...</p>
-        </div>
-      </div>
-    );
-  }
-
-  const dayData = getDay(appData, viewDate);
-
   // Auto-initialize day setup if it doesn't exist
   useEffect(() => {
-    if (!dayData.setup && tab === "today") {
+    if (!appData) return;
+    const day = getDay(appData, viewDate);
+    if (!day.setup && tab === "today") {
       let finalWake = 6;
       let finalSleep = 22;
       const routine = appData.routine || [];
@@ -277,7 +263,22 @@ export default function App() {
         syncedAt: null
       });
     }
-  }, [dayData.setup, tab, viewDate, appData.routine]);
+  }, [appData, viewDate, tab]);
+
+  if (!mounted) return null;
+
+  if (!appData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4 text-[var(--faint)]">
+          <Loader2 className="spin-slow" size={32} />
+          <p className="text-sm uppercase tracking-widest font-bold">Syncing from Sheets...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const dayData = getDay(appData, viewDate);
   const isToday = viewDate === TODAY;
   const activeCategories = appData.categories || DEFAULT_CATEGORIES;
 
