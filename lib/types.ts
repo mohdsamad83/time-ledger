@@ -67,6 +67,8 @@ export interface DaySetup {
   tasksCompleted:    [boolean, boolean, boolean];  // Track commitment completion
   successDefinition: string;
   druckerFocus:      string;   // "What needs to be done today?"
+  plannedInAdvance?: boolean;
+  tasksEdits?:       number;
   syncedAt?:         string | null;
 }
 

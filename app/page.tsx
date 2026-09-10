@@ -30,6 +30,7 @@ import BreakReminder   from "@/components/BreakReminder";
 import TargetsTracker  from "@/components/TargetsTracker";
 import SettingsView    from "@/components/SettingsView";
 import RoutineView     from "@/components/RoutineView";
+import PlanTomorrowModal from "@/components/PlanTomorrowModal";
 import { DEFAULT_CATEGORIES } from "@/lib/types";
 
 type Tab = "today" | "targets" | "routine" | "history" | "insights" | "settings";
@@ -51,6 +52,7 @@ export default function App() {
   const [modalHour,     setModalHour]     = useState<number | null>(null);
   const [showEvening,   setShowEvening]   = useState(false);
   const [showReminder,  setShowReminder]  = useState(false);
+  const [showPlanTomorrow, setShowPlanTomorrow] = useState(false);
   const router = useRouter();
 
   const handleLogout = async () => {
@@ -187,6 +189,10 @@ export default function App() {
     if (!day.setup) return;
     
     const newSetup = { ...day.setup, tasks: commitments };
+    if (newSetup.plannedInAdvance) {
+      newSetup.tasksEdits = (newSetup.tasksEdits || 0) + 1;
+    }
+    
     setAppData(prev => prev ? applySetup(prev, viewDate, newSetup) : prev);
     
     await syncToSheets(
@@ -229,6 +235,40 @@ export default function App() {
     await syncToSheets(
       "/api/sheets/routine",
       { routine },
+      () => {}
+    );
+  };
+
+  const handlePlanTomorrow = async (commitments: [string, string, string]) => {
+    if (!appData) return;
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = format(tomorrow, "yyyy-MM-dd");
+
+    // Initialize or update tomorrow's setup
+    const day = getDay(appData, tomorrowStr);
+    const existingSetup = day.setup || {
+      wakeHour: 6,
+      sleepHour: 22,
+      topPriority: "",
+      tasks: commitments,
+      tasksCompleted: [false, false, false],
+      successDefinition: "",
+      druckerFocus: "",
+      syncedAt: null
+    };
+
+    const newSetup: DaySetup = {
+      ...existingSetup,
+      tasks: commitments,
+      plannedInAdvance: true,
+      tasksEdits: 0
+    };
+
+    setAppData(prev => prev ? applySetup(prev, tomorrowStr, newSetup) : prev);
+    await syncToSheets(
+      "/api/sheets/setup",
+      { date: tomorrowStr, setup: newSetup },
       () => {}
     );
   };
@@ -380,6 +420,13 @@ export default function App() {
             >
               <RotateCcw size={10} /> Reset
             </button>
+            <button
+              onClick={() => setShowPlanTomorrow(true)}
+              className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold tracking-widest uppercase transition-colors"
+              style={{ color: "var(--primary)", border: "1px solid var(--primary)", background: "rgba(var(--primary-rgb), 0.1)" }}
+            >
+              Plan Tomorrow
+            </button>
           </div>
           <p className="text-xs italic hidden md:block max-w-sm text-right" style={{ color: "var(--faint)" }}>
             {quote}
@@ -500,6 +547,14 @@ export default function App() {
       </footer>
       {/* ── Break Reminder Widget ─────────────────────────────────────────── */}
       {showReminder && <BreakReminder onClose={() => setShowReminder(false)} />}
+      
+      {showPlanTomorrow && (
+        <PlanTomorrowModal
+          onClose={() => setShowPlanTomorrow(false)}
+          onSave={handlePlanTomorrow}
+          targets={currentTargets}
+        />
+      )}
     </div>
   );
 }

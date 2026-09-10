@@ -1,4 +1,5 @@
 "use client";
+import { useState, useEffect } from "react";
 import { TimeBlock, DaySetup, Category, CustomCategory, RoutineItem } from "@/lib/types";
 import { Plus, Edit2, Moon, CheckSquare, Star } from "lucide-react";
 import { SyncState } from "@/lib/types";
@@ -82,12 +83,36 @@ export default function TimelineView({
 
 
   const commitments = setup.tasks || ["", "", ""];
+  const isPrePlanned = !!setup.plannedInAdvance;
+  const canEditPlan = isPrePlanned && (setup.tasksEdits || 0) < 1;
+  const isLocked = isPrePlanned && !canEditPlan;
+
+  const [isEditingCommitments, setIsEditingCommitments] = useState(false);
+  const [localCommitments, setLocalCommitments] = useState<[string, string, string]>(commitments);
+
+  useEffect(() => {
+    setLocalCommitments(setup.tasks || ["", "", ""]);
+  }, [setup.tasks]);
   
   const handleSelectCommitment = (index: number, value: string) => {
+    if (isPrePlanned && !isEditingCommitments) return;
+
+    if (isPrePlanned && isEditingCommitments) {
+      const newComm = [...localCommitments] as [string, string, string];
+      newComm[index] = value;
+      setLocalCommitments(newComm);
+    } else {
+      if (!onUpdateCommitments) return;
+      const newComm = [...commitments] as [string, string, string];
+      newComm[index] = value;
+      onUpdateCommitments(newComm);
+    }
+  };
+
+  const handleSaveCommitments = () => {
     if (!onUpdateCommitments) return;
-    const newComm = [...commitments] as [string, string, string];
-    newComm[index] = value;
-    onUpdateCommitments(newComm);
+    onUpdateCommitments(localCommitments);
+    setIsEditingCommitments(false);
   };
 
   return (
@@ -98,51 +123,95 @@ export default function TimelineView({
         
         {/* Top 3 Commitments */}
         <div className="rounded-xl p-5 shadow-sm" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-          <div className="flex items-center gap-2 mb-4">
-            <Star size={16} className="text-yellow-500" />
-            <h3 className="font-semibold text-sm uppercase tracking-widest" style={{ color: "var(--text)" }}>Top 3 Commitments</h3>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Star size={16} className="text-yellow-500" />
+              <h3 className="font-semibold text-sm uppercase tracking-widest" style={{ color: "var(--text)" }}>Top 3 Commitments</h3>
+            </div>
+            {isLocked && (
+              <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded" style={{ background: "rgba(239, 68, 68, 0.1)", color: "#EF4444" }}>
+                Locked
+              </span>
+            )}
           </div>
-          <p className="text-xs mb-4 italic" style={{ color: "var(--faint)" }}>Select 3 targets to prioritize today.</p>
+          <p className="text-xs mb-4 italic" style={{ color: "var(--faint)" }}>
+            {isLocked ? "These commitments were planned in advance and are now locked." : "Select 3 targets to prioritize today."}
+          </p>
           <div className="space-y-3">
-            {[0, 1, 2].map(i => (
-              <div key={i} className="flex flex-col bg-opacity-50 rounded-lg p-2" style={{ background: "var(--s2)" }}>
-                <select
-                  value={commitments[i]}
-                  onChange={(e) => handleSelectCommitment(i, e.target.value)}
-                  className="text-sm rounded border-none focus:ring-1 focus:ring-[var(--gold)] w-full font-medium"
-                  style={{ background: "transparent", color: commitments[i] ? "var(--text)" : "var(--faint)", padding: "4px" }}
-                >
-                  <option value="">-- Select a Target --</option>
-                  {allTargets.map(t => (
-                    <option key={t} value={t} disabled={commitments.includes(t) && commitments[i] !== t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
-                {commitments[i] && (
-                  <div className="mt-2 text-xs">
-                    <div className="flex justify-between items-center mb-1">
-                      <span style={{ color: targetProgress[commitments[i]] >= 100 ? "#34D399" : "var(--muted)" }}>
-                        {targetProgress[commitments[i]] >= 100 ? "Completed" : "Progress"}
-                      </span>
-                      <span className="font-mono font-bold" style={{ color: "var(--text)" }}>
-                        {targetProgress[commitments[i]] || 0}%
-                      </span>
+            {[0, 1, 2].map(i => {
+              const currentVal = (isPrePlanned && isEditingCommitments) ? localCommitments[i] : commitments[i];
+              const isDisabled = isLocked || (isPrePlanned && !isEditingCommitments);
+              return (
+                <div key={i} className="flex flex-col bg-opacity-50 rounded-lg p-2" style={{ background: "var(--s2)" }}>
+                  <select
+                    value={currentVal}
+                    onChange={(e) => handleSelectCommitment(i, e.target.value)}
+                    disabled={isDisabled}
+                    className="text-sm rounded border-none focus:ring-1 focus:ring-[var(--gold)] w-full font-medium"
+                    style={{ background: "transparent", color: currentVal ? "var(--text)" : "var(--faint)", padding: "4px", opacity: isDisabled ? 0.8 : 1 }}
+                  >
+                    <option value="">-- Select a Target --</option>
+                    {allTargets.map(t => (
+                      <option key={t} value={t} disabled={((isPrePlanned && isEditingCommitments) ? localCommitments : commitments).includes(t) && currentVal !== t}>
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                  {currentVal && !isEditingCommitments && (
+                    <div className="mt-2 text-xs">
+                      <div className="flex justify-between items-center mb-1">
+                        <span style={{ color: targetProgress[currentVal] >= 100 ? "#34D399" : "var(--muted)" }}>
+                          {targetProgress[currentVal] >= 100 ? "Completed" : "Progress"}
+                        </span>
+                        <span className="font-mono font-bold" style={{ color: "var(--text)" }}>
+                          {targetProgress[currentVal] || 0}%
+                        </span>
+                      </div>
+                      <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: "var(--border)" }}>
+                        <div 
+                          className="h-full transition-all duration-500 ease-out" 
+                          style={{ 
+                            width: `${targetProgress[currentVal] || 0}%`,
+                            background: targetProgress[currentVal] >= 100 ? "#34D399" : "var(--primary)"
+                          }} 
+                        />
+                      </div>
                     </div>
-                    <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: "var(--border)" }}>
-                      <div 
-                        className="h-full transition-all duration-500 ease-out" 
-                        style={{ 
-                          width: `${targetProgress[commitments[i]] || 0}%`,
-                          background: targetProgress[commitments[i]] >= 100 ? "#34D399" : "var(--primary)"
-                        }} 
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
+                  )}
+                </div>
+              );
+            })}
           </div>
+
+          {isPrePlanned && !isLocked && !isEditingCommitments && (
+            <button 
+              onClick={() => setIsEditingCommitments(true)}
+              className="mt-4 w-full py-2 rounded text-xs font-bold uppercase tracking-widest transition-colors"
+              style={{ background: "rgba(var(--primary-rgb), 0.1)", color: "var(--primary)" }}
+            >
+              Edit Plan (1 chance remaining)
+            </button>
+          )}
+
+          {isEditingCommitments && (
+            <div className="mt-4 flex gap-2">
+              <button 
+                onClick={() => {
+                  setIsEditingCommitments(false);
+                  setLocalCommitments(setup.tasks || ["", "", ""]);
+                }}
+                className="flex-1 py-2 rounded text-xs font-bold uppercase tracking-widest btn-ghost"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSaveCommitments}
+                className="flex-1 py-2 rounded text-xs font-bold uppercase tracking-widest btn-primary"
+              >
+                Save & Lock
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Daily Targets Tracker */}
