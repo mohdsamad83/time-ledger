@@ -119,6 +119,7 @@ export interface Challenge {
   preferences: string;      // "What user prefer doing"
   actionPlan: string;       // "How to take appropriate actions"
   status: "active" | "completed" | "abandoned";
+  logs?: { date: string; note: string }[];
 }
 
 export interface AppData {

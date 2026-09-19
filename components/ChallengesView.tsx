@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Challenge } from "@/lib/types";
-import { Plus, Target, CalendarDays, CheckCircle, Flame, Edit2, X, Activity } from "lucide-react";
+import { Plus, Target, CalendarDays, CheckCircle, Flame, Edit2, X, Activity, MessageSquare, ArrowRight, Zap } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 
 interface Props {
@@ -20,6 +20,10 @@ export default function ChallengesView({ challenges, onUpdate }: Props) {
   const [preferences, setPreferences] = useState("");
   const [actionPlan, setActionPlan] = useState("");
   const [status, setStatus] = useState<Challenge["status"]>("active");
+  const [logs, setLogs] = useState<{ date: string; note: string }[]>([]);
+
+  // Check-in state
+  const [checkInText, setCheckInText] = useState("");
 
   const activeChallenge = challenges.find((c) => c.status === "active");
   const pastChallenges = challenges.filter((c) => c.status !== "active");
@@ -34,6 +38,7 @@ export default function ChallengesView({ challenges, onUpdate }: Props) {
       setPreferences(c.preferences);
       setActionPlan(c.actionPlan);
       setStatus(c.status);
+      setLogs(c.logs || []);
     } else {
       setEditingChallenge(null);
       setName("");
@@ -43,6 +48,7 @@ export default function ChallengesView({ challenges, onUpdate }: Props) {
       setPreferences("");
       setActionPlan("");
       setStatus("active");
+      setLogs([]);
     }
     setIsCreating(true);
   };
@@ -64,12 +70,10 @@ export default function ChallengesView({ challenges, onUpdate }: Props) {
       preferences,
       actionPlan,
       status,
+      logs
     };
 
     let nextChallenges = [...challenges];
-    
-    // If making this one active, complete other active ones?
-    // Actually, maybe allow multiple, but the UI prioritizes the first active one. Let's just update the array.
     if (editingChallenge) {
       nextChallenges = nextChallenges.map((c) => (c.id === newChallenge.id ? newChallenge : c));
     } else {
@@ -80,40 +84,220 @@ export default function ChallengesView({ challenges, onUpdate }: Props) {
     closeForm();
   };
 
-  const renderProgress = (c: Challenge) => {
+  const handleCheckIn = () => {
+    if (!activeChallenge || !checkInText.trim()) return;
+    
+    const todayStr = format(new Date(), "yyyy-MM-dd");
+    const newLogs = [...(activeChallenge.logs || [])];
+    
+    // Replace if already checked in today, otherwise push
+    const existingIdx = newLogs.findIndex(l => l.date === todayStr);
+    if (existingIdx !== -1) {
+      newLogs[existingIdx].note = checkInText.trim();
+    } else {
+      newLogs.push({ date: todayStr, note: checkInText.trim() });
+    }
+
+    // Sort logs descending by date
+    newLogs.sort((a, b) => b.date.localeCompare(a.date));
+
+    const updatedChallenge = { ...activeChallenge, logs: newLogs };
+    const nextChallenges = challenges.map(c => c.id === updatedChallenge.id ? updatedChallenge : c);
+    
+    onUpdate(nextChallenges);
+    setCheckInText("");
+  };
+
+  const renderDashboard = (c: Challenge) => {
     const start = new Date(c.startDate);
     const today = new Date();
     const daysElapsed = differenceInDays(today, start);
     
-    let label = "";
-    let progress = 0;
+    const isActive = daysElapsed >= 0 && daysElapsed < c.durationDays;
+    const progressPct = Math.min(100, Math.max(0, (daysElapsed / c.durationDays) * 100));
     
-    if (daysElapsed < 0) {
-      label = `Starts in ${Math.abs(daysElapsed)} days`;
-      progress = 0;
-    } else if (daysElapsed >= c.durationDays) {
-      label = `Completed (${c.durationDays} Days)`;
-      progress = 100;
-    } else {
-      label = `Day ${daysElapsed + 1} of ${c.durationDays}`;
-      progress = Math.min(100, Math.max(0, (daysElapsed / c.durationDays) * 100));
+    // Phase logic
+    let phase = 1;
+    let phaseName = "Momentum";
+    if (progressPct > 33 && progressPct <= 66) {
+      phase = 2;
+      phaseName = "Endurance";
+    } else if (progressPct > 66) {
+      phase = 3;
+      phaseName = "Mastery";
     }
 
+    // Motivational Context
+    let quote = "The hardest part is starting.";
+    if (progressPct > 10 && progressPct <= 30) quote = "Habits are forming. Don't break the chain.";
+    if (progressPct > 30 && progressPct <= 50) quote = "You're building incredible discipline.";
+    if (progressPct > 50 && progressPct <= 90) quote = "Over halfway there. This is who you are now.";
+    if (progressPct > 90) quote = "Home stretch. Finish strong!";
+    if (progressPct >= 100) quote = "Challenge Complete! You did it.";
+
     return (
-      <div className="mt-4">
-        <div className="flex justify-between text-xs mb-1" style={{ color: "var(--muted)" }}>
-          <span>{label}</span>
-          <span>{progress.toFixed(1)}%</span>
+      <div className="mb-10">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--primary)" }}>
+            Current Arc Active
+          </h2>
+          <button 
+            onClick={() => openForm(c)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+            style={{ color: "var(--faint)", border: "1px solid var(--border)" }}
+          >
+            <Edit2 size={12} />
+            Configure
+          </button>
         </div>
-        <div className="h-2 w-full rounded-full overflow-hidden" style={{ background: "var(--s2)" }}>
-          <div className="h-full transition-all" style={{ width: `${progress}%`, background: "var(--primary)" }} />
+
+        {/* Dashboard Card */}
+        <div 
+          className="rounded-2xl border overflow-hidden relative shadow-lg" 
+          style={{ background: "var(--surface)", borderColor: "var(--primary)" }}
+        >
+          {/* Top gradient bar */}
+          <div className="h-1.5 w-full bg-gradient-to-r from-orange-500 via-red-500 to-purple-600" />
+          
+          <div className="p-6 md:p-8">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-orange-500/10 text-orange-500 flex items-center gap-1">
+                    <Zap size={10} /> Phase {phase}: {phaseName}
+                  </div>
+                  <span className="text-xs font-mono" style={{ color: "var(--muted)" }}>
+                    {c.startDate} <ArrowRight size={10} className="inline mx-1" /> {format(new Date(start.getTime() + c.durationDays * 24 * 60 * 60 * 1000), "MMM d")}
+                  </span>
+                </div>
+                <h3 className="text-3xl md:text-4xl font-black tracking-tight" style={{ color: "var(--text)" }}>{c.name}</h3>
+                <p className="text-sm italic mt-2" style={{ color: "var(--faint)" }}>"{quote}"</p>
+              </div>
+
+              {/* Stats Row */}
+              <div className="flex gap-4">
+                <div className="text-center px-4 py-2 rounded-xl bg-black/5 dark:bg-white/5">
+                  <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: "var(--muted)" }}>Day</p>
+                  <p className="text-2xl font-black">{Math.max(0, Math.min(daysElapsed + 1, c.durationDays))}</p>
+                </div>
+                <div className="text-center px-4 py-2 rounded-xl bg-black/5 dark:bg-white/5">
+                  <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: "var(--muted)" }}>Total</p>
+                  <p className="text-2xl font-black" style={{ color: "var(--faint)" }}>{c.durationDays}</p>
+                </div>
+                <div className="text-center px-4 py-2 rounded-xl" style={{ background: "rgba(var(--primary-rgb), 0.1)" }}>
+                  <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: "var(--primary)" }}>Progress</p>
+                  <p className="text-2xl font-black" style={{ color: "var(--primary)" }}>{progressPct.toFixed(0)}%</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="mb-8">
+              <div className="h-3 w-full rounded-full overflow-hidden bg-black/10 dark:bg-white/10 relative">
+                <div 
+                  className="absolute top-0 left-0 h-full bg-gradient-to-r from-orange-500 to-red-500 transition-all duration-1000 ease-out" 
+                  style={{ width: `${progressPct}%` }} 
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Left Column: Rules & Actions */}
+              <div className="space-y-6">
+                <div>
+                  <h4 className="text-sm font-bold flex items-center gap-1.5 mb-3 uppercase tracking-wider" style={{ color: "var(--text)" }}>
+                    <Target size={14} className="text-blue-500" />
+                    Commitments
+                  </h4>
+                  <ul className="space-y-2.5">
+                    {c.goals.map((g, i) => (
+                      <li key={i} className="text-sm flex items-start gap-2.5" style={{ color: "var(--faint)" }}>
+                        <div className="mt-0.5 min-w-[16px] h-4 rounded-full bg-green-500/20 flex items-center justify-center">
+                          <CheckCircle size={10} className="text-green-500" />
+                        </div>
+                        <span className="leading-tight">{g}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-xl border" style={{ borderColor: "var(--s2)", background: "var(--bg)" }}>
+                    <h4 className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "var(--muted)" }}>Preferences</h4>
+                    <p className="text-xs leading-relaxed whitespace-pre-wrap" style={{ color: "var(--faint)" }}>
+                      {c.preferences || "None set."}
+                    </p>
+                  </div>
+                  <div className="p-4 rounded-xl border" style={{ borderColor: "var(--s2)", background: "var(--bg)" }}>
+                    <h4 className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "var(--muted)" }}>Action Plan</h4>
+                    <p className="text-xs leading-relaxed whitespace-pre-wrap" style={{ color: "var(--faint)" }}>
+                      {c.actionPlan || "None set."}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: Daily Check-in & Logs */}
+              <div className="flex flex-col h-full">
+                <h4 className="text-sm font-bold flex items-center gap-1.5 mb-3 uppercase tracking-wider" style={{ color: "var(--text)" }}>
+                  <MessageSquare size={14} className="text-purple-500" />
+                  Daily Check-in
+                </h4>
+                
+                <div className="flex-1 rounded-xl border flex flex-col overflow-hidden" style={{ borderColor: "var(--s2)", background: "var(--bg)" }}>
+                  <div className="p-4 border-b" style={{ borderColor: "var(--s2)" }}>
+                    <textarea
+                      className="w-full bg-transparent text-sm resize-none focus:outline-none"
+                      rows={3}
+                      placeholder="How did today go? Any blockers?"
+                      value={checkInText}
+                      onChange={(e) => setCheckInText(e.target.value)}
+                    />
+                    <div className="flex justify-between items-center mt-2">
+                      <span className="text-xs font-mono" style={{ color: "var(--muted)" }}>{format(new Date(), "MMM d, yyyy")}</span>
+                      <button 
+                        onClick={handleCheckIn}
+                        disabled={!checkInText.trim()}
+                        className="btn-primary px-3 py-1.5 text-xs font-bold rounded-lg disabled:opacity-50"
+                      >
+                        Log Entry
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Log History */}
+                  <div className="flex-1 p-4 overflow-y-auto max-h-[250px] space-y-4">
+                    {c.logs && c.logs.length > 0 ? (
+                      c.logs.map((log, i) => (
+                        <div key={i} className="flex gap-3">
+                          <div className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ background: "var(--primary)" }} />
+                          <div>
+                            <p className="text-[10px] font-mono font-bold uppercase tracking-widest mb-0.5" style={{ color: "var(--muted)" }}>
+                              {log.date}
+                            </p>
+                            <p className="text-sm leading-relaxed" style={{ color: "var(--faint)" }}>
+                              {log.note}
+                            </p>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-6 text-sm italic opacity-50">
+                        No check-ins logged yet.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 md:px-6 py-6 pb-24 fade-in">
+    <div className="max-w-5xl mx-auto px-4 md:px-6 py-6 pb-24 fade-in">
       
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
@@ -126,50 +310,53 @@ export default function ChallengesView({ challenges, onUpdate }: Props) {
             Custom arcs and long-term commitments.
           </p>
         </div>
-        <button
-          onClick={() => openForm()}
-          className="btn-primary px-3 py-1.5 text-sm rounded-lg flex items-center gap-1.5"
-        >
-          <Plus size={16} />
-          New Challenge
-        </button>
+        {!activeChallenge && (
+          <button
+            onClick={() => openForm()}
+            className="btn-primary px-3 py-1.5 text-sm rounded-lg flex items-center gap-1.5"
+          >
+            <Plus size={16} />
+            New Challenge
+          </button>
+        )}
       </div>
 
       {isCreating ? (
-        <div className="p-4 md:p-6 rounded-xl border mb-8" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold">{editingChallenge ? "Edit Challenge" : "Create Challenge"}</h2>
-            <button onClick={closeForm} className="p-1 rounded hover:bg-black/5 dark:hover:bg-white/5">
-              <X size={18} />
+        <div className="p-4 md:p-8 rounded-2xl border mb-8 shadow-xl relative overflow-hidden" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-purple-500" />
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold">{editingChallenge ? "Edit Challenge" : "Create Challenge"}</h2>
+            <button onClick={closeForm} className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+              <X size={20} />
             </button>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider mb-1" style={{ color: "var(--muted)" }}>Name (e.g. Winter Arc)</label>
+              <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "var(--muted)" }}>Name (e.g. Winter Arc)</label>
               <input
                 type="text"
-                className="input-field w-full"
+                className="input-field w-full text-lg font-medium py-3"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Name"
               />
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider mb-1" style={{ color: "var(--muted)" }}>Start Date</label>
+                <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "var(--muted)" }}>Start Date</label>
                 <input
                   type="date"
-                  className="input-field w-full"
+                  className="input-field w-full py-3"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider mb-1" style={{ color: "var(--muted)" }}>Duration (Days)</label>
+                <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "var(--muted)" }}>Duration (Days)</label>
                 <input
                   type="number"
-                  className="input-field w-full"
+                  className="input-field w-full py-3"
                   value={duration}
                   onChange={(e) => setDuration(parseInt(e.target.value) || 0)}
                 />
@@ -177,10 +364,10 @@ export default function ChallengesView({ challenges, onUpdate }: Props) {
             </div>
           </div>
 
-          <div className="mb-4">
-            <label className="block text-xs font-bold uppercase tracking-wider mb-1" style={{ color: "var(--muted)" }}>Status</label>
+          <div className="mb-6">
+            <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "var(--muted)" }}>Status</label>
             <select
-              className="input-field w-full"
+              className="input-field w-full py-3"
               value={status}
               onChange={(e) => setStatus(e.target.value as any)}
             >
@@ -190,30 +377,30 @@ export default function ChallengesView({ challenges, onUpdate }: Props) {
             </select>
           </div>
 
-          <div className="mb-4">
-            <label className="block text-xs font-bold uppercase tracking-wider mb-1" style={{ color: "var(--muted)" }}>Goals / Commitments (One per line)</label>
+          <div className="mb-6">
+            <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "var(--muted)" }}>Goals / Commitments (One per line)</label>
             <textarea
-              className="input-field w-full min-h-[100px]"
+              className="input-field w-full min-h-[120px] py-3 leading-relaxed"
               value={goalsStr}
               onChange={(e) => setGoalsStr(e.target.value)}
               placeholder="- Wake up at 5 AM\n- Workout 1hr\n- No sugar"
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider mb-1" style={{ color: "var(--muted)" }}>Preferences (What you prefer doing)</label>
+              <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "var(--muted)" }}>Preferences</label>
               <textarea
-                className="input-field w-full min-h-[100px]"
+                className="input-field w-full min-h-[120px] py-3 leading-relaxed"
                 value={preferences}
                 onChange={(e) => setPreferences(e.target.value)}
                 placeholder="I prefer to workout in the mornings and read at night..."
               />
             </div>
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider mb-1" style={{ color: "var(--muted)" }}>Action Plan (How to take action)</label>
+              <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "var(--muted)" }}>Action Plan</label>
               <textarea
-                className="input-field w-full min-h-[100px]"
+                className="input-field w-full min-h-[120px] py-3 leading-relaxed"
                 value={actionPlan}
                 onChange={(e) => setActionPlan(e.target.value)}
                 placeholder="I will set my alarm across the room. I will prep my meals on Sundays..."
@@ -221,108 +408,43 @@ export default function ChallengesView({ challenges, onUpdate }: Props) {
             </div>
           </div>
 
-          <div className="flex justify-end gap-2">
-            <button onClick={closeForm} className="btn-ghost px-4 py-2 text-sm rounded">Cancel</button>
-            <button onClick={handleSave} className="btn-primary px-4 py-2 text-sm rounded font-bold">Save Challenge</button>
+          <div className="flex justify-end gap-3 pt-6 border-t" style={{ borderColor: "var(--s2)" }}>
+            <button onClick={closeForm} className="px-6 py-2.5 text-sm rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors font-medium">Cancel</button>
+            <button onClick={handleSave} className="btn-primary px-8 py-2.5 text-sm rounded-lg font-bold shadow-lg hover:opacity-90 transition-opacity">Save Challenge</button>
           </div>
         </div>
       ) : null}
 
       {/* Active Challenge */}
-      {!isCreating && activeChallenge && (
-        <div className="mb-8">
-          <h2 className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "var(--muted)" }}>Current Arc</h2>
-          <div className="p-5 md:p-6 rounded-xl border relative" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
-            <button 
-              onClick={() => openForm(activeChallenge)}
-              className="absolute top-4 right-4 p-2 rounded text-sm hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-              style={{ color: "var(--faint)" }}
-            >
-              <Edit2 size={16} />
-            </button>
-            
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-orange-500/10 text-orange-500">
-                <Flame size={20} />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold">{activeChallenge.name}</h3>
-                <div className="flex items-center gap-2 text-xs font-mono" style={{ color: "var(--muted)" }}>
-                  <CalendarDays size={12} />
-                  {activeChallenge.startDate} — {format(new Date(new Date(activeChallenge.startDate).getTime() + activeChallenge.durationDays * 24 * 60 * 60 * 1000), "MMM d, yyyy")}
-                </div>
-              </div>
-            </div>
-
-            {renderProgress(activeChallenge)}
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6 pt-6 border-t" style={{ borderColor: "var(--s2)" }}>
-              {/* Goals */}
-              <div className="md:col-span-1">
-                <h4 className="text-sm font-bold flex items-center gap-1.5 mb-3">
-                  <Target size={14} className="text-blue-400" />
-                  Commitments
-                </h4>
-                <ul className="space-y-2">
-                  {activeChallenge.goals.map((g, i) => (
-                    <li key={i} className="text-sm flex items-start gap-2" style={{ color: "var(--faint)" }}>
-                      <CheckCircle size={14} className="mt-0.5 text-green-500/50" />
-                      <span className="leading-tight">{g}</span>
-                    </li>
-                  ))}
-                  {activeChallenge.goals.length === 0 && <span className="text-xs italic opacity-50">No goals set</span>}
-                </ul>
-              </div>
-
-              {/* Prefs / Actions */}
-              <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="p-4 rounded-lg bg-black/5 dark:bg-white/5">
-                  <h4 className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "var(--muted)" }}>Preferences</h4>
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: "var(--faint)" }}>
-                    {activeChallenge.preferences || <span className="italic opacity-50">None</span>}
-                  </p>
-                </div>
-                <div className="p-4 rounded-lg bg-black/5 dark:bg-white/5">
-                  <h4 className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "var(--muted)" }}>Action Plan</h4>
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: "var(--faint)" }}>
-                    {activeChallenge.actionPlan || <span className="italic opacity-50">None</span>}
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="mt-6 p-4 rounded-lg border border-dashed text-center flex flex-col items-center justify-center gap-2" style={{ borderColor: "var(--border)", background: "var(--bg)" }}>
-                <Activity size={20} style={{ color: "var(--muted)" }}/>
-                <p className="text-sm" style={{ color: "var(--faint)" }}>Log your daily actions directly in the <strong className="primary-text">Today</strong> tab timeline.</p>
-            </div>
-          </div>
-        </div>
-      )}
+      {!isCreating && activeChallenge && renderDashboard(activeChallenge)}
 
       {/* Past Challenges */}
       {!isCreating && pastChallenges.length > 0 && (
-        <div>
-          <h2 className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "var(--muted)" }}>Past Challenges</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="mt-12">
+          <h2 className="text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2" style={{ color: "var(--muted)" }}>
+            <Activity size={14} /> Challenge Archive
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {pastChallenges.map((c) => (
-              <div key={c.id} className="p-4 rounded-lg border" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
-                <div className="flex justify-between items-start mb-2">
+              <div key={c.id} className="p-5 rounded-xl border relative group" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+                <div className="flex justify-between items-start mb-3">
                   <div>
-                    <h4 className="font-bold">{c.name}</h4>
-                    <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>{c.durationDays} Days • {c.startDate}</p>
+                    <h4 className="font-bold text-lg">{c.name}</h4>
+                    <p className="text-xs font-mono mt-1" style={{ color: "var(--muted)" }}>{c.durationDays} Days • {c.startDate}</p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded ${c.status === "completed" ? "bg-green-500/10 text-green-500" : "bg-red-500/10 text-red-500"}`}>
-                      {c.status}
-                    </span>
-                    <button onClick={() => openForm(c)} className="p-1 rounded hover:bg-black/5 dark:hover:bg-white/5 text-xs">
-                      <Edit2 size={12} />
-                    </button>
-                  </div>
+                  <span className={`text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full ${c.status === "completed" ? "bg-green-500/10 text-green-500" : "bg-red-500/10 text-red-500"}`}>
+                    {c.status}
+                  </span>
                 </div>
-                <p className="text-xs mt-2 line-clamp-2" style={{ color: "var(--faint)" }}>
-                  {c.goals.join(", ")}
+                <p className="text-sm line-clamp-2 leading-relaxed" style={{ color: "var(--faint)" }}>
+                  {c.goals.join(" • ")}
                 </p>
+                <button 
+                  onClick={() => openForm(c)} 
+                  className="absolute bottom-4 right-4 p-2 rounded-full bg-black/5 dark:bg-white/5 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <Edit2 size={14} />
+                </button>
               </div>
             ))}
           </div>
@@ -330,16 +452,16 @@ export default function ChallengesView({ challenges, onUpdate }: Props) {
       )}
 
       {!isCreating && !activeChallenge && pastChallenges.length === 0 && (
-        <div className="text-center py-16 px-4 border rounded-xl" style={{ borderColor: "var(--s2)", background: "var(--surface)" }}>
-          <div className="w-16 h-16 rounded-full mx-auto flex items-center justify-center mb-4" style={{ background: "var(--s2)" }}>
-            <Flame size={32} style={{ color: "var(--muted)" }} />
+        <div className="text-center py-24 px-4 border rounded-2xl shadow-sm" style={{ borderColor: "var(--s2)", background: "var(--surface)" }}>
+          <div className="w-20 h-20 rounded-full mx-auto flex items-center justify-center mb-6 bg-gradient-to-br from-orange-500/20 to-red-500/20">
+            <Flame size={40} className="text-orange-500" />
           </div>
-          <h3 className="text-lg font-bold mb-2">No active challenges</h3>
-          <p className="text-sm max-w-md mx-auto mb-6" style={{ color: "var(--faint)" }}>
+          <h3 className="text-2xl font-black mb-3 tracking-tight">No active challenges</h3>
+          <p className="text-base max-w-md mx-auto mb-8 leading-relaxed" style={{ color: "var(--faint)" }}>
             Start a new Winter Arc, 75 Hard, or create your own custom challenge to build discipline and track your progress over time.
           </p>
-          <button onClick={() => openForm()} className="btn-primary px-4 py-2 text-sm font-bold rounded-lg inline-flex items-center gap-2">
-            <Plus size={16} /> Create Challenge
+          <button onClick={() => openForm()} className="btn-primary px-6 py-3 text-sm font-bold rounded-xl inline-flex items-center gap-2 shadow-lg shadow-primary/20 hover:scale-105 transition-transform">
+            <Plus size={18} /> Configure Your First Arc
           </button>
         </div>
       )}

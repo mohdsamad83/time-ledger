@@ -29,7 +29,7 @@ export async function GET() {
       sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "✅ Daily Targets!A2:C" }).catch(() => ({ data: { values: [] } })),
       sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "🏷️ Categories!A2:E" }).catch(() => ({ data: { values: [] } })),
       sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "⏱️ Routine!A2:C" }).catch(() => ({ data: { values: [] } })),
-      sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "🏆 Challenges!A2:H" }).catch(() => ({ data: { values: [] } })),
+      sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "🏆 Challenges!A2:I" }).catch(() => ({ data: { values: [] } })),
     ]);
 
     const logRows = logRes.data.values ?? [];
@@ -65,16 +65,23 @@ export async function GET() {
     
     // 0. Parse Challenges
     if (challengeRows.length > 0) {
-      appData.challenges = challengeRows.map((r: any) => ({
-        id: r[0] || "",
-        name: r[1] || "",
-        startDate: r[2] || "",
-        durationDays: parseInt(r[3] || "0", 10),
-        goals: r[4] ? r[4].split("\n") : [],
-        preferences: r[5] || "",
-        actionPlan: r[6] || "",
-        status: (r[7] || "active") as any,
-      })).filter((c: any) => c.id);
+      appData.challenges = challengeRows.map((r: any) => {
+        let logs = [];
+        try {
+          if (r[8]) logs = JSON.parse(r[8]);
+        } catch(e) {}
+        return {
+          id: r[0] || "",
+          name: r[1] || "",
+          startDate: r[2] || "",
+          durationDays: parseInt(r[3] || "0", 10),
+          goals: r[4] ? r[4].split("\n") : [],
+          preferences: r[5] || "",
+          actionPlan: r[6] || "",
+          status: (r[7] || "active") as any,
+          logs
+        };
+      }).filter((c: any) => c.id);
     }
 
     appData.monthlyTargets = {};

@@ -75,7 +75,7 @@ export default function App() {
   // ── Init Google Sheet (once per session) ──────────────────────────────────
   useEffect(() => {
     if (!mounted) return;
-    const key = "sheets-inited-v4";
+    const key = "sheets-inited-v5";
     if (sessionStorage.getItem(key)) { setSheetsReady(true); return; }
     fetch("/api/sheets/init", { method: "POST" })
       .then((r) => r.json())

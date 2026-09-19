@@ -12,11 +12,34 @@ export async function POST(req: Request) {
     const sheets = getSheetsClient();
     const sheetId = SHEET_ID();
 
-    // Clear existing data (but keep header)
-    await sheets.spreadsheets.values.clear({
-      spreadsheetId: sheetId,
-      range: "🏆 Challenges!A2:H",
-    });
+    try {
+      // Clear existing data (but keep header)
+      await sheets.spreadsheets.values.clear({
+        spreadsheetId: sheetId,
+        range: "🏆 Challenges!A2:I",
+      });
+    } catch (e: any) {
+      if (e.message && e.message.includes("Unable to parse range")) {
+        // Sheet does not exist. Create it on the fly.
+        await sheets.spreadsheets.batchUpdate({
+          spreadsheetId: sheetId,
+          requestBody: {
+            requests: [{
+              addSheet: { properties: { title: "🏆 Challenges", gridProperties: { frozenRowCount: 1 } } }
+            }]
+          }
+        });
+        // Add headers
+        await sheets.spreadsheets.values.update({
+          spreadsheetId: sheetId,
+          range: "🏆 Challenges!A1",
+          valueInputOption: "RAW",
+          requestBody: { values: [["ID", "Name", "Start Date", "Duration", "Goals", "Preferences", "Action Plan", "Status", "Logs (JSON)"]] }
+        });
+      } else {
+        throw e;
+      }
+    }
 
     if (challenges.length > 0) {
       const rows = challenges.map((c: Challenge) => [
@@ -27,7 +50,8 @@ export async function POST(req: Request) {
         c.goals.join("\n"),
         c.preferences,
         c.actionPlan,
-        c.status
+        c.status,
+        c.logs ? JSON.stringify(c.logs) : "[]"
       ]);
 
       await sheets.spreadsheets.values.update({
