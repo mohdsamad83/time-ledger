@@ -110,12 +110,24 @@ export interface RoutineItem {
   endTime: string;   // e.g., "07:30"
 }
 
+export interface Challenge {
+  id: string;
+  name: string;             // e.g., "Winter Arc"
+  startDate: string;        // "YYYY-MM-DD"
+  durationDays: number;     // e.g., 90
+  goals: string[];          // List of goals/commitments
+  preferences: string;      // "What user prefer doing"
+  actionPlan: string;       // "How to take appropriate actions"
+  status: "active" | "completed" | "abandoned";
+}
+
 export interface AppData {
   days:    { [date: string]: DayData };
   targets?: string[];                       // [DEPRECATED] Legacy global list
   monthlyTargets?: Record<string, TargetMeta[]>; // Keyed by month "YYYY-MM"
   categories?: CustomCategory[];            // Custom dynamic categories
   routine?: RoutineItem[];                  // Custom routine table
+  challenges?: Challenge[];                 // Custom challenges
   version: string;
 }
 

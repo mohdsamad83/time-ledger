@@ -31,9 +31,10 @@ import TargetsTracker  from "@/components/TargetsTracker";
 import SettingsView    from "@/components/SettingsView";
 import RoutineView     from "@/components/RoutineView";
 import PlanTomorrowModal from "@/components/PlanTomorrowModal";
+import ChallengesView  from "@/components/ChallengesView";
 import { DEFAULT_CATEGORIES } from "@/lib/types";
 
-type Tab = "today" | "targets" | "routine" | "history" | "insights" | "settings";
+type Tab = "today" | "targets" | "routine" | "challenges" | "history" | "insights" | "settings";
 
 const TODAY = format(new Date(), "yyyy-MM-dd");
 const DRUCKER_QUOTES = [
@@ -344,6 +345,7 @@ export default function App() {
             { id: "today",    icon: <Clock size={14} />,    label: "Today" },
             { id: "targets",  icon: <Target size={14} />,   label: "Targets" },
             { id: "routine",  icon: <CalendarDays size={14} />, label: "Routine" },
+            { id: "challenges", icon: <Target size={14} />, label: "Challenges" },
             { id: "history",  icon: <History size={14} />,  label: "History" },
             { id: "insights", icon: <BarChart2 size={14} />,label: "Insights" },
             { id: "settings", icon: <Settings size={14} />, label: "Settings" },
@@ -498,6 +500,17 @@ export default function App() {
         {/* ROUTINE ────────────────────────────────────────────────────────── */}
         {tab === "routine" && (
           <RoutineView routine={appData.routine || []} onSave={handleSaveRoutine} />
+        )}
+
+        {/* CHALLENGES ─────────────────────────────────────────────────────── */}
+        {tab === "challenges" && (
+          <ChallengesView 
+            challenges={appData.challenges || []}
+            onUpdate={async (newChallenges) => {
+              setAppData(prev => prev ? { ...prev, challenges: newChallenges } : prev);
+              await syncToSheets("/api/sheets/challenges", { challenges: newChallenges }, () => {});
+            }}
+          />
         )}
 
         {/* SETTINGS ───────────────────────────────────────────────────────── */}

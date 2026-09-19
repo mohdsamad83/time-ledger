@@ -57,6 +57,11 @@ const SHEETS_CONFIG = [
     headers: ["Value", "Label", "Color", "Background", "Emoji"],
     color: { red: 0.1, green: 0.5, blue: 0.8 },
   },
+  {
+    title: "🏆 Challenges",
+    headers: ["ID", "Name", "Start Date", "Duration", "Goals", "Preferences", "Action Plan", "Status"],
+    color: { red: 0.9, green: 0.2, blue: 0.2 },
+  },
 ];
 
 export async function POST() {

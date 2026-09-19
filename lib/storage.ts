@@ -1,8 +1,8 @@
 "use client";
-import { AppData, DayData, DaySetup, EveningReview, TimeBlock, DEFAULT_TARGETS, DEFAULT_CATEGORIES, CustomCategory } from "./types";
+import { AppData, DayData, DaySetup, EveningReview, TimeBlock, DEFAULT_TARGETS, DEFAULT_CATEGORIES, CustomCategory, Challenge } from "./types";
 
 export async function fetchAppData(): Promise<AppData> {
-  if (typeof window === "undefined") return { days: {}, version: "2.0", targets: DEFAULT_TARGETS, categories: DEFAULT_CATEGORIES, monthlyTargets: {} };
+  if (typeof window === "undefined") return { days: {}, version: "2.0", targets: DEFAULT_TARGETS, categories: DEFAULT_CATEGORIES, monthlyTargets: {}, challenges: [] };
   
   try {
     const res = await fetch("/api/sheets/data");
@@ -17,11 +17,14 @@ export async function fetchAppData(): Promise<AppData> {
       if (!json.data.monthlyTargets) {
         json.data.monthlyTargets = {};
       }
+      if (!json.data.challenges) {
+        json.data.challenges = [];
+      }
       return json.data;
     }
-    return { days: {}, version: "2.0", targets: DEFAULT_TARGETS, categories: DEFAULT_CATEGORIES, monthlyTargets: {} };
+    return { days: {}, version: "2.0", targets: DEFAULT_TARGETS, categories: DEFAULT_CATEGORIES, monthlyTargets: {}, challenges: [] };
   } catch {
-    return { days: {}, version: "2.0", targets: DEFAULT_TARGETS, categories: DEFAULT_CATEGORIES, monthlyTargets: {} };
+    return { days: {}, version: "2.0", targets: DEFAULT_TARGETS, categories: DEFAULT_CATEGORIES, monthlyTargets: {}, challenges: [] };
   }
 }
 
@@ -141,3 +144,21 @@ export async function saveCategories(categories: CustomCategory[]): Promise<bool
     return false;
   }
 }
+
+export function applyAddChallenge(data: AppData, challenge: Challenge): AppData {
+  const next = structuredClone(data);
+  if (!next.challenges) next.challenges = [];
+  next.challenges.push(challenge);
+  return next;
+}
+
+export function applyUpdateChallenge(data: AppData, challenge: Challenge): AppData {
+  const next = structuredClone(data);
+  if (!next.challenges) next.challenges = [];
+  const idx = next.challenges.findIndex(c => c.id === challenge.id);
+  if (idx !== -1) {
+    next.challenges[idx] = challenge;
+  }
+  return next;
+}
+

@@ -21,7 +21,7 @@ export async function GET() {
     const sheets = getSheetsClient();
     const sheetId = SHEET_ID();
 
-    const [logRes, setupRes, eveningRes, targetsRes, dailyTargetsRes, categoriesRes, routineRes] = await Promise.all([
+    const [logRes, setupRes, eveningRes, targetsRes, dailyTargetsRes, categoriesRes, routineRes, challengesRes] = await Promise.all([
       sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "📅 Time Log!A2:N" }).catch(() => ({ data: { values: [] } })),
       sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "🌅 Day Setup!A2:K" }).catch(() => ({ data: { values: [] } })),
       sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "🌙 Evening Reviews!A2:L" }).catch(() => ({ data: { values: [] } })),
@@ -29,6 +29,7 @@ export async function GET() {
       sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "✅ Daily Targets!A2:C" }).catch(() => ({ data: { values: [] } })),
       sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "🏷️ Categories!A2:E" }).catch(() => ({ data: { values: [] } })),
       sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "⏱️ Routine!A2:C" }).catch(() => ({ data: { values: [] } })),
+      sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "🏆 Challenges!A2:H" }).catch(() => ({ data: { values: [] } })),
     ]);
 
     const logRows = logRes.data.values ?? [];
@@ -38,8 +39,9 @@ export async function GET() {
     const dailyTargetRows = dailyTargetsRes.data.values ?? [];
     const categoryRows = categoriesRes.data.values ?? [];
     const routineRows = routineRes?.data?.values ?? [];
+    const challengeRows = challengesRes?.data?.values ?? [];
 
-    const appData: AppData = { days: {}, version: "2.0", targets: [], categories: [], routine: [] };
+    const appData: AppData = { days: {}, version: "2.0", targets: [], categories: [], routine: [], challenges: [] };
 
     // 0. Parse Routine
     if (routineRows.length > 0) {
@@ -60,6 +62,21 @@ export async function GET() {
         emoji: r[4] || "",
       })).filter(c => c.value);
     }
+    
+    // 0. Parse Challenges
+    if (challengeRows.length > 0) {
+      appData.challenges = challengeRows.map((r: any) => ({
+        id: r[0] || "",
+        name: r[1] || "",
+        startDate: r[2] || "",
+        durationDays: parseInt(r[3] || "0", 10),
+        goals: r[4] ? r[4].split("\n") : [],
+        preferences: r[5] || "",
+        actionPlan: r[6] || "",
+        status: (r[7] || "active") as any,
+      })).filter((c: any) => c.id);
+    }
+
     appData.monthlyTargets = {};
     
     targetRows.forEach(r => {
