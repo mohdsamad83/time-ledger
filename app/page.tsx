@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { format, isBefore, startOfMonth } from "date-fns";
 import {
+  Clock, BarChart2, History, CheckCircle,
   AlertCircle, Loader2, ExternalLink, BookOpen, RotateCcw, Timer, Target, LogOut, Settings, CalendarDays, Quote
 } from "lucide-react";
 import { useRouter } from "next/navigation";
