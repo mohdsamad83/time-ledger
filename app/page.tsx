@@ -18,6 +18,7 @@ import {
   applyTaskToggle, applyResetDay, applyTargetToggle,
   applyMonthlyTargetsUpdate
 } from "@/lib/storage";
+import { calculateCurrentMonthRank } from "@/lib/rank-utils";
 
 import TimelineView    from "@/components/TimelineView";
 import BlockModal      from "@/components/BlockModal";
@@ -37,14 +38,6 @@ import { DEFAULT_CATEGORIES } from "@/lib/types";
 type Tab = "today" | "targets" | "routine" | "challenges" | "history" | "insights" | "settings";
 
 const TODAY = format(new Date(), "yyyy-MM-dd");
-const DRUCKER_QUOTES = [
-  "\"Time is the scarcest resource. Unless it is managed, nothing else can be managed.\"",
-  "\"Efficiency is doing things right; effectiveness is doing the right things.\"",
-  "\"What gets measured gets managed.\"",
-  "\"Effective executives concentrate on the few major areas where superior performance will produce outstanding results.\"",
-  "\"Until we can manage time, we can manage nothing else.\"",
-  "\"The most important thing in communication is hearing what isn't said.\"",
-];
 
 export default function App() {
   const [tab,           setTab]           = useState<Tab>("today");
@@ -63,13 +56,28 @@ export default function App() {
   const [syncState,     setSyncState]     = useState<SyncState>("idle");
   const [syncMsg,       setSyncMsg]       = useState("");
   const [sheetsReady,   setSheetsReady]   = useState(false);
-  const [quote]         = useState(() => DRUCKER_QUOTES[Math.floor(Math.random() * DRUCKER_QUOTES.length)]);
+  const [quote,         setQuote]         = useState("Loading mindset...");
+  const [quoteAuthor,   setQuoteAuthor]   = useState("");
   const [mounted,       setMounted]       = useState(false);
 
   // ── Hydrate ────────────────────────────────────────────────────────────────
   useEffect(() => {
     setMounted(true);
     fetchAppData().then(data => setAppData(data));
+    
+    // Fetch daily quote
+    fetch("https://dummyjson.com/quotes/random")
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.quote) {
+          setQuote(`"${data.quote}"`);
+          setQuoteAuthor(data.author || "Unknown");
+        }
+      })
+      .catch(() => {
+        setQuote("\"Time is the scarcest resource. Unless it is managed, nothing else can be managed.\"");
+        setQuoteAuthor("Peter F. Drucker");
+      });
   }, []);
 
   // ── Init Google Sheet (once per session) ──────────────────────────────────
@@ -464,6 +472,8 @@ export default function App() {
                 onExtendDay={handleExtendDay}
                 activeChallenge={appData.challenges?.find(c => c.status === "active")}
                 quote={quote}
+                quoteAuthor={quoteAuthor}
+                targetRank={calculateCurrentMonthRank(appData)}
               />
             )}
           </>

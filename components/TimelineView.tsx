@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { TimeBlock, DaySetup, Category, CustomCategory, RoutineItem, Challenge } from "@/lib/types";
-import { Plus, Edit2, Moon, CheckSquare, Star, Flame, Zap, Quote } from "lucide-react";
+import { Plus, Edit2, Moon, CheckSquare, Star, Flame, Zap, Quote, Trophy } from "lucide-react";
 import { SyncState } from "@/lib/types";
 import { differenceInDays } from "date-fns";
 
@@ -22,6 +22,8 @@ interface Props {
   onExtendDay?: () => void;
   activeChallenge?: Challenge | null;
   quote?: string;
+  quoteAuthor?: string;
+  targetRank?: { level: string, rankStr: string, rankColor: string, rankLabel: string };
 }
 
 const toTime = (h: number) => {
@@ -55,7 +57,8 @@ const nowHour = () => new Date().getHours();
 
 export default function TimelineView({
   date, setup, blocks, routine, onLogBlock, onEveningReview, hasEveningReview, 
-  dayTargets, allTargets, categories, onToggleTarget, onUpdateCommitments, onExtendDay, activeChallenge, quote
+  dayTargets, allTargets, categories, onToggleTarget, onUpdateCommitments, onExtendDay, 
+  activeChallenge, quote, quoteAuthor, targetRank
 }: Props) {
   const hours = Array.from(
     { length: Math.max(1, (setup.sleepHour > setup.wakeHour
@@ -459,6 +462,19 @@ export default function TimelineView({
 
       {/* RIGHT COLUMN: Mindset & Challenges */}
       <div className="hidden xl:block space-y-6 sticky top-24">
+        {/* Target Rank Glance */}
+        {targetRank && (
+          <div className="rounded-xl p-5 shadow-sm border flex items-center justify-between" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+            <div>
+              <h3 className="font-semibold text-[10px] uppercase tracking-widest mb-1" style={{ color: "var(--muted)" }}>Monthly Target Rank</h3>
+              <p className={`font-bold text-sm ${targetRank.rankColor}`}>{targetRank.rankLabel}</p>
+            </div>
+            <div className="flex items-center justify-center w-10 h-10 rounded-xl font-black text-xl bg-black/5 dark:bg-white/5 border" style={{ borderColor: "var(--border)" }}>
+              <span className={targetRank.rankColor}>{targetRank.rankStr}</span>
+            </div>
+          </div>
+        )}
+
         {/* Mindset Quote */}
         {quote && (
           <div className="rounded-xl p-6 shadow-sm border relative overflow-hidden" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
@@ -466,9 +482,14 @@ export default function TimelineView({
             <h3 className="font-semibold text-xs uppercase tracking-widest mb-3 flex items-center gap-1.5" style={{ color: "var(--text)" }}>
                Mindset Focus
             </h3>
-            <p className="text-sm italic leading-relaxed" style={{ color: "var(--faint)" }}>
+            <p className="text-sm italic leading-relaxed mb-3" style={{ color: "var(--faint)" }}>
               {quote}
             </p>
+            {quoteAuthor && (
+              <p className="text-[10px] font-bold uppercase tracking-widest text-right" style={{ color: "var(--muted)" }}>
+                — {quoteAuthor}
+              </p>
+            )}
           </div>
         )}
 
@@ -511,15 +532,12 @@ export default function TimelineView({
                     <div className="mt-4 pt-4 border-t" style={{ borderColor: "var(--s2)" }}>
                       <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "var(--muted)" }}>Core Commitments</p>
                       <ul className="space-y-1.5">
-                        {activeChallenge.goals.slice(0, 3).map((g, i) => (
+                        {activeChallenge.goals.map((g, i) => (
                           <li key={i} className="text-xs truncate flex items-center gap-1.5" style={{ color: "var(--faint)" }}>
                             <div className="w-1 h-1 rounded-full bg-orange-500 flex-shrink-0" />
                             {g}
                           </li>
                         ))}
-                        {activeChallenge.goals.length > 3 && (
-                          <li className="text-[10px] italic mt-1" style={{ color: "var(--muted)" }}>+ {activeChallenge.goals.length - 3} more...</li>
-                        )}
                       </ul>
                     </div>
                   )}
