@@ -1,8 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
-import { TimeBlock, DaySetup, Category, CustomCategory, RoutineItem } from "@/lib/types";
-import { Plus, Edit2, Moon, CheckSquare, Star } from "lucide-react";
+import { TimeBlock, DaySetup, Category, CustomCategory, RoutineItem, Challenge } from "@/lib/types";
+import { Plus, Edit2, Moon, CheckSquare, Star, Flame, Zap, Quote } from "lucide-react";
 import { SyncState } from "@/lib/types";
+import { differenceInDays } from "date-fns";
 
 interface Props {
   date:          string;
@@ -19,6 +20,8 @@ interface Props {
   onToggleTarget: (targetName: string) => void;
   onUpdateCommitments?: (tasks: [string, string, string]) => void;
   onExtendDay?: () => void;
+  activeChallenge?: Challenge | null;
+  quote?: string;
 }
 
 const toTime = (h: number) => {
@@ -52,7 +55,7 @@ const nowHour = () => new Date().getHours();
 
 export default function TimelineView({
   date, setup, blocks, routine, onLogBlock, onEveningReview, hasEveningReview, 
-  dayTargets, allTargets, categories, onToggleTarget, onUpdateCommitments, onExtendDay
+  dayTargets, allTargets, categories, onToggleTarget, onUpdateCommitments, onExtendDay, activeChallenge, quote
 }: Props) {
   const hours = Array.from(
     { length: Math.max(1, (setup.sleepHour > setup.wakeHour
@@ -116,7 +119,7 @@ export default function TimelineView({
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 pb-16 grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-8 items-start">
+    <div className="w-full max-w-[1600px] mx-auto px-4 md:px-8 pb-16 grid grid-cols-1 lg:grid-cols-[260px_1fr] xl:grid-cols-[280px_1fr_320px] gap-6 xl:gap-8 items-start">
       
       {/* LEFT COLUMN: Targets & Commitments */}
       <div className="space-y-6 lg:sticky lg:top-24">
@@ -450,6 +453,79 @@ export default function TimelineView({
               <Moon size={18} fill={hasEveningReview ? "none" : "currentColor"} />
               {hasEveningReview ? "Edit Evening Review" : "Close Today's Ledger"}
             </button>
+          </div>
+        )}
+      </div>
+
+      {/* RIGHT COLUMN: Mindset & Challenges */}
+      <div className="hidden xl:block space-y-6 sticky top-24">
+        {/* Mindset Quote */}
+        {quote && (
+          <div className="rounded-xl p-6 shadow-sm border relative overflow-hidden" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+            <Quote size={40} className="absolute -top-2 -left-2 opacity-5" style={{ color: "var(--text)" }} />
+            <h3 className="font-semibold text-xs uppercase tracking-widest mb-3 flex items-center gap-1.5" style={{ color: "var(--text)" }}>
+               Mindset Focus
+            </h3>
+            <p className="text-sm italic leading-relaxed" style={{ color: "var(--faint)" }}>
+              {quote}
+            </p>
+          </div>
+        )}
+
+        {/* Active Challenge Glance */}
+        {activeChallenge && (
+          <div className="rounded-xl p-5 shadow-sm border overflow-hidden relative" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 to-red-500" />
+            <div className="flex items-center gap-2 mb-4">
+              <Flame size={16} className="text-orange-500" />
+              <h3 className="font-semibold text-xs uppercase tracking-widest" style={{ color: "var(--text)" }}>Active Arc</h3>
+            </div>
+            
+            <h4 className="text-xl font-black tracking-tight mb-1">{activeChallenge.name}</h4>
+            
+            {(() => {
+              const start = new Date(activeChallenge.startDate);
+              const today = new Date();
+              const daysElapsed = differenceInDays(today, start);
+              const progressPct = Math.min(100, Math.max(0, (daysElapsed / activeChallenge.durationDays) * 100));
+              
+              let phase = 1;
+              if (progressPct > 33 && progressPct <= 66) phase = 2;
+              if (progressPct > 66) phase = 3;
+
+              return (
+                <div>
+                  <div className="flex items-center justify-between mt-3 mb-1">
+                    <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--muted)" }}>
+                      Phase {phase} • Day {Math.max(0, daysElapsed + 1)}
+                    </span>
+                    <span className="text-[10px] font-mono font-bold" style={{ color: "var(--primary)" }}>
+                      {progressPct.toFixed(0)}%
+                    </span>
+                  </div>
+                  <div className="h-1.5 w-full rounded-full overflow-hidden mb-4" style={{ background: "var(--s2)" }}>
+                    <div className="h-full bg-gradient-to-r from-orange-500 to-red-500 transition-all" style={{ width: `${progressPct}%` }} />
+                  </div>
+                  
+                  {activeChallenge.goals.length > 0 && (
+                    <div className="mt-4 pt-4 border-t" style={{ borderColor: "var(--s2)" }}>
+                      <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "var(--muted)" }}>Core Commitments</p>
+                      <ul className="space-y-1.5">
+                        {activeChallenge.goals.slice(0, 3).map((g, i) => (
+                          <li key={i} className="text-xs truncate flex items-center gap-1.5" style={{ color: "var(--faint)" }}>
+                            <div className="w-1 h-1 rounded-full bg-orange-500 flex-shrink-0" />
+                            {g}
+                          </li>
+                        ))}
+                        {activeChallenge.goals.length > 3 && (
+                          <li className="text-[10px] italic mt-1" style={{ color: "var(--muted)" }}>+ {activeChallenge.goals.length - 3} more...</li>
+                        )}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         )}
       </div>

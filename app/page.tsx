@@ -430,9 +430,6 @@ export default function App() {
               Plan Tomorrow
             </button>
           </div>
-          <p className="text-xs italic hidden md:block max-w-sm text-right" style={{ color: "var(--faint)" }}>
-            {quote}
-          </p>
         </div>
       )}
 
@@ -465,6 +462,8 @@ export default function App() {
                 onToggleTarget={(targetName) => handleToggleTarget(viewDate, targetName)}
                 onUpdateCommitments={handleUpdateCommitments}
                 onExtendDay={handleExtendDay}
+                activeChallenge={appData.challenges?.find(c => c.status === "active")}
+                quote={quote}
               />
             )}
           </>
