@@ -531,13 +531,40 @@ export default function TimelineView({
                   {activeChallenge.goals.length > 0 && (
                     <div className="mt-4 pt-4 border-t" style={{ borderColor: "var(--s2)" }}>
                       <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "var(--muted)" }}>Core Commitments</p>
-                      <ul className="space-y-1.5">
-                        {activeChallenge.goals.map((g, i) => (
-                          <li key={i} className="text-xs truncate flex items-center gap-1.5" style={{ color: "var(--faint)" }}>
-                            <div className="w-1 h-1 rounded-full bg-orange-500 flex-shrink-0" />
-                            {g}
-                          </li>
-                        ))}
+                      <ul className="space-y-3">
+                        {activeChallenge.goals.map((g, i) => {
+                          const mappedTargets = activeChallenge.targetMapping?.[g] || [];
+                          const hasMappedTargets = mappedTargets.length > 0;
+                          return (
+                            <li key={i} className="text-xs flex flex-col gap-1.5" style={{ color: "var(--text)" }}>
+                              <div className="flex items-start gap-1.5 font-medium">
+                                <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-orange-500 flex-shrink-0" />
+                                {g}
+                              </div>
+                              {hasMappedTargets && (
+                                <ul className="pl-3 space-y-1.5 mt-0.5">
+                                  {mappedTargets.map(tName => {
+                                    const isDone = dayTargets[tName];
+                                    return (
+                                      <li key={tName} className="flex items-center gap-1.5 text-[10px]" style={{ color: isDone ? "var(--emerald-500)" : "var(--faint)" }}>
+                                        <span className="opacity-50">↳</span>
+                                        {isDone ? (
+                                          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" className="text-emerald-500 flex-shrink-0">
+                                            <rect width="12" height="12" rx="2" fill="currentColor" fillOpacity="0.2"/>
+                                            <path d="M3 6L5.5 8.5L9 3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                          </svg>
+                                        ) : (
+                                          <div className="w-2.5 h-2.5 rounded-[2px] border flex-shrink-0" style={{ borderColor: "var(--faint)" }} />
+                                        )}
+                                        <span className={isDone ? "line-through opacity-80 truncate" : "truncate"}>{tName}</span>
+                                      </li>
+                                    );
+                                  })}
+                                </ul>
+                              )}
+                            </li>
+                          );
+                        })}
                       </ul>
                     </div>
                   )}

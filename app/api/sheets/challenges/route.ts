@@ -16,7 +16,7 @@ export async function POST(req: Request) {
       // Clear existing data (but keep header)
       await sheets.spreadsheets.values.clear({
         spreadsheetId: sheetId,
-        range: "🏆 Challenges!A2:I",
+        range: "🏆 Challenges!A2:J",
       });
     } catch (e: any) {
       if (e.message && e.message.includes("Unable to parse range")) {
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
           spreadsheetId: sheetId,
           range: "🏆 Challenges!A1",
           valueInputOption: "RAW",
-          requestBody: { values: [["ID", "Name", "Start Date", "Duration", "Goals", "Preferences", "Action Plan", "Status", "Logs (JSON)"]] }
+          requestBody: { values: [["ID", "Name", "Start Date", "Duration", "Goals", "Preferences", "Action Plan", "Status", "Logs (JSON)", "Target Mapping (JSON)"]] }
         });
       } else {
         throw e;
@@ -51,7 +51,8 @@ export async function POST(req: Request) {
         c.preferences,
         c.actionPlan,
         c.status,
-        c.logs ? JSON.stringify(c.logs) : "[]"
+        c.logs ? JSON.stringify(c.logs) : "[]",
+        c.targetMapping ? JSON.stringify(c.targetMapping) : "{}"
       ]);
 
       await sheets.spreadsheets.values.update({

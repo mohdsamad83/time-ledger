@@ -29,7 +29,7 @@ export async function GET() {
       sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "✅ Daily Targets!A2:C" }).catch(() => ({ data: { values: [] } })),
       sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "🏷️ Categories!A2:E" }).catch(() => ({ data: { values: [] } })),
       sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "⏱️ Routine!A2:C" }).catch(() => ({ data: { values: [] } })),
-      sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "🏆 Challenges!A2:I" }).catch(() => ({ data: { values: [] } })),
+      sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "🏆 Challenges!A2:J" }).catch(() => ({ data: { values: [] } })),
     ]);
 
     const logRows = logRes.data.values ?? [];
@@ -67,8 +67,10 @@ export async function GET() {
     if (challengeRows.length > 0) {
       appData.challenges = challengeRows.map((r: any) => {
         let logs = [];
+        let targetMapping = {};
         try {
           if (r[8]) logs = JSON.parse(r[8]);
+          if (r[9]) targetMapping = JSON.parse(r[9]);
         } catch(e) {}
         return {
           id: r[0] || "",
@@ -79,7 +81,8 @@ export async function GET() {
           preferences: r[5] || "",
           actionPlan: r[6] || "",
           status: (r[7] || "active") as any,
-          logs
+          logs,
+          targetMapping
         };
       }).filter((c: any) => c.id);
     }

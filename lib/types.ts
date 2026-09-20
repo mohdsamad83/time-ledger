@@ -120,6 +120,7 @@ export interface Challenge {
   actionPlan: string;       // "How to take appropriate actions"
   status: "active" | "completed" | "abandoned";
   logs?: { date: string; note: string }[];
+  targetMapping?: Record<string, string[]>;
 }
 
 export interface AppData {

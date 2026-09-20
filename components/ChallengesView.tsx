@@ -5,10 +5,12 @@ import { format, differenceInDays } from "date-fns";
 
 interface Props {
   challenges: Challenge[];
+  allTargets?: string[];
+  dayTargets?: Record<string, boolean>;
   onUpdate: (challenges: Challenge[]) => void;
 }
 
-export default function ChallengesView({ challenges, onUpdate }: Props) {
+export default function ChallengesView({ challenges, allTargets, dayTargets, onUpdate }: Props) {
   const [isCreating, setIsCreating] = useState(false);
   const [editingChallenge, setEditingChallenge] = useState<Challenge | null>(null);
 
@@ -21,6 +23,7 @@ export default function ChallengesView({ challenges, onUpdate }: Props) {
   const [actionPlan, setActionPlan] = useState("");
   const [status, setStatus] = useState<Challenge["status"]>("active");
   const [logs, setLogs] = useState<{ date: string; note: string }[]>([]);
+  const [targetMapping, setTargetMapping] = useState<Record<string, string[]>>({});
 
   // Check-in state
   const [checkInText, setCheckInText] = useState("");
@@ -39,6 +42,7 @@ export default function ChallengesView({ challenges, onUpdate }: Props) {
       setActionPlan(c.actionPlan);
       setStatus(c.status);
       setLogs(c.logs || []);
+      setTargetMapping(c.targetMapping || {});
     } else {
       setEditingChallenge(null);
       setName("");
@@ -49,6 +53,7 @@ export default function ChallengesView({ challenges, onUpdate }: Props) {
       setActionPlan("");
       setStatus("active");
       setLogs([]);
+      setTargetMapping({});
     }
     setIsCreating(true);
   };
@@ -70,7 +75,8 @@ export default function ChallengesView({ challenges, onUpdate }: Props) {
       preferences,
       actionPlan,
       status,
-      logs
+      logs,
+      targetMapping
     };
 
     let nextChallenges = [...challenges];
@@ -209,15 +215,45 @@ export default function ChallengesView({ challenges, onUpdate }: Props) {
                     <Target size={14} className="text-blue-500" />
                     Commitments
                   </h4>
-                  <ul className="space-y-2.5">
-                    {c.goals.map((g, i) => (
-                      <li key={i} className="text-sm flex items-start gap-2.5" style={{ color: "var(--faint)" }}>
-                        <div className="mt-0.5 min-w-[16px] h-4 rounded-full bg-green-500/20 flex items-center justify-center">
-                          <CheckCircle size={10} className="text-green-500" />
-                        </div>
-                        <span className="leading-tight">{g}</span>
-                      </li>
-                    ))}
+                  <ul className="space-y-4">
+                    {c.goals.map((g, i) => {
+                      const mappedTargets = c.targetMapping?.[g] || [];
+                      const hasMappedTargets = mappedTargets.length > 0;
+                      
+                      return (
+                        <li key={i} className="text-sm flex flex-col gap-1.5" style={{ color: "var(--text)" }}>
+                          <div className="flex items-start gap-2.5">
+                             <div className="mt-0.5 min-w-[16px] h-4 rounded-full bg-green-500/20 flex items-center justify-center">
+                               {hasMappedTargets ? (
+                                  <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                               ) : (
+                                  <CheckCircle size={10} className="text-green-500" />
+                               )}
+                             </div>
+                             <span className="leading-tight font-bold">{g}</span>
+                          </div>
+                          
+                          {hasMappedTargets && (
+                            <ul className="pl-7 space-y-1.5 mt-1">
+                              {mappedTargets.map(tName => {
+                                const isDone = dayTargets?.[tName];
+                                return (
+                                  <li key={tName} className="flex items-center gap-2 text-xs" style={{ color: isDone ? "var(--emerald-500)" : "var(--faint)" }}>
+                                    <span className="text-[10px]">↳</span>
+                                    {isDone ? (
+                                      <CheckCircle size={12} className="text-emerald-500" />
+                                    ) : (
+                                      <div className="w-3 h-3 rounded-sm border" style={{ borderColor: "var(--faint)" }} />
+                                    )}
+                                    <span className={isDone ? "line-through opacity-80" : ""}>{tName}</span>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          )}
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
                 
@@ -386,6 +422,52 @@ export default function ChallengesView({ challenges, onUpdate }: Props) {
               placeholder="- Wake up at 5 AM\n- Workout 1hr\n- No sugar"
             />
           </div>
+
+          {allTargets && allTargets.length > 0 && (
+            <div className="mb-6 p-4 md:p-6 rounded-xl border" style={{ borderColor: "var(--s2)", background: "var(--bg)" }}>
+              <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "var(--text)" }}>Map Daily Targets to Commitments</label>
+              <p className="text-[10px] mb-4" style={{ color: "var(--faint)" }}>Assign your existing Daily Targets to your arc commitments.</p>
+              
+              <div className="space-y-3 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
+                {allTargets.map(targetName => {
+                  let currentMappedGoal = "";
+                  Object.entries(targetMapping).forEach(([goal, targets]) => {
+                    if (targets.includes(targetName)) currentMappedGoal = goal;
+                  });
+                  
+                  const goalsList = goalsStr.split("\n").map(g => g.trim()).filter(Boolean);
+
+                  return (
+                    <div key={targetName} className="flex items-center justify-between gap-4 p-3 rounded-lg border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+                      <span className="text-sm font-semibold truncate flex-1">{targetName}</span>
+                      <select 
+                        className="text-xs p-2 rounded-lg bg-transparent border flex-1 outline-none focus:border-primary"
+                        style={{ borderColor: "var(--border)", color: "var(--text)" }}
+                        value={currentMappedGoal}
+                        onChange={(e) => {
+                          const newGoal = e.target.value;
+                          const newMapping = { ...targetMapping };
+                          Object.keys(newMapping).forEach(g => {
+                            newMapping[g] = newMapping[g].filter(t => t !== targetName);
+                          });
+                          if (newGoal) {
+                            if (!newMapping[newGoal]) newMapping[newGoal] = [];
+                            newMapping[newGoal].push(targetName);
+                          }
+                          setTargetMapping(newMapping);
+                        }}
+                      >
+                        <option value="" style={{ color: "var(--bg)" }}>-- Unassigned --</option>
+                        {goalsList.map((g, i) => (
+                          <option key={i} value={g} style={{ color: "var(--bg)" }}>{g}</option>
+                        ))}
+                      </select>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div>
