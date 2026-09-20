@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { TimeBlock, DaySetup, Category, CustomCategory, RoutineItem, Challenge } from "@/lib/types";
-import { Plus, Edit2, Moon, CheckSquare, Star, Flame, Zap, Quote, Trophy } from "lucide-react";
+import { Plus, Edit2, Moon, CheckSquare, Star, Flame, Zap, Trophy } from "lucide-react";
 import { SyncState } from "@/lib/types";
 import { differenceInDays } from "date-fns";
 
@@ -21,8 +21,6 @@ interface Props {
   onUpdateCommitments?: (tasks: [string, string, string]) => void;
   onExtendDay?: () => void;
   activeChallenge?: Challenge | null;
-  quote?: string;
-  quoteAuthor?: string;
   targetRank?: { level: string, rankStr: string, rankColor: string, rankLabel: string };
 }
 
@@ -58,7 +56,7 @@ const nowHour = () => new Date().getHours();
 export default function TimelineView({
   date, setup, blocks, routine, onLogBlock, onEveningReview, hasEveningReview, 
   dayTargets, allTargets, categories, onToggleTarget, onUpdateCommitments, onExtendDay, 
-  activeChallenge, quote, quoteAuthor, targetRank
+  activeChallenge, targetRank
 }: Props) {
   const hours = Array.from(
     { length: Math.max(1, (setup.sleepHour > setup.wakeHour

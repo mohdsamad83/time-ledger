@@ -486,8 +486,6 @@ export default function App() {
                 onUpdateCommitments={handleUpdateCommitments}
                 onExtendDay={handleExtendDay}
                 activeChallenge={appData.challenges?.find(c => c.status === "active")}
-                quote={quote}
-                quoteAuthor={quoteAuthor}
                 targetRank={calculateCurrentMonthRank(appData)}
               />
             )}
