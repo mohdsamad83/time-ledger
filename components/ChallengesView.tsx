@@ -457,9 +457,9 @@ export default function ChallengesView({ challenges, allTargets, dayTargets, onU
                           setTargetMapping(newMapping);
                         }}
                       >
-                        <option value="" style={{ color: "var(--bg)" }}>-- Unassigned --</option>
+                        <option value="">-- Unassigned --</option>
                         {goalsList.map((g, i) => (
-                          <option key={i} value={g} style={{ color: "var(--bg)" }}>{g}</option>
+                          <option key={i} value={g}>{g}</option>
                         ))}
                       </select>
                     </div>
