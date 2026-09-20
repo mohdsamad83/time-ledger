@@ -475,23 +475,6 @@ export default function TimelineView({
           </div>
         )}
 
-        {/* Mindset Quote */}
-        {quote && (
-          <div className="rounded-xl p-6 shadow-sm border relative overflow-hidden" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
-            <Quote size={40} className="absolute -top-2 -left-2 opacity-5" style={{ color: "var(--text)" }} />
-            <h3 className="font-semibold text-xs uppercase tracking-widest mb-3 flex items-center gap-1.5" style={{ color: "var(--text)" }}>
-               Mindset Focus
-            </h3>
-            <p className="text-sm italic leading-relaxed mb-3" style={{ color: "var(--faint)" }}>
-              {quote}
-            </p>
-            {quoteAuthor && (
-              <p className="text-[10px] font-bold uppercase tracking-widest text-right" style={{ color: "var(--muted)" }}>
-                — {quoteAuthor}
-              </p>
-            )}
-          </div>
-        )}
 
         {/* Active Challenge Glance */}
         {activeChallenge && (

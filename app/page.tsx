@@ -3,8 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { format, isBefore, startOfMonth } from "date-fns";
 import {
-  Clock, BarChart2, History, CheckCircle,
-  AlertCircle, Loader2, ExternalLink, BookOpen, RotateCcw, Timer, Target, LogOut, Settings, CalendarDays
+  AlertCircle, Loader2, ExternalLink, BookOpen, RotateCcw, Timer, Target, LogOut, Settings, CalendarDays, Quote
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -411,10 +410,10 @@ export default function App() {
       {/* ── Date header (today view only) ──────────────────────────────────── */}
       {tab === "today" && dayData.setup && (
         <div
-          className="px-4 md:px-6 py-3 flex items-center justify-between"
+          className="px-4 md:px-6 py-3 flex items-center justify-between gap-6"
           style={{ background: "var(--bg)", borderBottom: "1px solid var(--s2)" }}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0">
             <p className="font-mono text-xs" style={{ color: "var(--faint)" }}>
               {format(new Date(viewDate + "T12:00:00"), "EEEE, MMMM d, yyyy")}
             </p>
@@ -438,6 +437,22 @@ export default function App() {
               Plan Tomorrow
             </button>
           </div>
+
+          {quote && (
+            <div className="hidden lg:flex flex-1 items-center justify-end opacity-80 hover:opacity-100 transition-opacity">
+               <div className="flex items-center gap-2 max-w-[800px]">
+                 <Quote size={12} style={{ color: "var(--primary)" }} className="shrink-0" />
+                 <p className="text-sm italic truncate" style={{ color: "var(--text)" }}>
+                   {quote}
+                 </p>
+                 {quoteAuthor && (
+                   <span className="text-[10px] font-bold uppercase tracking-widest shrink-0" style={{ color: "var(--muted)" }}>
+                     — {quoteAuthor}
+                   </span>
+                 )}
+               </div>
+            </div>
+          )}
         </div>
       )}
 
