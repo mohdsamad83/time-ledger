@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { format, getDaysInMonth, startOfMonth, addMonths, subMonths, isSameMonth, isBefore, isAfter } from "date-fns";
+import { format, getDaysInMonth, startOfMonth, addMonths, subMonths, isSameMonth, isBefore, isAfter, differenceInDays } from "date-fns";
 import { AppData, TargetMeta } from "@/lib/types";
 import { AreaChart, Area, ResponsiveContainer } from "recharts";
 import { ChevronLeft, ChevronRight, Target, X, ChevronDown, Trophy, CheckCircle2 } from "lucide-react";
@@ -408,11 +408,23 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Prop
               <th className="p-2 border font-medium w-16" style={{ borderColor: "var(--border)", color: "var(--muted)", background: "var(--s2)" }}>
                 %
               </th>
-              {days.map((_, i) => (
-                <th key={i} className="p-2 border font-medium w-8 text-xs" style={{ borderColor: "var(--border)", color: "var(--faint)" }}>
-                  {i + 1}
-                </th>
-              ))}
+              {days.map((dateStr, i) => {
+                const isChallengeActiveOnDate = !!data.challenges?.find(c => {
+                  if (c.status !== "active") return false;
+                  const cStart = new Date(c.startDate);
+                  const date = new Date(dateStr);
+                  const diff = differenceInDays(date, cStart);
+                  return diff >= 0 && diff < c.durationDays;
+                });
+                return (
+                  <th key={i} className={`p-2 border font-medium w-8 text-[10px] ${isChallengeActiveOnDate ? "bg-orange-500/5 dark:bg-orange-500/10" : ""}`} style={{ borderColor: "var(--border)", color: "var(--faint)" }}>
+                    <div className="flex flex-col items-center leading-tight gap-0.5">
+                      <span className="opacity-50 text-[8px] uppercase">{format(new Date(dateStr), "EEE")}</span>
+                      <span className="text-xs">{i + 1}</span>
+                    </div>
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody>
@@ -462,9 +474,21 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Prop
                     const todayStr = format(now, "yyyy-MM-dd");
                     const isFuture = dateStr > todayStr;
                     const isDisabled = isFuture || (isAccomplished && dayNum > accomplishedDay && accomplishedDay !== -1);
+                    
+                    const isChallengeActiveOnDate = !!data.challenges?.find(c => {
+                      if (c.status !== "active") return false;
+                      const cStart = new Date(c.startDate);
+                      const date = new Date(dateStr);
+                      const diff = differenceInDays(date, cStart);
+                      return diff >= 0 && diff < c.durationDays;
+                    });
+
+                    let cellBg = "";
+                    if (isDisabled) cellBg = "bg-[var(--s2)] opacity-30";
+                    else if (isChallengeActiveOnDate) cellBg = "bg-orange-500/5 dark:bg-orange-500/10";
 
                     return (
-                      <td key={colIdx} className={`p-0 border relative ${isDisabled ? "bg-[var(--s2)] opacity-30" : ""}`} style={{ borderColor: "var(--border)" }}>
+                      <td key={colIdx} className={`p-0 border relative ${cellBg}`} style={{ borderColor: "var(--border)" }}>
                         <button
                           disabled={isDisabled}
                           onClick={() => onToggle(dateStr, targetMeta.name)}
