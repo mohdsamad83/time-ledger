@@ -223,188 +223,157 @@ export default function ChallengesView({ challenges, allTargets, dayTargets, onU
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Left Column: Rules & Actions */}
-              <div className="space-y-6">
-                <div>
-                  <h4 className="text-sm font-bold flex items-center gap-1.5 mb-3 uppercase tracking-wider" style={{ color: "var(--text)" }}>
-                    <Target size={14} className="text-blue-500" />
-                    Commitments
-                  </h4>
-                  <div className="space-y-4">
-                    {c.goals.map((g, i) => {
-                      const mappedTargets = c.targetMapping?.[g] || [];
-                      const hasMappedTargets = mappedTargets.length > 0;
-                      const meta = c.goalMetadata?.[g] || {};
-                      const isExpanded = expandedGoal === g;
-                      const isEditing = editingGoal === g;
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 px-6 md:px-8 pb-8">
+              {c.goals.map((g, i) => {
+                const mappedTargets = c.targetMapping?.[g] || [];
+                const hasMappedTargets = mappedTargets.length > 0;
+                const meta = c.goalMetadata?.[g] || {};
+                const isEditing = editingGoal === g;
 
-                      // Deadline display logic
-                      let deadlineStr = "";
-                      let deadlineColor = "var(--faint)";
-                      if (meta.deadline) {
-                         const dlDate = new Date(meta.deadline);
-                         if (isToday(dlDate)) { deadlineStr = "Due Today"; deadlineColor = "var(--orange-500)"; }
-                         else if (isPast(dlDate)) { deadlineStr = "Overdue"; deadlineColor = "#EF4444"; }
-                         else {
-                           const diff = differenceInDays(dlDate, new Date());
-                           deadlineStr = `${diff} day${diff !== 1 ? 's' : ''} left`;
-                           deadlineColor = "var(--primary)";
-                         }
-                      }
+                // Deadline display logic
+                let deadlineStr = "";
+                let deadlineColor = "var(--faint)";
+                if (meta.deadline) {
+                   const dlDate = new Date(meta.deadline);
+                   if (isToday(dlDate)) { deadlineStr = "Due Today"; deadlineColor = "var(--orange-500)"; }
+                   else if (isPast(dlDate)) { deadlineStr = "Overdue"; deadlineColor = "#EF4444"; }
+                   else {
+                     const diff = differenceInDays(dlDate, new Date());
+                     deadlineStr = `${diff} day${diff !== 1 ? 's' : ''} left`;
+                     deadlineColor = "var(--primary)";
+                   }
+                }
 
-                      return (
-                        <div key={i} className="rounded-xl border transition-all duration-300 overflow-hidden bg-black/5 dark:bg-white/5" style={{ borderColor: isExpanded ? "var(--primary)" : "var(--s2)" }}>
-                          {/* Header / Clickable area */}
-                          <div 
-                            onClick={() => {
-                              if (isEditing) return;
-                              setExpandedGoal(isExpanded ? null : g);
-                            }}
-                            className={`flex items-center justify-between p-4 cursor-pointer transition-colors ${isExpanded && !isEditing ? 'bg-primary/5' : 'hover:bg-primary/5'}`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="min-w-[16px] h-4 rounded-full bg-green-500/20 flex items-center justify-center">
-                                {hasMappedTargets ? (
-                                   <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                                ) : (
-                                   <CheckCircle size={10} className="text-green-500" />
-                                )}
-                              </div>
-                              <span className="font-bold text-sm leading-tight" style={{ color: "var(--text)" }}>{g}</span>
-                            </div>
-                            
-                            <div className="flex items-center gap-3">
-                              {meta.deadline && !isExpanded && (
-                                <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full" style={{ color: deadlineColor, background: `${deadlineColor}15` }}>
-                                  {deadlineStr}
-                                </span>
-                              )}
-                              <ChevronDown 
-                                size={16} 
-                                className={`transition-transform duration-300 ${isExpanded ? "rotate-180 text-primary" : "text-gray-400"}`} 
-                              />
-                            </div>
+                return (
+                  <div key={i} className="rounded-xl border relative shadow-sm overflow-hidden flex flex-col bg-black/5 dark:bg-white/5" style={{ borderColor: isEditing ? "var(--primary)" : "var(--s2)" }}>
+                    {/* Header */}
+                    <div className="p-4 flex flex-col gap-2 border-b" style={{ borderColor: "var(--s2)" }}>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1 shrink-0" />
+                          <h4 className="font-bold text-sm leading-tight" style={{ color: "var(--text)" }}>{g}</h4>
+                        </div>
+                        {meta.deadline && !isEditing && (
+                          <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full shrink-0" style={{ color: deadlineColor, background: `${deadlineColor}15` }}>
+                            {deadlineStr}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Body */}
+                    <div className="p-4 flex-1 flex flex-col justify-between">
+                      {isEditing ? (
+                        <div className="space-y-4 animate-in fade-in duration-200 h-full flex flex-col">
+                          <div>
+                            <label className="block text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: "var(--primary)" }}>Target Deadline</label>
+                            <input 
+                              type="date" 
+                              className="input-field w-full text-xs py-2 bg-transparent border-primary/30 focus:border-primary"
+                              value={editingDeadline}
+                              onChange={(e) => setEditingDeadline(e.target.value)}
+                            />
                           </div>
-
-                          {/* Expanded Content (Animated) */}
-                          <div 
-                            className="transition-all duration-300 ease-in-out" 
-                            style={{ 
-                              maxHeight: isExpanded ? "500px" : "0px", 
-                              opacity: isExpanded ? 1 : 0 
-                            }}
-                          >
-                            <div className="p-4 pt-0 border-t" style={{ borderColor: "var(--s2)" }}>
-                              {isEditing ? (
-                                <div className="mt-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
-                                  <div>
-                                    <label className="block text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: "var(--primary)" }}>Target Deadline</label>
-                                    <input 
-                                      type="date" 
-                                      className="input-field w-full text-xs py-2 bg-transparent border-primary/30 focus:border-primary"
-                                      value={editingDeadline}
-                                      onChange={(e) => setEditingDeadline(e.target.value)}
-                                    />
-                                  </div>
-                                  <div>
-                                    <label className="block text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: "var(--primary)" }}>Commitment Notes</label>
-                                    <textarea 
-                                      className="input-field w-full text-xs py-2 min-h-[80px] bg-transparent border-primary/30 focus:border-primary"
-                                      placeholder="Why is this important? Any key milestones?"
-                                      value={editingNotes}
-                                      onChange={(e) => setEditingNotes(e.target.value)}
-                                    />
-                                  </div>
-                                  <div className="flex justify-end gap-2 pt-2">
-                                    <button 
-                                      onClick={() => setEditingGoal(null)}
-                                      className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-                                    >
-                                      Cancel
-                                    </button>
-                                    <button 
-                                      onClick={() => handleSaveGoalMeta(g)}
-                                      className="btn-primary px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg shadow-md hover:scale-105 transition-transform flex items-center gap-1.5"
-                                    >
-                                      <Check size={12} /> Save
-                                    </button>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="mt-4 space-y-4 animate-in fade-in duration-300">
-                                  {/* Read-only metadata */}
-                                  <div className="flex flex-col gap-3">
-                                    {(meta.deadline || meta.notes) ? (
-                                      <div className="p-3 rounded-lg bg-black/5 dark:bg-white/5 space-y-3">
-                                        {meta.deadline && (
-                                          <div className="flex items-center gap-2">
-                                            <Calendar size={12} style={{ color: deadlineColor }} />
-                                            <span className="text-xs font-medium" style={{ color: deadlineColor }}>
-                                              Deadline: {format(new Date(meta.deadline), "MMMM d, yyyy")} ({deadlineStr})
-                                            </span>
-                                          </div>
-                                        )}
-                                        {meta.notes && (
-                                          <div className="flex items-start gap-2">
-                                            <FileText size={12} className="mt-0.5 text-blue-500" />
-                                            <p className="text-xs leading-relaxed whitespace-pre-wrap" style={{ color: "var(--faint)" }}>
-                                              {meta.notes}
-                                            </p>
-                                          </div>
-                                        )}
-                                      </div>
-                                    ) : (
-                                      <p className="text-xs italic opacity-50 px-1">No deadline or notes set.</p>
-                                    )}
-                                    
-                                    <div className="flex justify-end">
-                                      <button 
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setEditingDeadline(meta.deadline || "");
-                                          setEditingNotes(meta.notes || "");
-                                          setEditingGoal(g);
-                                        }}
-                                        className="text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5 px-2 py-1 rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-blue-500"
-                                      >
-                                        <Edit2 size={10} /> Edit Details
-                                      </button>
-                                    </div>
-                                  </div>
-
-                                  {/* Mapped Targets nested inside */}
-                                  {hasMappedTargets && (
-                                    <div className="pt-2 border-t border-dashed" style={{ borderColor: "var(--s2)" }}>
-                                      <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "var(--muted)" }}>Daily Targets Mapped</p>
-                                      <ul className="pl-2 space-y-2">
-                                        {mappedTargets.map(tName => {
-                                          const isDone = dayTargets?.[tName];
-                                          return (
-                                            <li key={tName} className="flex items-center gap-2 text-xs" style={{ color: isDone ? "var(--emerald-500)" : "var(--faint)" }}>
-                                              {isDone ? (
-                                                <CheckCircle size={12} className="text-emerald-500" />
-                                              ) : (
-                                                <div className="w-3 h-3 rounded-sm border" style={{ borderColor: "var(--faint)" }} />
-                                              )}
-                                              <span className={isDone ? "line-through opacity-80" : "font-medium"}>{tName}</span>
-                                            </li>
-                                          );
-                                        })}
-                                      </ul>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </div>
+                          <div className="flex-1">
+                            <label className="block text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: "var(--primary)" }}>Commitment Notes</label>
+                            <textarea 
+                              className="input-field w-full text-xs py-2 min-h-[100px] h-full bg-transparent border-primary/30 focus:border-primary"
+                              placeholder="Why is this important? Any key milestones?"
+                              value={editingNotes}
+                              onChange={(e) => setEditingNotes(e.target.value)}
+                            />
+                          </div>
+                          <div className="flex justify-end gap-2 pt-2">
+                            <button 
+                              onClick={() => setEditingGoal(null)}
+                              className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                            >
+                              Cancel
+                            </button>
+                            <button 
+                              onClick={() => handleSaveGoalMeta(g)}
+                              className="btn-primary px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg shadow-md hover:scale-105 transition-transform flex items-center gap-1.5"
+                            >
+                              <Check size={12} /> Save
+                            </button>
                           </div>
                         </div>
-                      );
-                    })}
+                      ) : (
+                        <div className="animate-in fade-in duration-300 h-full flex flex-col justify-between">
+                          <div className="space-y-4 mb-4">
+                            {/* Read-only metadata */}
+                            {(meta.deadline || meta.notes) ? (
+                              <div className="space-y-3">
+                                {meta.deadline && (
+                                  <div className="flex items-center gap-2">
+                                    <Calendar size={12} style={{ color: deadlineColor }} />
+                                    <span className="text-xs font-medium" style={{ color: deadlineColor }}>
+                                      {format(new Date(meta.deadline), "MMMM d, yyyy")}
+                                    </span>
+                                  </div>
+                                )}
+                                {meta.notes && (
+                                  <div className="flex items-start gap-2">
+                                    <FileText size={12} className="mt-0.5 text-blue-500 shrink-0" />
+                                    <p className="text-xs leading-relaxed whitespace-pre-wrap" style={{ color: "var(--faint)" }}>
+                                      {meta.notes}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <p className="text-xs italic opacity-50">No deadline or notes set.</p>
+                            )}
+                            
+                            {/* Mapped Targets */}
+                            {hasMappedTargets && (
+                              <div className="pt-3 border-t border-dashed" style={{ borderColor: "var(--s2)" }}>
+                                <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "var(--muted)" }}>Mapped Targets</p>
+                                <ul className="space-y-2">
+                                  {mappedTargets.map(tName => {
+                                    const isDone = dayTargets?.[tName];
+                                    return (
+                                      <li key={tName} className="flex items-center gap-2 text-xs" style={{ color: isDone ? "var(--emerald-500)" : "var(--faint)" }}>
+                                        {isDone ? (
+                                          <CheckCircle size={12} className="text-emerald-500 shrink-0" />
+                                        ) : (
+                                          <div className="w-3 h-3 rounded-sm border shrink-0" style={{ borderColor: "var(--faint)" }} />
+                                        )}
+                                        <span className={isDone ? "line-through opacity-80" : "font-medium"}>{tName}</span>
+                                      </li>
+                                    );
+                                  })}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="flex justify-end mt-2">
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingDeadline(meta.deadline || "");
+                                setEditingNotes(meta.notes || "");
+                                setEditingGoal(g);
+                              }}
+                              className="text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5 px-2 py-1 rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-blue-500"
+                            >
+                              <Edit2 size={10} /> Edit Details
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                );
+              })}
+            </div>
+
+            {/* Bottom Split Section: Preferences, Action Plan, Daily Check-in */}
+            <div className="px-6 md:px-8 pb-8 border-t pt-8" style={{ borderColor: "var(--s2)" }}>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Left Area: Preferences & Action Plan */}
+                <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="p-4 rounded-xl border" style={{ borderColor: "var(--s2)", background: "var(--bg)" }}>
                     <h4 className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "var(--muted)" }}>Preferences</h4>
                     <p className="text-xs leading-relaxed whitespace-pre-wrap" style={{ color: "var(--faint)" }}>
@@ -418,10 +387,9 @@ export default function ChallengesView({ challenges, allTargets, dayTargets, onU
                     </p>
                   </div>
                 </div>
-              </div>
 
-              {/* Right Column: Daily Check-in & Logs */}
-              <div className="flex flex-col h-full">
+              {/* Right Area: Daily Check-in & Logs */}
+              <div className="lg:col-span-1 flex flex-col h-full">
                 <h4 className="text-sm font-bold flex items-center gap-1.5 mb-3 uppercase tracking-wider" style={{ color: "var(--text)" }}>
                   <MessageSquare size={14} className="text-purple-500" />
                   Daily Check-in
@@ -480,7 +448,7 @@ export default function ChallengesView({ challenges, allTargets, dayTargets, onU
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 md:px-6 py-6 pb-24 fade-in">
+    <div className="max-w-[1400px] mx-auto px-4 md:px-6 py-6 pb-24 fade-in">
       
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
