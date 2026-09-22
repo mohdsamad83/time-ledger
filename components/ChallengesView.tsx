@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Challenge } from "@/lib/types";
-import { CheckCircle, Flame, Edit2, MessageSquare, ArrowRight, Zap, Calendar, FileText, Check } from "lucide-react";
+import { Plus, X, Activity, CheckCircle, Flame, Edit2, MessageSquare, ArrowRight, Zap, Calendar, FileText, Check } from "lucide-react";
 import { format, differenceInDays, isPast, isToday } from "date-fns";
 
 interface Props {
