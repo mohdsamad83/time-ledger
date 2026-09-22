@@ -121,6 +121,7 @@ export interface Challenge {
   status: "active" | "completed" | "abandoned";
   logs?: { date: string; note: string }[];
   targetMapping?: Record<string, string[]>;
+  goalMetadata?: Record<string, { deadline?: string, notes?: string }>;
 }
 
 export interface AppData {

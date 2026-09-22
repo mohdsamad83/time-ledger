@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Challenge } from "@/lib/types";
-import { Plus, Target, CalendarDays, CheckCircle, Flame, Edit2, X, Activity, MessageSquare, ArrowRight, Zap } from "lucide-react";
-import { format, differenceInDays } from "date-fns";
+import { Plus, Target, CalendarDays, CheckCircle, Flame, Edit2, X, Activity, MessageSquare, ArrowRight, Zap, ChevronDown, Calendar, FileText, Check } from "lucide-react";
+import { format, differenceInDays, isPast, isToday } from "date-fns";
 
 interface Props {
   challenges: Challenge[];
@@ -24,6 +24,12 @@ export default function ChallengesView({ challenges, allTargets, dayTargets, onU
   const [status, setStatus] = useState<Challenge["status"]>("active");
   const [logs, setLogs] = useState<{ date: string; note: string }[]>([]);
   const [targetMapping, setTargetMapping] = useState<Record<string, string[]>>({});
+
+  // Inline editing state for active challenge dashboard
+  const [expandedGoal, setExpandedGoal] = useState<string | null>(null);
+  const [editingGoal, setEditingGoal] = useState<string | null>(null);
+  const [editingNotes, setEditingNotes] = useState("");
+  const [editingDeadline, setEditingDeadline] = useState("");
 
   // Check-in state
   const [checkInText, setCheckInText] = useState("");
@@ -112,6 +118,16 @@ export default function ChallengesView({ challenges, allTargets, dayTargets, onU
     
     onUpdate(nextChallenges);
     setCheckInText("");
+  };
+
+  const handleSaveGoalMeta = (goal: string) => {
+    if (!activeChallenge) return;
+    const newMetadata = { ...(activeChallenge.goalMetadata || {}) };
+    newMetadata[goal] = { notes: editingNotes.trim(), deadline: editingDeadline };
+    const updated = { ...activeChallenge, goalMetadata: newMetadata };
+    const nextChallenges = challenges.map(c => c.id === updated.id ? updated : c);
+    onUpdate(nextChallenges);
+    setEditingGoal(null);
   };
 
   const renderDashboard = (c: Challenge) => {
@@ -215,46 +231,177 @@ export default function ChallengesView({ challenges, allTargets, dayTargets, onU
                     <Target size={14} className="text-blue-500" />
                     Commitments
                   </h4>
-                  <ul className="space-y-4">
+                  <div className="space-y-4">
                     {c.goals.map((g, i) => {
                       const mappedTargets = c.targetMapping?.[g] || [];
                       const hasMappedTargets = mappedTargets.length > 0;
-                      
+                      const meta = c.goalMetadata?.[g] || {};
+                      const isExpanded = expandedGoal === g;
+                      const isEditing = editingGoal === g;
+
+                      // Deadline display logic
+                      let deadlineStr = "";
+                      let deadlineColor = "var(--faint)";
+                      if (meta.deadline) {
+                         const dlDate = new Date(meta.deadline);
+                         if (isToday(dlDate)) { deadlineStr = "Due Today"; deadlineColor = "var(--orange-500)"; }
+                         else if (isPast(dlDate)) { deadlineStr = "Overdue"; deadlineColor = "#EF4444"; }
+                         else {
+                           const diff = differenceInDays(dlDate, new Date());
+                           deadlineStr = `${diff} day${diff !== 1 ? 's' : ''} left`;
+                           deadlineColor = "var(--primary)";
+                         }
+                      }
+
                       return (
-                        <li key={i} className="text-sm flex flex-col gap-1.5" style={{ color: "var(--text)" }}>
-                          <div className="flex items-start gap-2.5">
-                             <div className="mt-0.5 min-w-[16px] h-4 rounded-full bg-green-500/20 flex items-center justify-center">
-                               {hasMappedTargets ? (
-                                  <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                               ) : (
-                                  <CheckCircle size={10} className="text-green-500" />
-                               )}
-                             </div>
-                             <span className="leading-tight font-bold">{g}</span>
+                        <div key={i} className="rounded-xl border transition-all duration-300 overflow-hidden bg-black/5 dark:bg-white/5" style={{ borderColor: isExpanded ? "var(--primary)" : "var(--s2)" }}>
+                          {/* Header / Clickable area */}
+                          <div 
+                            onClick={() => {
+                              if (isEditing) return;
+                              setExpandedGoal(isExpanded ? null : g);
+                            }}
+                            className={`flex items-center justify-between p-4 cursor-pointer transition-colors ${isExpanded && !isEditing ? 'bg-primary/5' : 'hover:bg-primary/5'}`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="min-w-[16px] h-4 rounded-full bg-green-500/20 flex items-center justify-center">
+                                {hasMappedTargets ? (
+                                   <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                                ) : (
+                                   <CheckCircle size={10} className="text-green-500" />
+                                )}
+                              </div>
+                              <span className="font-bold text-sm leading-tight" style={{ color: "var(--text)" }}>{g}</span>
+                            </div>
+                            
+                            <div className="flex items-center gap-3">
+                              {meta.deadline && !isExpanded && (
+                                <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full" style={{ color: deadlineColor, background: `${deadlineColor}15` }}>
+                                  {deadlineStr}
+                                </span>
+                              )}
+                              <ChevronDown 
+                                size={16} 
+                                className={`transition-transform duration-300 ${isExpanded ? "rotate-180 text-primary" : "text-gray-400"}`} 
+                              />
+                            </div>
                           </div>
-                          
-                          {hasMappedTargets && (
-                            <ul className="pl-7 space-y-1.5 mt-1">
-                              {mappedTargets.map(tName => {
-                                const isDone = dayTargets?.[tName];
-                                return (
-                                  <li key={tName} className="flex items-center gap-2 text-xs" style={{ color: isDone ? "var(--emerald-500)" : "var(--faint)" }}>
-                                    <span className="text-[10px]">↳</span>
-                                    {isDone ? (
-                                      <CheckCircle size={12} className="text-emerald-500" />
+
+                          {/* Expanded Content (Animated) */}
+                          <div 
+                            className="transition-all duration-300 ease-in-out" 
+                            style={{ 
+                              maxHeight: isExpanded ? "500px" : "0px", 
+                              opacity: isExpanded ? 1 : 0 
+                            }}
+                          >
+                            <div className="p-4 pt-0 border-t" style={{ borderColor: "var(--s2)" }}>
+                              {isEditing ? (
+                                <div className="mt-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                                  <div>
+                                    <label className="block text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: "var(--primary)" }}>Target Deadline</label>
+                                    <input 
+                                      type="date" 
+                                      className="input-field w-full text-xs py-2 bg-transparent border-primary/30 focus:border-primary"
+                                      value={editingDeadline}
+                                      onChange={(e) => setEditingDeadline(e.target.value)}
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: "var(--primary)" }}>Commitment Notes</label>
+                                    <textarea 
+                                      className="input-field w-full text-xs py-2 min-h-[80px] bg-transparent border-primary/30 focus:border-primary"
+                                      placeholder="Why is this important? Any key milestones?"
+                                      value={editingNotes}
+                                      onChange={(e) => setEditingNotes(e.target.value)}
+                                    />
+                                  </div>
+                                  <div className="flex justify-end gap-2 pt-2">
+                                    <button 
+                                      onClick={() => setEditingGoal(null)}
+                                      className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                                    >
+                                      Cancel
+                                    </button>
+                                    <button 
+                                      onClick={() => handleSaveGoalMeta(g)}
+                                      className="btn-primary px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg shadow-md hover:scale-105 transition-transform flex items-center gap-1.5"
+                                    >
+                                      <Check size={12} /> Save
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="mt-4 space-y-4 animate-in fade-in duration-300">
+                                  {/* Read-only metadata */}
+                                  <div className="flex flex-col gap-3">
+                                    {(meta.deadline || meta.notes) ? (
+                                      <div className="p-3 rounded-lg bg-black/5 dark:bg-white/5 space-y-3">
+                                        {meta.deadline && (
+                                          <div className="flex items-center gap-2">
+                                            <Calendar size={12} style={{ color: deadlineColor }} />
+                                            <span className="text-xs font-medium" style={{ color: deadlineColor }}>
+                                              Deadline: {format(new Date(meta.deadline), "MMMM d, yyyy")} ({deadlineStr})
+                                            </span>
+                                          </div>
+                                        )}
+                                        {meta.notes && (
+                                          <div className="flex items-start gap-2">
+                                            <FileText size={12} className="mt-0.5 text-blue-500" />
+                                            <p className="text-xs leading-relaxed whitespace-pre-wrap" style={{ color: "var(--faint)" }}>
+                                              {meta.notes}
+                                            </p>
+                                          </div>
+                                        )}
+                                      </div>
                                     ) : (
-                                      <div className="w-3 h-3 rounded-sm border" style={{ borderColor: "var(--faint)" }} />
+                                      <p className="text-xs italic opacity-50 px-1">No deadline or notes set.</p>
                                     )}
-                                    <span className={isDone ? "line-through opacity-80" : ""}>{tName}</span>
-                                  </li>
-                                );
-                              })}
-                            </ul>
-                          )}
-                        </li>
+                                    
+                                    <div className="flex justify-end">
+                                      <button 
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setEditingDeadline(meta.deadline || "");
+                                          setEditingNotes(meta.notes || "");
+                                          setEditingGoal(g);
+                                        }}
+                                        className="text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5 px-2 py-1 rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-blue-500"
+                                      >
+                                        <Edit2 size={10} /> Edit Details
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  {/* Mapped Targets nested inside */}
+                                  {hasMappedTargets && (
+                                    <div className="pt-2 border-t border-dashed" style={{ borderColor: "var(--s2)" }}>
+                                      <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "var(--muted)" }}>Daily Targets Mapped</p>
+                                      <ul className="pl-2 space-y-2">
+                                        {mappedTargets.map(tName => {
+                                          const isDone = dayTargets?.[tName];
+                                          return (
+                                            <li key={tName} className="flex items-center gap-2 text-xs" style={{ color: isDone ? "var(--emerald-500)" : "var(--faint)" }}>
+                                              {isDone ? (
+                                                <CheckCircle size={12} className="text-emerald-500" />
+                                              ) : (
+                                                <div className="w-3 h-3 rounded-sm border" style={{ borderColor: "var(--faint)" }} />
+                                              )}
+                                              <span className={isDone ? "line-through opacity-80" : "font-medium"}>{tName}</span>
+                                            </li>
+                                          );
+                                        })}
+                                      </ul>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       );
                     })}
-                  </ul>
+                  </div>
                 </div>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
