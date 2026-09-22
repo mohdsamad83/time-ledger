@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Challenge } from "@/lib/types";
-import { Plus, Target, CalendarDays, CheckCircle, Flame, Edit2, X, Activity, MessageSquare, ArrowRight, Zap, ChevronDown, Calendar, FileText, Check } from "lucide-react";
+import { Plus, Target, CalendarDays, CheckCircle, Flame, Edit2, X, Activity, MessageSquare, ArrowRight, Zap, Calendar, FileText, Check } from "lucide-react";
 import { format, differenceInDays, isPast, isToday } from "date-fns";
 
 interface Props {
@@ -26,7 +26,6 @@ export default function ChallengesView({ challenges, allTargets, dayTargets, onU
   const [targetMapping, setTargetMapping] = useState<Record<string, string[]>>({});
 
   // Inline editing state for active challenge dashboard
-  const [expandedGoal, setExpandedGoal] = useState<string | null>(null);
   const [editingGoal, setEditingGoal] = useState<string | null>(null);
   const [editingNotes, setEditingNotes] = useState("");
   const [editingDeadline, setEditingDeadline] = useState("");
