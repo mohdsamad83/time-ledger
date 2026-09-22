@@ -443,6 +443,7 @@ export default function ChallengesView({ challenges, allTargets, dayTargets, onU
           </div>
         </div>
       </div>
+      </div>
     );
   };
 
