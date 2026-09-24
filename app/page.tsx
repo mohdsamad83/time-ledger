@@ -65,19 +65,24 @@ export default function App() {
     setMounted(true);
     fetchAppData().then(data => setAppData(data));
     
-    // Fetch daily quote
-    fetch("https://dummyjson.com/quotes/random")
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.quote) {
-          setQuote(`"${data.quote}"`);
-          setQuoteAuthor(data.author || "Unknown");
-        }
-      })
-      .catch(() => {
-        setQuote("\"Time is the scarcest resource. Unless it is managed, nothing else can be managed.\"");
-        setQuoteAuthor("Peter F. Drucker");
-      });
+    // Set a highly motivational daily quote
+    const motivationalQuotes = [
+      { q: "Time is the scarcest resource. Unless it is managed, nothing else can be managed.", a: "Peter F. Drucker" },
+      { q: "Discipline equals freedom.", a: "Jocko Willink" },
+      { q: "We must all suffer one of two things: the pain of discipline or the pain of regret.", a: "Jim Rohn" },
+      { q: "You don't have to be great to start, but you have to start to be great.", a: "Zig Ziglar" },
+      { q: "The secret of your future is hidden in your daily routine.", a: "Mike Murdock" },
+      { q: "Success is the sum of small efforts, repeated day in and day out.", a: "Robert Collier" },
+      { q: "Amateurs sit and wait for inspiration, the rest of us just get up and go to work.", a: "Stephen King" },
+      { q: "Focus on being productive instead of busy.", a: "Tim Ferriss" },
+      { q: "Don't count the days, make the days count.", a: "Muhammad Ali" },
+      { q: "It is not that we have a short time to live, but that we waste a lot of it.", a: "Seneca" },
+      { q: "The successful warrior is the average man, with laser-like focus.", a: "Bruce Lee" },
+      { q: "Your future is created by what you do today, not tomorrow.", a: "Robert Kiyosaki" }
+    ];
+    const randomQuote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
+    setQuote(`"${randomQuote.q}"`);
+    setQuoteAuthor(randomQuote.a);
   }, []);
 
   // ── Init Google Sheet (once per session) ──────────────────────────────────
