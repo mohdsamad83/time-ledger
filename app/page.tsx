@@ -536,6 +536,7 @@ export default function App() {
             challenges={appData.challenges || []}
             allTargets={currentTargets}
             dayTargets={dayData.targets || {}}
+            allDays={appData.days}
             onUpdate={async (newChallenges) => {
               setAppData(prev => prev ? { ...prev, challenges: newChallenges } : prev);
               await syncToSheets("/api/sheets/challenges", { challenges: newChallenges }, () => {});

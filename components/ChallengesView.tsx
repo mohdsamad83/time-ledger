@@ -7,10 +7,11 @@ interface Props {
   challenges: Challenge[];
   allTargets?: string[];
   dayTargets?: Record<string, boolean>;
+  allDays?: Record<string, any>;
   onUpdate: (challenges: Challenge[]) => void;
 }
 
-export default function ChallengesView({ challenges, allTargets, dayTargets, onUpdate }: Props) {
+export default function ChallengesView({ challenges, allTargets, dayTargets, allDays, onUpdate }: Props) {
   const [isCreating, setIsCreating] = useState(false);
   const [editingChallenge, setEditingChallenge] = useState<Challenge | null>(null);
 
@@ -135,26 +136,66 @@ export default function ChallengesView({ challenges, allTargets, dayTargets, onU
     const daysElapsed = differenceInDays(today, start);
     
     const isActive = daysElapsed >= 0 && daysElapsed < c.durationDays;
-    const progressPct = Math.min(100, Math.max(0, (daysElapsed / c.durationDays) * 100));
+    const timeProgressPct = Math.min(100, Math.max(0, (daysElapsed / c.durationDays) * 100));
     
-    // Phase logic
+    // --- Target Completion Progress Calculation ---
+    const mappedTargets = new Set<string>();
+    c.goals.forEach(g => {
+      if (c.targetMapping && c.targetMapping[g]) {
+        c.targetMapping[g].forEach(t => mappedTargets.add(t));
+      }
+    });
+
+    const activeDaysCount = Math.max(0, Math.min(daysElapsed + 1, c.durationDays));
+    const totalPossibleTargets = mappedTargets.size * activeDaysCount;
+    let completedTargetsCount = 0;
+
+    if (mappedTargets.size > 0 && allDays) {
+      for (let i = 0; i < activeDaysCount; i++) {
+        // Construct date correctly handling timezone issues by using the string representation if possible, or addDays
+        const dDate = new Date(start);
+        dDate.setDate(dDate.getDate() + i);
+        const dStr = format(dDate, "yyyy-MM-dd");
+        
+        const dayData = allDays[dStr];
+        if (dayData && dayData.targets) {
+          mappedTargets.forEach(t => {
+            if (dayData.targets[t]) {
+              completedTargetsCount++;
+            }
+          });
+        }
+      }
+    }
+
+    // If targets are mapped, progress is based on consistency. Otherwise fallback to time elapsed.
+    const hasTargets = mappedTargets.size > 0;
+    const actionProgressPct = hasTargets && totalPossibleTargets > 0 ? (completedTargetsCount / totalPossibleTargets) * 100 : 0;
+    const displayProgressPct = hasTargets ? actionProgressPct : timeProgressPct;
+
+    // Phase logic based on Action Progress if available, else Time Progress
     let phase = 1;
     let phaseName = "Momentum";
-    if (progressPct > 33 && progressPct <= 66) {
+    if (displayProgressPct > 33 && displayProgressPct <= 66) {
       phase = 2;
       phaseName = "Endurance";
-    } else if (progressPct > 66) {
+    } else if (displayProgressPct > 66) {
       phase = 3;
       phaseName = "Mastery";
     }
 
-    // Motivational Context
-    let quote = "The hardest part is starting.";
-    if (progressPct > 10 && progressPct <= 30) quote = "Habits are forming. Don't break the chain.";
-    if (progressPct > 30 && progressPct <= 50) quote = "You're building incredible discipline.";
-    if (progressPct > 50 && progressPct <= 90) quote = "Over halfway there. This is who you are now.";
-    if (progressPct > 90) quote = "Home stretch. Finish strong!";
-    if (progressPct >= 100) quote = "Challenge Complete! You did it.";
+    // Motivational Context based on Action Progress
+    let quote = "The hardest part is starting. Map your targets to begin tracking action.";
+    if (hasTargets) {
+      if (displayProgressPct === 0) quote = "Action speaks louder than words. Time to execute your targets.";
+      else if (displayProgressPct > 0 && displayProgressPct <= 30) quote = "Building the foundation. Consistency is key.";
+      else if (displayProgressPct > 30 && displayProgressPct <= 60) quote = "You're building incredible discipline. Don't break the chain.";
+      else if (displayProgressPct > 60 && displayProgressPct <= 90) quote = "Over halfway there. High performance is becoming your baseline.";
+      else if (displayProgressPct > 90) quote = "Elite consistency. Finish strong!";
+      else if (displayProgressPct >= 100) quote = "Flawless Execution! You did it.";
+    } else {
+      if (timeProgressPct > 10 && timeProgressPct <= 50) quote = "Time is ticking. Start mapping targets.";
+    }
 
     return (
       <div className="mb-10">
@@ -199,15 +240,17 @@ export default function ChallengesView({ challenges, allTargets, dayTargets, onU
               <div className="flex gap-4">
                 <div className="text-center px-4 py-2 rounded-xl bg-black/5 dark:bg-white/5">
                   <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: "var(--muted)" }}>Day</p>
-                  <p className="text-2xl font-black">{Math.max(0, Math.min(daysElapsed + 1, c.durationDays))}</p>
+                  <p className="text-2xl font-black">{activeDaysCount}</p>
                 </div>
                 <div className="text-center px-4 py-2 rounded-xl bg-black/5 dark:bg-white/5">
                   <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: "var(--muted)" }}>Total</p>
                   <p className="text-2xl font-black" style={{ color: "var(--faint)" }}>{c.durationDays}</p>
                 </div>
                 <div className="text-center px-4 py-2 rounded-xl" style={{ background: "rgba(var(--primary-rgb), 0.1)" }}>
-                  <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: "var(--primary)" }}>Progress</p>
-                  <p className="text-2xl font-black" style={{ color: "var(--primary)" }}>{progressPct.toFixed(0)}%</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: "var(--primary)" }}>
+                    {hasTargets ? "Action Score" : "Time Spent"}
+                  </p>
+                  <p className="text-2xl font-black" style={{ color: "var(--primary)" }}>{displayProgressPct.toFixed(0)}%</p>
                 </div>
               </div>
             </div>
@@ -217,8 +260,16 @@ export default function ChallengesView({ challenges, allTargets, dayTargets, onU
               <div className="h-3 w-full rounded-full overflow-hidden bg-black/10 dark:bg-white/10 relative">
                 <div 
                   className="absolute top-0 left-0 h-full bg-gradient-to-r from-orange-500 to-red-500 transition-all duration-1000 ease-out" 
-                  style={{ width: `${progressPct}%` }} 
+                  style={{ width: `${displayProgressPct}%` }} 
                 />
+              </div>
+              <div className="flex justify-between mt-2 px-1">
+                <span className="text-[10px] uppercase font-bold tracking-wider" style={{ color: "var(--muted)" }}>
+                  {hasTargets ? `${completedTargetsCount} / ${totalPossibleTargets} Targets Hit` : "Map targets to track action"}
+                </span>
+                <span className="text-[10px] uppercase font-bold tracking-wider" style={{ color: "var(--muted)" }}>
+                  {timeProgressPct.toFixed(0)}% Time Elapsed
+                </span>
               </div>
             </div>
 
