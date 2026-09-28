@@ -237,7 +237,7 @@ export default function ChallengesView({ challenges, allTargets, dayTargets, all
               </div>
 
               {/* Stats Row */}
-              <div className="flex gap-4">
+              <div className="flex flex-wrap gap-4">
                 <div className="text-center px-4 py-2 rounded-xl bg-black/5 dark:bg-white/5">
                   <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: "var(--muted)" }}>Day</p>
                   <p className="text-2xl font-black">{activeDaysCount}</p>
@@ -246,30 +246,64 @@ export default function ChallengesView({ challenges, allTargets, dayTargets, all
                   <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: "var(--muted)" }}>Total</p>
                   <p className="text-2xl font-black" style={{ color: "var(--faint)" }}>{c.durationDays}</p>
                 </div>
-                <div className="text-center px-4 py-2 rounded-xl" style={{ background: "rgba(var(--primary-rgb), 0.1)" }}>
-                  <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: "var(--primary)" }}>
-                    {hasTargets ? "Action Score" : "Time Spent"}
+
+                <div className="text-center px-4 py-2 rounded-xl bg-orange-500/10">
+                  <p className="text-[10px] font-bold uppercase tracking-widest mb-1 text-orange-500">
+                    Time Burned
                   </p>
-                  <p className="text-2xl font-black" style={{ color: "var(--primary)" }}>{displayProgressPct.toFixed(0)}%</p>
+                  <p className="text-2xl font-black text-orange-500">{timeProgressPct.toFixed(0)}%</p>
                 </div>
+
+                {hasTargets && (
+                  <div className="text-center px-4 py-2 rounded-xl" style={{ background: "rgba(var(--primary-rgb), 0.1)" }}>
+                    <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: "var(--primary)" }}>
+                      Action Score
+                    </p>
+                    <p className="text-2xl font-black" style={{ color: "var(--primary)" }}>{actionProgressPct.toFixed(0)}%</p>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Progress Bar */}
-            <div className="mb-8">
-              <div className="h-3 w-full rounded-full overflow-hidden bg-black/10 dark:bg-white/10 relative">
-                <div 
-                  className="absolute top-0 left-0 h-full bg-gradient-to-r from-orange-500 to-red-500 transition-all duration-1000 ease-out" 
-                  style={{ width: `${displayProgressPct}%` }} 
-                />
-              </div>
-              <div className="flex justify-between mt-2 px-1">
-                <span className="text-[10px] uppercase font-bold tracking-wider" style={{ color: "var(--muted)" }}>
-                  {hasTargets ? `${completedTargetsCount} / ${totalPossibleTargets} Targets Hit` : "Map targets to track action"}
-                </span>
-                <span className="text-[10px] uppercase font-bold tracking-wider" style={{ color: "var(--muted)" }}>
-                  {timeProgressPct.toFixed(0)}% Time Elapsed
-                </span>
+            {/* Dual Progress Bars */}
+            <div className="mb-8 flex flex-col gap-6">
+              
+              {/* Action Progress (if targets mapped) */}
+              {hasTargets && (
+                <div>
+                  <div className="flex justify-between mb-2 px-1">
+                    <span className="text-[10px] uppercase font-bold tracking-wider" style={{ color: "var(--primary)" }}>
+                      Targets Executed ({completedTargetsCount} / {totalPossibleTargets})
+                    </span>
+                    <span className="text-[10px] uppercase font-bold tracking-wider" style={{ color: "var(--primary)" }}>
+                      {actionProgressPct.toFixed(0)}% Action
+                    </span>
+                  </div>
+                  <div className="h-3 w-full rounded-full overflow-hidden bg-black/10 dark:bg-white/10 relative">
+                    <div 
+                      className="absolute top-0 left-0 h-full transition-all duration-1000 ease-out" 
+                      style={{ width: `${actionProgressPct}%`, background: "var(--primary)" }} 
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Time Progress */}
+              <div>
+                <div className="flex justify-between mb-2 px-1">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-orange-500">
+                    Time Elapsed
+                  </span>
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-orange-500">
+                    {timeProgressPct.toFixed(0)}% Time
+                  </span>
+                </div>
+                <div className="h-3 w-full rounded-full overflow-hidden bg-black/10 dark:bg-white/10 relative">
+                  <div 
+                    className="absolute top-0 left-0 h-full bg-gradient-to-r from-orange-500 to-red-500 transition-all duration-1000 ease-out" 
+                    style={{ width: `${timeProgressPct}%` }} 
+                  />
+                </div>
               </div>
             </div>
 
