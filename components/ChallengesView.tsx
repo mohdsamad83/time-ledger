@@ -82,7 +82,8 @@ export default function ChallengesView({ challenges, allTargets, dayTargets, all
       actionPlan,
       status,
       logs,
-      targetMapping
+      targetMapping,
+      goalMetadata: editingChallenge?.goalMetadata || {}
     };
 
     let nextChallenges = [...challenges];
