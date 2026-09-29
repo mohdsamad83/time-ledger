@@ -443,8 +443,20 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Prop
                 accomplishedDay = parseInt(targetMeta.accomplishedAt.split("-")[2], 10);
               }
 
+              // Apply a very subtle deterministic tint to each row to help the eyes track horizontally
+              const rowColors = [
+                "bg-blue-500/[0.03] dark:bg-blue-500/10",
+                "bg-purple-500/[0.03] dark:bg-purple-500/10",
+                "bg-emerald-500/[0.03] dark:bg-emerald-500/10",
+                "bg-amber-500/[0.03] dark:bg-amber-500/10",
+                "bg-rose-500/[0.03] dark:bg-rose-500/10",
+                "bg-indigo-500/[0.03] dark:bg-indigo-500/10",
+                "bg-teal-500/[0.03] dark:bg-teal-500/10"
+              ];
+              const rowBg = rowColors[rowIdx % rowColors.length];
+
               return (
-                <tr key={targetMeta.name} className="hover:bg-white/5 transition-colors">
+                <tr key={targetMeta.name} className={`hover:brightness-95 dark:hover:brightness-110 transition-all ${rowBg}`}>
                   <td className="p-2 border font-semibold text-left text-xs truncate" style={{ borderColor: "var(--border)", color: isAccomplished ? "var(--emerald-500)" : "var(--text)" }}>
                     <span className="flex items-center gap-1.5">
                       {isAccomplished && <CheckCircle2 size={12} className="text-emerald-500" />}
