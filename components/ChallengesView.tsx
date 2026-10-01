@@ -26,14 +26,11 @@ export default function ChallengesView({ challenges, allTargets, dayTargets, all
   const [logs, setLogs] = useState<{ date: string; note: string }[]>([]);
   const [targetMapping, setTargetMapping] = useState<Record<string, string[]>>({});
   const [isGenerating, setIsGenerating] = useState(false);
-  const [selectedModel, setSelectedModel] = useState("google/gemini-1.5-flash");
+  const [selectedModel, setSelectedModel] = useState("openai/gpt-4o-mini");
 
   const AI_MODELS = [
-    { id: "google/gemini-1.5-flash", label: "Gemini 1.5 Flash" },
-    { id: "google/gemini-1.5-pro", label: "Gemini 1.5 Pro" },
     { id: "openai/gpt-4o-mini", label: "GPT-4o Mini" },
     { id: "openai/gpt-4.1-nano", label: "GPT-4.1 Nano" },
-    { id: "anthropic/claude-3-haiku", label: "Claude 3 Haiku" }
   ];
 
   // Inline editing state for active challenge dashboard

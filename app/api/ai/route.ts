@@ -4,7 +4,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { prompt, systemContext, model } = body;
-    const selectedModel = model || "google/gemini-1.5-flash";
+    const selectedModel = model || "openai/gpt-4o-mini";
 
     const apiKey = process.env.AI_API_KEY;
     if (!apiKey) {
