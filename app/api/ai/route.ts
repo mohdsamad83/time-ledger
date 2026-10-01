@@ -17,7 +17,7 @@ export async function POST(req: Request) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-1.5-pro", // Fallback: "openai/gpt-4o-mini"
+        model: "google/gemini-1.5-flash", // Using flash as it is typically more widely available
         messages: [
           { role: "system", content: systemContext },
           { role: "user", content: prompt }
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-1.5-pro",
+          model: "google/gemini-1.5-flash",
           messages: [
             { role: "system", content: systemContext },
             { role: "user", content: prompt }
@@ -44,7 +44,7 @@ export async function POST(req: Request) {
       });
 
       if (!fallbackResponse.ok) {
-        return NextResponse.json({ error: "API Request Failed", details: await fallbackResponse.text(), originalError: errorText }, { status: 500 });
+        return NextResponse.json({ error: `API Request Failed. AIPipe: ${errorText} | Fallback: ${await fallbackResponse.text()}` }, { status: 500 });
       }
 
       const fallbackData = await fallbackResponse.json();
