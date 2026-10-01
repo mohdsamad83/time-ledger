@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Challenge } from "@/lib/types";
-import { Plus, X, Activity, CheckCircle, Flame, Edit2, MessageSquare, ArrowRight, Zap, Calendar, FileText, Check } from "lucide-react";
+import { Plus, X, Activity, CheckCircle, Flame, Edit2, MessageSquare, ArrowRight, Zap, Calendar, FileText, Check, Loader2, Sparkles } from "lucide-react";
 import { format, differenceInDays, isPast, isToday } from "date-fns";
 
 interface Props {
@@ -25,6 +25,7 @@ export default function ChallengesView({ challenges, allTargets, dayTargets, all
   const [status, setStatus] = useState<Challenge["status"]>("active");
   const [logs, setLogs] = useState<{ date: string; note: string }[]>([]);
   const [targetMapping, setTargetMapping] = useState<Record<string, string[]>>({});
+  const [isGenerating, setIsGenerating] = useState(false);
 
   // Inline editing state for active challenge dashboard
   const [editingGoal, setEditingGoal] = useState<string | null>(null);
@@ -67,6 +68,26 @@ export default function ChallengesView({ challenges, allTargets, dayTargets, all
   const closeForm = () => {
     setIsCreating(false);
     setEditingChallenge(null);
+  };
+
+  const generateActionPlan = async () => {
+    if (!goalsStr.trim()) return;
+    setIsGenerating(true);
+    try {
+      const res = await fetch("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: `Based on my goals and preferences, generate a concise, brutally practical action plan. Break it down into daily actions and mindset shifts. Return ONLY the plan text.`,
+          systemContext: `User Goals: ${goalsStr}\nPreferences: ${preferences}\nDuration: ${duration} days.`
+        })
+      });
+      const data = await res.json();
+      if (data.result) setActionPlan(data.result);
+    } catch (e) {
+      console.error(e);
+    }
+    setIsGenerating(false);
   };
 
   const handleSave = () => {
@@ -681,7 +702,17 @@ export default function ChallengesView({ challenges, allTargets, dayTargets, all
               />
             </div>
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "var(--muted)" }}>Action Plan</label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-xs font-bold uppercase tracking-wider" style={{ color: "var(--muted)" }}>Action Plan</label>
+                <button 
+                  onClick={generateActionPlan}
+                  disabled={isGenerating || !goalsStr.trim()}
+                  className="text-xs font-bold uppercase tracking-widest flex items-center gap-1.5 px-2 py-1 rounded-lg bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 disabled:opacity-50 transition-colors"
+                >
+                  {isGenerating ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                  Auto-Generate
+                </button>
+              </div>
               <textarea
                 className="input-field w-full min-h-[120px] py-3 leading-relaxed"
                 value={actionPlan}

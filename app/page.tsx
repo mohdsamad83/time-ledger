@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { format, isBefore, startOfMonth } from "date-fns";
 import {
   Clock, BarChart2, History, CheckCircle,
-  AlertCircle, Loader2, ExternalLink, BookOpen, RotateCcw, Timer, Target, LogOut, Settings, CalendarDays, Quote
+  AlertCircle, Loader2, ExternalLink, BookOpen, RotateCcw, Timer, Target, LogOut, Settings, CalendarDays, Quote, Bot
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -33,9 +33,10 @@ import SettingsView    from "@/components/SettingsView";
 import RoutineView     from "@/components/RoutineView";
 import PlanTomorrowModal from "@/components/PlanTomorrowModal";
 import ChallengesView  from "@/components/ChallengesView";
+import AICoachView     from "@/components/AICoachView";
 import { DEFAULT_CATEGORIES } from "@/lib/types";
 
-type Tab = "today" | "targets" | "routine" | "challenges" | "history" | "insights" | "settings";
+type Tab = "today" | "targets" | "routine" | "challenges" | "history" | "insights" | "settings" | "ai";
 
 const TODAY = format(new Date(), "yyyy-MM-dd");
 
@@ -361,6 +362,7 @@ export default function App() {
             { id: "challenges", icon: <Target size={14} />, label: "Challenges" },
             { id: "history",  icon: <History size={14} />,  label: "History" },
             { id: "insights", icon: <BarChart2 size={14} />,label: "Insights" },
+            { id: "ai",       icon: <Bot size={14} />,      label: "AI Coach" },
             { id: "settings", icon: <Settings size={14} />, label: "Settings" },
           ] as { id: Tab; icon: React.ReactNode; label: string }[]).map((t) => (
             <button
@@ -552,6 +554,11 @@ export default function App() {
               setAppData(prev => prev ? { ...prev, categories: newCategories } : prev);
             }}
           />
+        )}
+
+        {/* AI COACH ───────────────────────────────────────────────────────── */}
+        {tab === "ai" && (
+          <AICoachView data={appData} />
         )}
       </main>
 
