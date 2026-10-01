@@ -15,6 +15,15 @@ export default function AICoachView({ data }: Props) {
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [selectedModel, setSelectedModel] = useState("google/gemini-1.5-flash");
+
+  const AI_MODELS = [
+    { id: "google/gemini-1.5-flash", label: "Gemini 1.5 Flash" },
+    { id: "google/gemini-1.5-pro", label: "Gemini 1.5 Pro" },
+    { id: "openai/gpt-4o-mini", label: "GPT-4o Mini" },
+    { id: "openai/gpt-4.1-nano", label: "GPT-4.1 Nano" },
+    { id: "anthropic/claude-3-haiku", label: "Claude 3 Haiku" }
+  ];
 
   const buildSystemContext = () => {
     // Inject user data into the system prompt
@@ -58,7 +67,8 @@ export default function AICoachView({ data }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           prompt: userMsg,
-          systemContext: buildSystemContext()
+          systemContext: buildSystemContext(),
+          model: selectedModel
         })
       });
 
@@ -84,7 +94,8 @@ export default function AICoachView({ data }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           prompt: "Analyze my performance for today based on the targets I hit and missed. Give me a brutally honest daily debrief and one specific adjustment I need to make for tomorrow.",
-          systemContext: buildSystemContext()
+          systemContext: buildSystemContext(),
+          model: selectedModel
         })
       });
 
@@ -108,15 +119,27 @@ export default function AICoachView({ data }: Props) {
             Data-driven intelligence to optimize your execution.
           </p>
         </div>
-        <button 
-          onClick={generateDebrief}
-          disabled={loading}
-          className="px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-all hover:brightness-110 disabled:opacity-50"
-          style={{ background: "rgba(59, 130, 246, 0.1)", color: "#3b82f6" }}
-        >
-          <Sparkles size={14} />
-          Daily Debrief
-        </button>
+        <div className="flex items-center gap-3">
+          <select 
+            value={selectedModel} 
+            onChange={(e) => setSelectedModel(e.target.value)}
+            className="px-3 py-2 rounded-xl text-xs font-medium border focus:outline-none focus:ring-1 focus:ring-blue-500"
+            style={{ background: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }}
+          >
+            {AI_MODELS.map(m => (
+              <option key={m.id} value={m.id}>{m.label}</option>
+            ))}
+          </select>
+          <button 
+            onClick={generateDebrief}
+            disabled={loading}
+            className="px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-all hover:brightness-110 disabled:opacity-50"
+            style={{ background: "rgba(59, 130, 246, 0.1)", color: "#3b82f6" }}
+          >
+            <Sparkles size={14} />
+            Daily Debrief
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 rounded-2xl border overflow-hidden flex flex-col shadow-xl" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>

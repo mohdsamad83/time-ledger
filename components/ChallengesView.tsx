@@ -26,6 +26,15 @@ export default function ChallengesView({ challenges, allTargets, dayTargets, all
   const [logs, setLogs] = useState<{ date: string; note: string }[]>([]);
   const [targetMapping, setTargetMapping] = useState<Record<string, string[]>>({});
   const [isGenerating, setIsGenerating] = useState(false);
+  const [selectedModel, setSelectedModel] = useState("google/gemini-1.5-flash");
+
+  const AI_MODELS = [
+    { id: "google/gemini-1.5-flash", label: "Gemini 1.5 Flash" },
+    { id: "google/gemini-1.5-pro", label: "Gemini 1.5 Pro" },
+    { id: "openai/gpt-4o-mini", label: "GPT-4o Mini" },
+    { id: "openai/gpt-4.1-nano", label: "GPT-4.1 Nano" },
+    { id: "anthropic/claude-3-haiku", label: "Claude 3 Haiku" }
+  ];
 
   // Inline editing state for active challenge dashboard
   const [editingGoal, setEditingGoal] = useState<string | null>(null);
@@ -79,7 +88,8 @@ export default function ChallengesView({ challenges, allTargets, dayTargets, all
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           prompt: `Based on my goals and preferences, generate a concise, brutally practical action plan. Break it down into daily actions and mindset shifts. Return ONLY the plan text.`,
-          systemContext: `User Goals: ${goalsStr}\nPreferences: ${preferences}\nDuration: ${duration} days.`
+          systemContext: `User Goals: ${goalsStr}\nPreferences: ${preferences}\nDuration: ${duration} days.`,
+          model: selectedModel
         })
       });
       const data = await res.json();
@@ -704,14 +714,26 @@ export default function ChallengesView({ challenges, allTargets, dayTargets, all
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="block text-xs font-bold uppercase tracking-wider" style={{ color: "var(--muted)" }}>Action Plan</label>
-                <button 
-                  onClick={generateActionPlan}
-                  disabled={isGenerating || !goalsStr.trim()}
-                  className="text-xs font-bold uppercase tracking-widest flex items-center gap-1.5 px-2 py-1 rounded-lg bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 disabled:opacity-50 transition-colors"
-                >
-                  {isGenerating ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
-                  Auto-Generate
-                </button>
+                <div className="flex items-center gap-2">
+                  <select 
+                    value={selectedModel} 
+                    onChange={(e) => setSelectedModel(e.target.value)}
+                    className="px-2 py-1 rounded-lg text-[10px] font-medium border focus:outline-none focus:ring-1 focus:ring-blue-500 bg-transparent"
+                    style={{ borderColor: "var(--border)", color: "var(--text)" }}
+                  >
+                    {AI_MODELS.map(m => (
+                      <option key={m.id} value={m.id}>{m.label}</option>
+                    ))}
+                  </select>
+                  <button 
+                    onClick={generateActionPlan}
+                    disabled={isGenerating || !goalsStr.trim()}
+                    className="text-xs font-bold uppercase tracking-widest flex items-center gap-1.5 px-2 py-1 rounded-lg bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 disabled:opacity-50 transition-colors"
+                  >
+                    {isGenerating ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                    Auto-Generate
+                  </button>
+                </div>
               </div>
               <textarea
                 className="input-field w-full min-h-[120px] py-3 leading-relaxed"

@@ -3,7 +3,8 @@ import { NextResponse } from "next/server";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { prompt, systemContext } = body;
+    const { prompt, systemContext, model } = body;
+    const selectedModel = model || "google/gemini-1.5-flash";
 
     const apiKey = process.env.AI_API_KEY;
     if (!apiKey) {
@@ -17,7 +18,7 @@ export async function POST(req: Request) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-1.5-flash", // Using flash as it is typically more widely available
+        model: selectedModel,
         messages: [
           { role: "system", content: systemContext },
           { role: "user", content: prompt }
@@ -35,7 +36,7 @@ export async function POST(req: Request) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-1.5-flash",
+          model: selectedModel,
           messages: [
             { role: "system", content: systemContext },
             { role: "user", content: prompt }
