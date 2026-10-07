@@ -392,20 +392,20 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Prop
       </div>
 
       {/* The Grid Tracker */}
-      <div className="overflow-x-auto rounded-xl border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+      <div className="overflow-auto max-h-[calc(100vh-250px)] rounded-xl border relative custom-scrollbar" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
         <table className="w-full text-sm text-center border-collapse">
-          <thead>
+          <thead className="sticky top-0 z-20" style={{ background: "var(--s2)" }}>
             <tr>
-              <th className="p-2 border font-medium text-left min-w-[150px]" style={{ borderColor: "var(--border)", color: "var(--muted)", background: "var(--s2)" }}>
+              <th className="p-2 border font-medium text-left min-w-[150px] sticky top-0 z-20 shadow-[0_1px_0_var(--border)]" style={{ borderColor: "var(--border)", color: "var(--muted)", background: "var(--s2)" }}>
                 Targets
               </th>
-              <th className="p-2 border font-medium w-16" title="Mark Accomplished" style={{ borderColor: "var(--border)", color: "var(--muted)", background: "var(--s2)" }}>
+              <th className="p-2 border font-medium w-16 sticky top-0 z-20 shadow-[0_1px_0_var(--border)]" title="Mark Accomplished" style={{ borderColor: "var(--border)", color: "var(--muted)", background: "var(--s2)" }}>
                 Done?
               </th>
-              <th className="p-2 border font-medium w-16" title="Ideal completion by today" style={{ borderColor: "var(--border)", color: "var(--muted)", background: "var(--s2)" }}>
+              <th className="p-2 border font-medium w-16 sticky top-0 z-20 shadow-[0_1px_0_var(--border)]" title="Ideal completion by today" style={{ borderColor: "var(--border)", color: "var(--muted)", background: "var(--s2)" }}>
                 Ideal
               </th>
-              <th className="p-2 border font-medium w-16" style={{ borderColor: "var(--border)", color: "var(--muted)", background: "var(--s2)" }}>
+              <th className="p-2 border font-medium w-16 sticky top-0 z-20 shadow-[0_1px_0_var(--border)]" style={{ borderColor: "var(--border)", color: "var(--muted)", background: "var(--s2)" }}>
                 %
               </th>
               {days.map((dateStr, i) => {
@@ -417,8 +417,11 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Prop
                   return diff >= 0 && diff < c.durationDays;
                 });
                 return (
-                  <th key={i} className={`p-2 border font-medium w-8 text-[10px] ${isChallengeActiveOnDate ? "bg-orange-500/5 dark:bg-orange-500/10" : ""}`} style={{ borderColor: "var(--border)", color: "var(--faint)" }}>
-                    <div className="flex flex-col items-center leading-tight gap-0.5">
+                  <th key={i} className="p-2 border font-medium w-8 text-[10px] sticky top-0 z-20 shadow-[0_1px_0_var(--border)] relative overflow-hidden" style={{ borderColor: "var(--border)", color: "var(--faint)", backgroundColor: "var(--s2)" }}>
+                    {isChallengeActiveOnDate && (
+                      <div className="absolute inset-0 bg-orange-500/10 dark:bg-orange-500/20 pointer-events-none" />
+                    )}
+                    <div className="flex flex-col items-center leading-tight gap-0.5 relative z-10">
                       <span className="opacity-50 text-[8px] uppercase">{format(new Date(dateStr), "EEE")}</span>
                       <span className="text-xs">{i + 1}</span>
                     </div>
