@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { format, getDaysInMonth, startOfMonth, addMonths, subMonths, isSameMonth, isBefore, isAfter, differenceInDays } from "date-fns";
 import { AppData, TargetMeta } from "@/lib/types";
 import { AreaChart, Area, ResponsiveContainer } from "recharts";
-import { ChevronLeft, ChevronRight, Target, X, ChevronDown, Trophy, CheckCircle2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Target, X, ChevronDown, Trophy, CheckCircle2, Flag } from "lucide-react";
 
 interface Props {
   data: AppData;
@@ -446,6 +446,19 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Prop
                 accomplishedDay = parseInt(targetMeta.accomplishedAt.split("-")[2], 10);
               }
 
+              let targetDeadline: string | undefined = undefined;
+              let challengeStartDate: string | undefined = undefined;
+              if (data.challenges) {
+                const activeChallenge = data.challenges.find(c => c.status === "active");
+                if (activeChallenge && activeChallenge.targetMapping && activeChallenge.goalMetadata) {
+                  const mappedGoal = Object.entries(activeChallenge.targetMapping).find(([goal, targets]) => targets.includes(targetMeta.name))?.[0];
+                  if (mappedGoal) {
+                    targetDeadline = activeChallenge.goalMetadata[mappedGoal]?.deadline;
+                    challengeStartDate = activeChallenge.startDate;
+                  }
+                }
+              }
+
               // Apply a very subtle deterministic tint to each row to help the eyes track horizontally
               const rowColors = [
                 "bg-blue-500/[0.03] dark:bg-blue-500/10",
@@ -498,8 +511,21 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Prop
                       return diff >= 0 && diff < c.durationDays;
                     });
 
+                    let isRunway = false;
+                    let isDeadlineDay = false;
+                    if (targetDeadline && challengeStartDate) {
+                      if (dateStr >= challengeStartDate && dateStr <= targetDeadline) {
+                        isRunway = true;
+                      }
+                      if (dateStr === targetDeadline) {
+                        isDeadlineDay = true;
+                      }
+                    }
+
                     let cellBg = "";
                     if (isDisabled) cellBg = "bg-[var(--s2)] opacity-30";
+                    else if (isDeadlineDay) cellBg = "bg-red-500/10 dark:bg-red-500/20 border-r-2 !border-r-red-500 relative";
+                    else if (isRunway) cellBg = "bg-blue-500/10 dark:bg-blue-500/20";
                     else if (isChallengeActiveOnDate) cellBg = "bg-orange-500/5 dark:bg-orange-500/10";
 
                     return (
@@ -520,6 +546,11 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Prop
                               </svg>
                             )}
                           </div>
+                          {isDeadlineDay && (
+                            <div className="absolute top-0 right-0 p-[2px] opacity-70">
+                              <Flag size={8} className="text-red-500 fill-red-500" />
+                            </div>
+                          )}
                         </button>
                       </td>
                     );
