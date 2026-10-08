@@ -124,6 +124,28 @@ export interface Challenge {
   goalMetadata?: Record<string, { deadline?: string, notes?: string }>;
 }
 
+export interface AcademicTask {
+  id: string;
+  name: string;
+  completed: boolean;
+}
+
+export interface AcademicUnit {
+  id: string;
+  title: string;
+  lecturesTotal: number;
+  lecturesCompleted: number;
+  tasks: AcademicTask[];
+}
+
+export interface AcademicSubject {
+  id: string;
+  name: string;
+  color: string;
+  hoursPerTopic: number;
+  units: AcademicUnit[];
+}
+
 export interface AppData {
   days:    { [date: string]: DayData };
   targets?: string[];                       // [DEPRECATED] Legacy global list
@@ -131,6 +153,7 @@ export interface AppData {
   categories?: CustomCategory[];            // Custom dynamic categories
   routine?: RoutineItem[];                  // Custom routine table
   challenges?: Challenge[];                 // Custom challenges
+  academics?: AcademicSubject[];            // Academic progress tracker
   version: string;
 }
 

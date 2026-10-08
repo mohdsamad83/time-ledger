@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { format, isBefore, startOfMonth } from "date-fns";
 import {
   Clock, BarChart2, History, CheckCircle,
-  AlertCircle, Loader2, ExternalLink, BookOpen, RotateCcw, Timer, Target, LogOut, Settings, CalendarDays, Quote, Bot
+  AlertCircle, Loader2, ExternalLink, BookOpen, RotateCcw, Timer, Target, LogOut, Settings, CalendarDays, Quote, Bot, GraduationCap
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -34,9 +34,10 @@ import RoutineView     from "@/components/RoutineView";
 import PlanTomorrowModal from "@/components/PlanTomorrowModal";
 import ChallengesView  from "@/components/ChallengesView";
 import AICoachView     from "@/components/AICoachView";
+import AcademicsView   from "@/components/AcademicsView";
 import { DEFAULT_CATEGORIES } from "@/lib/types";
 
-type Tab = "today" | "targets" | "routine" | "challenges" | "history" | "insights" | "settings" | "ai";
+type Tab = "today" | "targets" | "routine" | "challenges" | "academics" | "history" | "insights" | "settings" | "ai";
 
 const TODAY = format(new Date(), "yyyy-MM-dd");
 
@@ -360,6 +361,7 @@ export default function App() {
             { id: "targets",  icon: <Target size={14} />,   label: "Targets" },
             { id: "routine",  icon: <CalendarDays size={14} />, label: "Routine" },
             { id: "challenges", icon: <Target size={14} />, label: "Challenges" },
+            { id: "academics", icon: <GraduationCap size={14} />, label: "Academics" },
             { id: "history",  icon: <History size={14} />,  label: "History" },
             { id: "insights", icon: <BarChart2 size={14} />,label: "Insights" },
             { id: "ai",       icon: <Bot size={14} />,      label: "AI Coach" },
@@ -542,6 +544,17 @@ export default function App() {
             onUpdate={async (newChallenges) => {
               setAppData(prev => prev ? { ...prev, challenges: newChallenges } : prev);
               await syncToSheets("/api/sheets/challenges", { challenges: newChallenges }, () => {});
+            }}
+          />
+        )}
+
+        {/* ACADEMICS ──────────────────────────────────────────────────────── */}
+        {tab === "academics" && (
+          <AcademicsView
+            data={appData}
+            onUpdate={async (newAcademics) => {
+              setAppData(prev => prev ? { ...prev, academics: newAcademics } : prev);
+              await syncToSheets("/api/sheets/academics", { academics: newAcademics }, () => {}); 
             }}
           />
         )}

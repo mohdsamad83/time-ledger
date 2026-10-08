@@ -21,7 +21,7 @@ export async function GET() {
     const sheets = getSheetsClient();
     const sheetId = SHEET_ID();
 
-    const [logRes, setupRes, eveningRes, targetsRes, dailyTargetsRes, categoriesRes, routineRes, challengesRes] = await Promise.all([
+    const [logRes, setupRes, eveningRes, targetsRes, dailyTargetsRes, categoriesRes, routineRes, challengesRes, academicsRes] = await Promise.all([
       sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "📅 Time Log!A2:N" }).catch(() => ({ data: { values: [] } })),
       sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "🌅 Day Setup!A2:K" }).catch(() => ({ data: { values: [] } })),
       sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "🌙 Evening Reviews!A2:L" }).catch(() => ({ data: { values: [] } })),
@@ -30,6 +30,7 @@ export async function GET() {
       sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "🏷️ Categories!A2:E" }).catch(() => ({ data: { values: [] } })),
       sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "⏱️ Routine!A2:C" }).catch(() => ({ data: { values: [] } })),
       sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "🏆 Challenges!A2:K" }).catch(() => ({ data: { values: [] } })),
+      sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: "🎓 Academics!A2:E" }).catch(() => ({ data: { values: [] } })),
     ]);
 
     const logRows = logRes.data.values ?? [];
@@ -40,8 +41,9 @@ export async function GET() {
     const categoryRows = categoriesRes.data.values ?? [];
     const routineRows = routineRes?.data?.values ?? [];
     const challengeRows = challengesRes?.data?.values ?? [];
+    const academicsRows = academicsRes?.data?.values ?? [];
 
-    const appData: AppData = { days: {}, version: "2.0", targets: [], categories: [], routine: [], challenges: [] };
+    const appData: AppData = { days: {}, version: "2.0", targets: [], categories: [], routine: [], challenges: [], academics: [] };
 
     // 0. Parse Routine
     if (routineRows.length > 0) {
@@ -88,6 +90,23 @@ export async function GET() {
           goalMetadata
         };
       }).filter((c: any) => c.id);
+    }
+
+    // 0. Parse Academics
+    if (academicsRows.length > 0) {
+      appData.academics = academicsRows.map((r: any) => {
+        let units = [];
+        try {
+          if (r[4]) units = JSON.parse(r[4]);
+        } catch(e) {}
+        return {
+          id: r[0] || "",
+          name: r[1] || "",
+          color: r[2] || "",
+          hoursPerTopic: parseFloat(r[3]) || 0.5,
+          units
+        };
+      }).filter((a: any) => a.id);
     }
 
     appData.monthlyTargets = {};
