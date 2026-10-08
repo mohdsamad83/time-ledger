@@ -237,6 +237,11 @@ export default function AcademicsView({ data, onUpdate }: Props) {
                   <div className="xl:col-span-8 overflow-x-auto rounded-2xl border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
                     <table className="w-full text-center text-sm font-bold border-collapse min-w-[600px]">
                       <tbody>
+                        <tr style={{ background: "var(--bg)" }}>
+                          <td className="p-3 text-left border uppercase tracking-wider text-[10px]" style={{ borderColor: "var(--border)", color: "var(--muted)" }}>Subjects</td>
+                          {subjectStats.map(s => <td key={s.id} className="p-3 border uppercase tracking-wider" style={{ borderColor: "var(--border)", color: s.color }}>{s.name}</td>)}
+                          <td className="p-3 border text-[10px] uppercase tracking-wider text-white bg-blue-600/80 leading-tight" style={{ borderColor: "var(--border)" }}>Overall End Sem<br/>Prep Score</td>
+                        </tr>
                         <tr style={{ background: "var(--s2)" }}>
                           <td className="p-3 text-left border uppercase tracking-wider text-[10px]" style={{ borderColor: "var(--border)", color: "var(--muted)" }}>Total Topics</td>
                           {subjectStats.map(s => <td key={s.id} className="p-3 border" style={{ borderColor: "var(--border)", color: s.color }}>{s.total}</td>)}
@@ -246,11 +251,6 @@ export default function AcademicsView({ data, onUpdate }: Props) {
                           <td className="p-3 text-left border uppercase tracking-wider text-[10px]" style={{ borderColor: "var(--border)", color: "var(--muted)" }}>% Completed</td>
                           {subjectStats.map(s => <td key={s.id} className="p-3 border" style={{ borderColor: "var(--border)", color: s.color }}>{s.pct.toFixed(1)}%</td>)}
                           <td className="p-3 border text-white bg-blue-600/80" style={{ borderColor: "var(--border)" }}>{globalPct.toFixed(1)}%</td>
-                        </tr>
-                        <tr style={{ background: "var(--bg)" }}>
-                          <td className="p-3 text-left border uppercase tracking-wider text-[10px]" style={{ borderColor: "var(--border)", color: "var(--muted)" }}>Subjects</td>
-                          {subjectStats.map(s => <td key={s.id} className="p-3 border uppercase tracking-wider" style={{ borderColor: "var(--border)", color: s.color }}>{s.name}</td>)}
-                          <td className="p-3 border text-[10px] uppercase tracking-wider text-white bg-blue-600/80 leading-tight" style={{ borderColor: "var(--border)" }}>Overall End Sem<br/>Prep Score</td>
                         </tr>
                         <tr>
                           <td className="p-3 text-left border uppercase tracking-wider text-[10px]" style={{ borderColor: "var(--border)", color: "var(--muted)" }}>Completed Topics</td>
