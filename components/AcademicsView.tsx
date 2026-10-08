@@ -212,12 +212,92 @@ export default function AcademicsView({ data, onUpdate }: Props) {
         </div>
       ) : (
         <div className="flex-1 overflow-y-auto space-y-8 pr-2 custom-scrollbar">
-          {academics.map(subject => {
-            const totalLectures = subject.units.reduce((acc, u) => acc + (u.lecturesTotal || 0), 0);
-            const completedLectures = subject.units.reduce((acc, u) => acc + (u.lecturesCompleted || 0), 0);
-            const progress = totalLectures > 0 ? (completedLectures / totalLectures) * 100 : 0;
-            const remaining = totalLectures - completedLectures;
-            const requiredHours = remaining * subject.hoursPerTopic;
+          
+          {(() => {
+            const subjectStats = academics.map(sub => {
+              const total = sub.units.reduce((acc, u) => acc + (u.lecturesTotal || 0), 0);
+              const comp = sub.units.reduce((acc, u) => acc + (u.lecturesCompleted || 0), 0);
+              const rem = total - comp;
+              const reqHrs = rem * sub.hoursPerTopic;
+              const pct = total > 0 ? (comp / total) * 100 : 0;
+              return { ...sub, total, comp, rem, reqHrs, pct };
+            });
+
+            const globalTotalTopics = subjectStats.reduce((acc, s) => acc + s.total, 0);
+            const globalCompletedTopics = subjectStats.reduce((acc, s) => acc + s.comp, 0);
+            const globalRemaining = globalTotalTopics - globalCompletedTopics;
+            const globalRequiredHours = subjectStats.reduce((acc, s) => acc + s.reqHrs, 0);
+            const globalPct = globalTotalTopics > 0 ? (globalCompletedTopics / globalTotalTopics) * 100 : 0;
+
+            return (
+              <>
+                {/* ── EXECUTIVE DASHBOARD ────────────────────────────────────────── */}
+                <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+                  {/* Subject Comparison Grid */}
+                  <div className="xl:col-span-8 overflow-x-auto rounded-2xl border" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+                    <table className="w-full text-center text-sm font-bold border-collapse min-w-[600px]">
+                      <tbody>
+                        <tr style={{ background: "var(--s2)" }}>
+                          <td className="p-3 text-left border uppercase tracking-wider text-[10px]" style={{ borderColor: "var(--border)", color: "var(--muted)" }}>Total Topics</td>
+                          {subjectStats.map(s => <td key={s.id} className="p-3 border" style={{ borderColor: "var(--border)", color: s.color }}>{s.total}</td>)}
+                          <td className="p-3 border text-white bg-blue-600/80" style={{ borderColor: "var(--border)" }}>{globalTotalTopics}</td>
+                        </tr>
+                        <tr>
+                          <td className="p-3 text-left border uppercase tracking-wider text-[10px]" style={{ borderColor: "var(--border)", color: "var(--muted)" }}>% Completed</td>
+                          {subjectStats.map(s => <td key={s.id} className="p-3 border" style={{ borderColor: "var(--border)", color: s.color }}>{s.pct.toFixed(1)}%</td>)}
+                          <td className="p-3 border text-white bg-blue-600/80" style={{ borderColor: "var(--border)" }}>{globalPct.toFixed(1)}%</td>
+                        </tr>
+                        <tr style={{ background: "var(--bg)" }}>
+                          <td className="p-3 text-left border uppercase tracking-wider text-[10px]" style={{ borderColor: "var(--border)", color: "var(--muted)" }}>Subjects</td>
+                          {subjectStats.map(s => <td key={s.id} className="p-3 border uppercase tracking-wider" style={{ borderColor: "var(--border)", color: s.color }}>{s.name}</td>)}
+                          <td className="p-3 border text-[10px] uppercase tracking-wider text-white bg-blue-600/80 leading-tight" style={{ borderColor: "var(--border)" }}>Overall End Sem<br/>Prep Score</td>
+                        </tr>
+                        <tr>
+                          <td className="p-3 text-left border uppercase tracking-wider text-[10px]" style={{ borderColor: "var(--border)", color: "var(--muted)" }}>Completed Topics</td>
+                          {subjectStats.map(s => <td key={s.id} className="p-3 border" style={{ borderColor: "var(--border)", color: "var(--emerald-500)" }}>{s.comp}</td>)}
+                          <td className="p-3 border text-white bg-blue-600/80" style={{ borderColor: "var(--border)" }}>{globalCompletedTopics}</td>
+                        </tr>
+                        <tr style={{ background: "rgba(239, 68, 68, 0.05)" }}>
+                          <td className="p-3 text-left border uppercase tracking-wider text-[10px]" style={{ borderColor: "var(--border)", color: "var(--muted)" }}>Yet to Complete</td>
+                          {subjectStats.map(s => <td key={s.id} className="p-3 border text-red-500" style={{ borderColor: "var(--border)" }}>{s.rem}</td>)}
+                          <td className="p-3 border text-white bg-red-500/80" style={{ borderColor: "var(--border)" }}>{globalRemaining}</td>
+                        </tr>
+                        <tr style={{ background: "rgba(16, 185, 129, 0.05)" }}>
+                          <td className="p-3 text-left border uppercase tracking-wider text-[10px] leading-tight" style={{ borderColor: "var(--border)", color: "var(--muted)" }}>Req. Time (hrs)</td>
+                          {subjectStats.map(s => <td key={s.id} className="p-3 border text-emerald-600 dark:text-emerald-500" style={{ borderColor: "var(--border)" }}>{s.reqHrs.toFixed(1)}</td>)}
+                          <td className="p-3 border text-white bg-emerald-600/80" style={{ borderColor: "var(--border)" }}>{globalRequiredHours.toFixed(1)}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* CEO Action Cards */}
+                  <div className="xl:col-span-4 flex flex-col gap-4">
+                    <div className="flex-1 rounded-2xl border p-5 flex flex-col justify-center items-center text-center relative overflow-hidden" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+                      <div className="absolute inset-0 bg-blue-500/5" />
+                      <div className="relative z-10">
+                        <div className="text-[10px] font-bold uppercase tracking-widest mb-1 text-blue-500">Execution Debt</div>
+                        <div className="text-4xl font-black mb-1 text-red-500">{globalRequiredHours.toFixed(1)}<span className="text-lg opacity-50">hrs</span></div>
+                        <p className="text-xs" style={{ color: "var(--faint)" }}>Total hours required to complete all {globalRemaining} pending topics.</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex-1 rounded-2xl border p-5 flex flex-col justify-center items-center text-center relative overflow-hidden" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
+                      <div className="absolute inset-0 bg-emerald-500/5" />
+                      <div className="relative z-10">
+                        <div className="text-[10px] font-bold uppercase tracking-widest mb-1 text-emerald-500">Master Completion</div>
+                        <div className="text-4xl font-black mb-1">{globalPct.toFixed(1)}<span className="text-lg opacity-50">%</span></div>
+                        <div className="w-full h-1.5 rounded-full bg-black/10 dark:bg-white/10 mt-3 overflow-hidden">
+                          <div className="h-full bg-emerald-500 transition-all duration-1000" style={{ width: `${globalPct}%` }} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── SUBJECTS LIST ────────────────────────────────────────────── */}
+                {subjectStats.map(subject => {
+                  const { total: totalLectures, comp: completedLectures, reqHrs: requiredHours, pct: progress, rem: remaining } = subject;
 
             return (
               <div key={subject.id} className="rounded-2xl border overflow-hidden shadow-sm" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
@@ -366,6 +446,9 @@ export default function AcademicsView({ data, onUpdate }: Props) {
               </div>
             );
           })}
+              </>
+            );
+          })()}
         </div>
       )}
     </div>
