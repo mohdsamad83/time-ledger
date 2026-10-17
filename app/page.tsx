@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { format, isBefore, startOfMonth } from "date-fns";
 import {
   Clock, BarChart2, History, CheckCircle,
-  AlertCircle, Loader2, ExternalLink, BookOpen, RotateCcw, Timer, Target, LogOut, Settings, CalendarDays, Quote, Bot, GraduationCap
+  AlertCircle, Loader2, ExternalLink, BookOpen, RotateCcw, Timer, Target, LogOut, Settings, CalendarDays, Quote, Bot, GraduationCap, Dices
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -35,6 +35,7 @@ import PlanTomorrowModal from "@/components/PlanTomorrowModal";
 import ChallengesView  from "@/components/ChallengesView";
 import AICoachView     from "@/components/AICoachView";
 import AcademicsView   from "@/components/AcademicsView";
+import TargetPickerModal from "@/components/TargetPickerModal";
 import { DEFAULT_CATEGORIES } from "@/lib/types";
 
 type Tab = "today" | "targets" | "routine" | "challenges" | "academics" | "history" | "insights" | "settings" | "ai";
@@ -46,9 +47,11 @@ export default function App() {
   const [viewDate,      setViewDate]      = useState(TODAY);
   const [appData,       setAppData]       = useState<AppData | null>(null);
   const [modalHour,     setModalHour]     = useState<number | null>(null);
+  const [prefillTarget, setPrefillTarget] = useState<string | null>(null);
   const [showEvening,   setShowEvening]   = useState(false);
   const [showReminder,  setShowReminder]  = useState(false);
   const [showPlanTomorrow, setShowPlanTomorrow] = useState(false);
+  const [showPicker,    setShowPicker]    = useState(false);
   const router = useRouter();
 
   const handleLogout = async () => {
@@ -387,6 +390,19 @@ export default function App() {
         <div className="flex items-center gap-2">
           <SyncIndicator state={syncState} msg={syncMsg} />
           <button
+            onClick={() => setShowPicker(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition-all hover:scale-105 active:scale-95 shadow-sm"
+            style={{
+              background: "linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(56, 189, 248, 0.2) 100%)",
+              border: "1px solid rgba(245, 158, 11, 0.4)",
+              color: "var(--text)"
+            }}
+            title="Pick Next Target (Paralysis Breaker)"
+          >
+            <Dices size={13} className="text-amber-400" />
+            <span className="hidden md:inline">Pick Target</span>
+          </button>
+          <button
             onClick={() => setShowReminder(!showReminder)}
             className="flex items-center gap-1 btn-ghost text-xs px-2 py-1"
             title="Break Timer"
@@ -497,6 +513,7 @@ export default function App() {
                 onExtendDay={handleExtendDay}
                 activeChallenge={appData.challenges?.find(c => c.status === "active")}
                 targetRank={calculateCurrentMonthRank(appData)}
+                onOpenPicker={() => setShowPicker(true)}
               />
             )}
           </>
@@ -509,6 +526,7 @@ export default function App() {
               data={appData}
               onToggle={handleToggleTarget}
               onUpdateTargets={handleUpdateTargets}
+              onOpenPicker={() => setShowPicker(true)}
             />
           </div>
         )}
@@ -556,6 +574,7 @@ export default function App() {
               setAppData(prev => prev ? { ...prev, academics: newAcademics } : prev);
               await syncToSheets("/api/sheets/academics", { academics: newAcademics }, () => {}); 
             }}
+            onOpenPicker={() => setShowPicker(true)}
           />
         )}
 
@@ -583,7 +602,11 @@ export default function App() {
           targets={currentTargets}
           categories={activeCategories}
           onSave={handleBlockSave}
-          onClose={() => setModalHour(null)}
+          onClose={() => {
+            setModalHour(null);
+            setPrefillTarget(null);
+          }}
+          prefillTarget={prefillTarget}
         />
       )}
 
@@ -617,6 +640,24 @@ export default function App() {
           onClose={() => setShowPlanTomorrow(false)}
           onSave={handlePlanTomorrow}
           targets={currentTargets}
+        />
+      )}
+
+      {/* ── Target Decider & Focus Studio Modal ────────────────────────────── */}
+      {showPicker && (
+        <TargetPickerModal
+          isOpen={showPicker}
+          onClose={() => setShowPicker(false)}
+          appData={appData}
+          viewDate={viewDate}
+          allTargets={currentTargets}
+          dayTargets={dayData.targets || {}}
+          onToggleTarget={(targetName) => handleToggleTarget(viewDate, targetName)}
+          onLogBlock={(hour, targetName) => {
+            setPrefillTarget(targetName);
+            setModalHour(hour);
+          }}
+          activeChallenge={appData.challenges?.find(c => c.status === "active")}
         />
       )}
     </div>

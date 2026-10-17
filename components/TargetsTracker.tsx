@@ -4,15 +4,16 @@ import { useState, useEffect } from "react";
 import { format, getDaysInMonth, startOfMonth, addMonths, subMonths, isSameMonth, isBefore, isAfter, differenceInDays } from "date-fns";
 import { AppData, TargetMeta } from "@/lib/types";
 import { AreaChart, Area, ResponsiveContainer } from "recharts";
-import { ChevronLeft, ChevronRight, Target, X, ChevronDown, Trophy, CheckCircle2, Flag } from "lucide-react";
+import { ChevronLeft, ChevronRight, Target, X, ChevronDown, Trophy, CheckCircle2, Flag, Dices } from "lucide-react";
 
 interface Props {
   data: AppData;
   onToggle: (date: string, targetName: string) => void;
   onUpdateTargets?: (monthlyTargets: Record<string, TargetMeta[]>) => void;
+  onOpenPicker?: () => void;
 }
 
-export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Props) {
+export default function TargetsTracker({ data, onToggle, onUpdateTargets, onOpenPicker }: Props) {
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()));
   const [isEditing, setIsEditing] = useState(false);
   const [localTargets, setLocalTargets] = useState<TargetMeta[]>([]);
@@ -258,7 +259,23 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets }: Prop
           </div>
         </div>
         
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          {onOpenPicker && (
+            <button
+              onClick={onOpenPicker}
+              className="px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 shadow-sm"
+              style={{
+                background: "linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(56, 189, 248, 0.2) 100%)",
+                border: "1px solid rgba(245, 158, 11, 0.4)",
+                color: "var(--text)"
+              }}
+              title="Pick which target to work on next (Decider)"
+            >
+              <Dices size={14} className="text-amber-400" />
+              <span>Pick Next 🎲</span>
+            </button>
+          )}
+
           {onUpdateTargets && (
             <div className="relative">
               <button 

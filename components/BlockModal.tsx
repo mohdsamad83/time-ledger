@@ -10,6 +10,7 @@ interface Props {
   categories:  CustomCategory[];
   onSave:      (block: TimeBlock) => void;
   onClose:     () => void;
+  prefillTarget?: string | null;
 }
 
 const toTime = (h: number) => {
@@ -23,15 +24,19 @@ const ENERGY_OPTIONS: { value: EnergyLevel; label: string; icon: React.ReactNode
   { value: "low",    label: "Low",    icon: <BatteryLow size={14} />, color: "#F87171" },
 ];
 
-export default function BlockModal({ hour, block, targets, categories: categoriesList, onSave, onClose }: Props) {
-  const [activity,     setActivity]     = useState(block?.activity     ?? "");
+export default function BlockModal({ hour, block, targets, categories: categoriesList, onSave, onClose, prefillTarget }: Props) {
+  const [activity,     setActivity]     = useState(block?.activity ?? (prefillTarget ? `Work on ${prefillTarget}` : ""));
   const [categories, setCategories] = useState<string[]>(
-    block?.categories ?? (block?.category ? [block.category] : ["deep-work"])
+    block?.categories ?? (block?.category ? [block.category] : ["working"])
   );
   const [energy,       setEnergy]       = useState<EnergyLevel>(block?.energy   ?? "medium");
   const [wasPlanned,   setWasPlanned]   = useState(block?.wasPlanned   ?? true);
   const [contributedTargets, setContributedTargets] = useState<{name: string, percentage: number}[]>(
-    block?.contributedTargets ?? (block?.contributedPriority && block.contributedPriority !== "None" ? [{ name: block.contributedPriority, percentage: 100 }] : [])
+    block?.contributedTargets ?? (
+      prefillTarget
+        ? [{ name: prefillTarget, percentage: 100 }]
+        : (block?.contributedPriority && block.contributedPriority !== "None" ? [{ name: block.contributedPriority, percentage: 100 }] : [])
+    )
   );
   const [couldDel,     setCouldDel]     = useState<DelegateOpt>(block?.couldDelegate   ?? "na");
   const [satisfaction, setSatisfaction] = useState(block?.satisfaction ?? 3);

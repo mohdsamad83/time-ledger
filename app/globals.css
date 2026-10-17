@@ -159,3 +159,43 @@ select option { background: var(--surface); }
   font-size: 14px;
   line-height: 1.5;
 }
+
+/* ── 3D & Decider Animations ── */
+.perspective-800 {
+  perspective: 800px;
+  -webkit-perspective: 800px;
+}
+.perspective-1000 {
+  perspective: 1000px;
+  -webkit-perspective: 1000px;
+}
+.transform-style-3d {
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+}
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+@keyframes neon-pulse {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(56, 189, 248, 0.4), inset 0 0 10px rgba(56, 189, 248, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(56, 189, 248, 0.7), inset 0 0 18px rgba(56, 189, 248, 0.4);
+  }
+}
+.neon-glow {
+  animation: neon-pulse 2s infinite ease-in-out;
+}
+
+@keyframes gold-shine {
+  0% { filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.3)); }
+  50% { filter: drop-shadow(0 0 20px rgba(245, 158, 11, 0.7)); }
+  100% { filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.3)); }
+}
+.gold-glow {
+  animation: gold-shine 2s infinite ease-in-out;
+}
+

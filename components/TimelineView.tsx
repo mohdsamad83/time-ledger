@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { TimeBlock, DaySetup, Category, CustomCategory, RoutineItem, Challenge } from "@/lib/types";
-import { Plus, Edit2, Moon, CheckSquare, Star, Flame, Zap, Trophy } from "lucide-react";
+import { Plus, Edit2, Moon, CheckSquare, Star, Flame, Zap, Trophy, Dices } from "lucide-react";
 import { SyncState } from "@/lib/types";
 import { differenceInDays } from "date-fns";
 
@@ -22,6 +22,7 @@ interface Props {
   onExtendDay?: () => void;
   activeChallenge?: Challenge | null;
   targetRank?: { level: string, rankStr: string, rankColor: string, rankLabel: string };
+  onOpenPicker?: () => void;
 }
 
 const toTime = (h: number) => {
@@ -56,7 +57,7 @@ const nowHour = () => new Date().getHours();
 export default function TimelineView({
   date, setup, blocks, routine, onLogBlock, onEveningReview, hasEveningReview, 
   dayTargets, allTargets, categories, onToggleTarget, onUpdateCommitments, onExtendDay, 
-  activeChallenge, targetRank
+  activeChallenge, targetRank, onOpenPicker
 }: Props) {
   const hours = Array.from(
     { length: Math.max(1, (setup.sleepHour > setup.wakeHour
@@ -125,6 +126,31 @@ export default function TimelineView({
       {/* LEFT COLUMN: Targets & Commitments */}
       <div className="space-y-6 lg:sticky lg:top-24">
         
+        {/* Anti-Paralysis Decision Trigger */}
+        {onOpenPicker && (
+          <button
+            onClick={onOpenPicker}
+            className="w-full p-3 rounded-xl border flex items-center justify-between text-left transition-all hover:scale-[1.01] active:scale-[0.99] group shadow-sm"
+            style={{
+              background: "linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(56, 189, 248, 0.12) 100%)",
+              borderColor: "rgba(245, 158, 11, 0.35)",
+            }}
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-amber-500/20 text-amber-400 font-bold shrink-0">
+                <Dices size={16} />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold leading-tight" style={{ color: "var(--text)" }}>Unsure what to do?</h4>
+                <p className="text-[10px] leading-tight" style={{ color: "var(--faint)" }}>Roll 3D Dice / Wheel to pick target</p>
+              </div>
+            </div>
+            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded bg-amber-500/20 text-amber-400 group-hover:bg-amber-500 group-hover:text-black transition-colors shrink-0">
+              Pick 🎲
+            </span>
+          </button>
+        )}
+
         {/* Top 3 Commitments */}
         <div className="rounded-xl p-5 shadow-sm" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
           <div className="flex items-center justify-between mb-4">

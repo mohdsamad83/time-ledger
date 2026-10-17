@@ -2,16 +2,17 @@
 
 import React, { useState } from "react";
 import { AppData, AcademicSubject, AcademicUnit, AcademicTask } from "@/lib/types";
-import { Plus, Trash2, Edit3, Save, X, GraduationCap, CheckCircle2, Clock, Target, Check, Circle, GripVertical } from "lucide-react";
+import { Plus, Trash2, Edit3, Save, X, GraduationCap, CheckCircle2, Clock, Target, Check, Circle, GripVertical, Dices } from "lucide-react";
 
 interface Props {
   data: AppData | null;
   onUpdate: (academics: AcademicSubject[]) => void;
+  onOpenPicker?: () => void;
 }
 
 const DEFAULT_COLORS = ["#3b82f6", "#8b5cf6", "#10b981", "#f59e0b", "#f43f5e", "#14b8a6", "#6366f1"];
 
-export default function AcademicsView({ data, onUpdate }: Props) {
+export default function AcademicsView({ data, onUpdate, onOpenPicker }: Props) {
   const academics = data?.academics || [];
 
   const [editingSubject, setEditingSubject] = useState<AcademicSubject | null>(null);
@@ -134,13 +135,30 @@ export default function AcademicsView({ data, onUpdate }: Props) {
             Track subjects, lectures, and assignments precisely to hit your deadlines.
           </p>
         </div>
-        <button 
-          onClick={() => setEditingSubject({ id: crypto.randomUUID(), name: "", color: DEFAULT_COLORS[0], hoursPerTopic: 0.5, units: [] })}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all hover:opacity-80"
-          style={{ background: "var(--primary)", color: "#fff" }}
-        >
-          <Plus size={16} /> Add Subject
-        </button>
+        <div className="flex items-center gap-3">
+          {onOpenPicker && (
+            <button 
+              onClick={onOpenPicker}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all hover:scale-105 active:scale-95 shadow-sm"
+              style={{
+                background: "linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(56, 189, 248, 0.2) 100%)",
+                border: "1px solid rgba(245, 158, 11, 0.4)",
+                color: "var(--text)"
+              }}
+              title="Pick next topic or lecture"
+            >
+              <Dices size={16} className="text-amber-400" />
+              <span>Pick Next 🎲</span>
+            </button>
+          )}
+          <button 
+            onClick={() => setEditingSubject({ id: crypto.randomUUID(), name: "", color: DEFAULT_COLORS[0], hoursPerTopic: 0.5, units: [] })}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all hover:opacity-80"
+            style={{ background: "var(--primary)", color: "#fff" }}
+          >
+            <Plus size={16} /> Add Subject
+          </button>
+        </div>
       </div>
 
       {editingSubject && (
