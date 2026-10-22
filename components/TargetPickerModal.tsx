@@ -268,23 +268,29 @@ export default function TargetPickerModal({
             academicPool.push(`${sub.name} (Review)`);
           }
         });
-        return academicPool.length > 0 ? academicPool : allTargets;
+        const pool = academicPool.length > 0 ? academicPool : allTargets;
+        return Array.from(new Set(pool));
       }
-      return allTargets;
+      return Array.from(new Set(allTargets));
     }
-    return allTargets;
+    return Array.from(new Set(allTargets));
   }, [scope, allTargets, dayTargets, activeChallenge, appData?.academics]);
 
   // Sync Coin Duel targets when candidates change
   useEffect(() => {
     if (candidateTargets.length >= 2) {
-      if (!candidateTargets.includes(coinTargetA)) setCoinTargetA(candidateTargets[0]);
-      if (!candidateTargets.includes(coinTargetB) || coinTargetB === candidateTargets[0]) {
-        setCoinTargetB(candidateTargets[1]);
+      const first = candidateTargets[0];
+      const second = candidateTargets[1];
+      if (coinTargetA !== first && !candidateTargets.includes(coinTargetA)) {
+        setCoinTargetA(first);
+      }
+      if (coinTargetB !== second && (!candidateTargets.includes(coinTargetB) || (coinTargetB === first && first !== second))) {
+        setCoinTargetB(second);
       }
     } else if (candidateTargets.length === 1) {
-      setCoinTargetA(candidateTargets[0]);
-      setCoinTargetB(candidateTargets[0]);
+      const only = candidateTargets[0];
+      if (coinTargetA !== only) setCoinTargetA(only);
+      if (coinTargetB !== only) setCoinTargetB(only);
     }
   }, [candidateTargets, coinTargetA, coinTargetB]);
 

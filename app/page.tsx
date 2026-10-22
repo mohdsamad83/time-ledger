@@ -42,6 +42,7 @@ import { DEFAULT_CATEGORIES } from "@/lib/types";
 type Tab = "today" | "targets" | "routine" | "challenges" | "academics" | "history" | "insights" | "settings" | "ai";
 
 const TODAY = format(new Date(), "yyyy-MM-dd");
+const EMPTY_ROUTINE: RoutineItem[] = [];
 
 export default function App() {
   const [tab,           setTab]           = useState<Tab>("today");
@@ -664,7 +665,7 @@ export default function App() {
 
       {/* ── Global Hourly Topic Alert & Chime Engine ───────────────────────── */}
       <HourlyReminderAlert
-        routine={appData.routine || []}
+        routine={appData.routine || EMPTY_ROUTINE}
         onOpenPicker={() => setShowPicker(true)}
         onLogBlock={(hour) => setModalHour(hour)}
       />

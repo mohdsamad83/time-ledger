@@ -15,7 +15,20 @@ interface Props {
 }
 
 export default function HourlyReminderAlert({ routine = [], onOpenPicker, onLogBlock }: Props) {
-  const [settings, setSettings] = useState<HourlyAlertSettings>(DEFAULT_HOURLY_SETTINGS);
+  // Initialize state once from localStorage to avoid initial mount re-render churn
+  const [settings, setSettings] = useState<HourlyAlertSettings>(() => {
+    if (typeof window === "undefined") return DEFAULT_HOURLY_SETTINGS;
+    try {
+      const saved = localStorage.getItem("tl-hourly-alert-settings");
+      if (saved) {
+        return { ...DEFAULT_HOURLY_SETTINGS, ...JSON.parse(saved) };
+      }
+    } catch {
+      // Fallback to default
+    }
+    return DEFAULT_HOURLY_SETTINGS;
+  });
+
   const [activeAlert, setActiveAlert] = useState<{
     timeStr: string;
     hour: number;
@@ -26,44 +39,20 @@ export default function HourlyReminderAlert({ routine = [], onOpenPicker, onLogB
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastAlertHourRef = useRef<number | null>(null);
 
-  // Load settings from localStorage
-  const loadSettings = useCallback(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const saved = localStorage.getItem("tl-hourly-alert-settings");
-      if (saved) {
-        setSettings({ ...DEFAULT_HOURLY_SETTINGS, ...JSON.parse(saved) });
-      } else {
-        setSettings(DEFAULT_HOURLY_SETTINGS);
-      }
-    } catch {
-      setSettings(DEFAULT_HOURLY_SETTINGS);
-    }
-  }, []);
-
+  // Keep ref up to date so listeners and timers don't cause infinite dependency re-runs
+  const settingsRef = useRef<HourlyAlertSettings>(settings);
   useEffect(() => {
-    loadSettings();
-    const handleUpdate = () => loadSettings();
-    window.addEventListener("tl-hourly-settings-updated", handleUpdate);
-    window.addEventListener("storage", handleUpdate);
+    settingsRef.current = settings;
+  }, [settings]);
 
-    // Listen for manual test trigger from Settings
-    const handleTest = (e: Event) => {
-      const customEvent = e as CustomEvent<{ settings?: HourlyAlertSettings }>;
-      const testSettings = customEvent.detail?.settings || settings;
-      triggerAlert(new Date(), testSettings, true);
-    };
-    window.addEventListener("tl-test-hourly-alert", handleTest);
-
-    return () => {
-      window.removeEventListener("tl-hourly-settings-updated", handleUpdate);
-      window.removeEventListener("storage", handleUpdate);
-      window.removeEventListener("tl-test-hourly-alert", handleTest);
-    };
-  }, [loadSettings, settings]);
+  const routineRef = useRef<RoutineItem[]>(routine);
+  useEffect(() => {
+    routineRef.current = routine;
+  }, [routine]);
 
   // Trigger alert execution
-  const triggerAlert = useCallback((now: Date, cfg: HourlyAlertSettings, isTest: boolean = false) => {
+  const triggerAlert = useCallback((now: Date, overrideCfg?: HourlyAlertSettings, isTest: boolean = false) => {
+    const cfg = overrideCfg || settingsRef.current;
     const currentHour = now.getHours();
     const formattedTime = format(now, "h:mm a");
 
@@ -80,7 +69,8 @@ export default function HourlyReminderAlert({ routine = [], onOpenPicker, onLogB
     // Check routine item for this hour
     let scheduledActivity: string | undefined = undefined;
     const nowMinutes = currentHour * 60 + now.getMinutes();
-    for (const item of routine) {
+    const routineList = routineRef.current || [];
+    for (const item of routineList) {
       if (!item.startTime || !item.endTime) continue;
       const [sHr, sMin] = item.startTime.split(":").map(Number);
       const [eHr, eMin] = item.endTime.split(":").map(Number);
@@ -123,12 +113,46 @@ export default function HourlyReminderAlert({ routine = [], onOpenPicker, onLogB
     }
 
     lastAlertHourRef.current = currentHour;
-  }, [routine]);
+  }, []);
 
-  // Scheduler logic
+  // Window events listener (only mounted once, decoupled from settings state loop)
+  useEffect(() => {
+    const handleUpdate = () => {
+      try {
+        const saved = localStorage.getItem("tl-hourly-alert-settings");
+        if (saved) {
+          setSettings({ ...DEFAULT_HOURLY_SETTINGS, ...JSON.parse(saved) });
+        }
+      } catch {
+        // Ignore
+      }
+    };
+
+    // Listen for manual test trigger from Settings
+    const handleTest = (e: Event) => {
+      const customEvent = e as CustomEvent<{ settings?: HourlyAlertSettings }>;
+      const testSettings = customEvent.detail?.settings || settingsRef.current;
+      triggerAlert(new Date(), testSettings, true);
+    };
+
+    window.addEventListener("tl-hourly-settings-updated", handleUpdate);
+    window.addEventListener("storage", handleUpdate);
+    window.addEventListener("tl-test-hourly-alert", handleTest);
+
+    return () => {
+      window.removeEventListener("tl-hourly-settings-updated", handleUpdate);
+      window.removeEventListener("storage", handleUpdate);
+      window.removeEventListener("tl-test-hourly-alert", handleTest);
+    };
+  }, [triggerAlert]);
+
+  // Scheduler logic — only re-runs when schedule parameters actually change
   useEffect(() => {
     if (!settings.enabled) {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
       return;
     }
 
@@ -154,7 +178,7 @@ export default function HourlyReminderAlert({ routine = [], onOpenPicker, onLogB
 
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       timeoutRef.current = setTimeout(() => {
-        triggerAlert(new Date(), settings);
+        triggerAlert(new Date());
         scheduleNext();
       }, delayMs);
     };
@@ -167,18 +191,29 @@ export default function HourlyReminderAlert({ routine = [], onOpenPicker, onLogB
       const currentMin = now.getMinutes();
       const currentHour = now.getHours();
 
-      if (settings.timingMode === "top-of-hour" && currentMin === 0) {
+      if (settingsRef.current.timingMode === "top-of-hour" && currentMin === 0) {
         if (lastAlertHourRef.current !== currentHour) {
-          triggerAlert(now, settings);
+          triggerAlert(now);
         }
       }
     }, 30000);
 
     return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
       clearInterval(watchdog);
     };
-  }, [settings, triggerAlert]);
+  }, [
+    settings.enabled,
+    settings.timingMode,
+    settings.customIntervalMinutes,
+    settings.startHour,
+    settings.endHour,
+    settings.activeWindowMode,
+    triggerAlert
+  ]);
 
   // Auto-dismiss alert after 35 seconds
   useEffect(() => {
