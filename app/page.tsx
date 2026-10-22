@@ -36,6 +36,7 @@ import ChallengesView  from "@/components/ChallengesView";
 import AICoachView     from "@/components/AICoachView";
 import AcademicsView   from "@/components/AcademicsView";
 import TargetPickerModal from "@/components/TargetPickerModal";
+import HourlyReminderAlert from "@/components/HourlyReminderAlert";
 import { DEFAULT_CATEGORIES } from "@/lib/types";
 
 type Tab = "today" | "targets" | "routine" | "challenges" | "academics" | "history" | "insights" | "settings" | "ai";
@@ -660,6 +661,13 @@ export default function App() {
           activeChallenge={appData.challenges?.find(c => c.status === "active")}
         />
       )}
+
+      {/* ── Global Hourly Topic Alert & Chime Engine ───────────────────────── */}
+      <HourlyReminderAlert
+        routine={appData.routine || []}
+        onOpenPicker={() => setShowPicker(true)}
+        onLogBlock={(hour) => setModalHour(hour)}
+      />
     </div>
   );
 }

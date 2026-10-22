@@ -157,5 +157,34 @@ export interface AppData {
   version: string;
 }
 
+export type HourlySoundType = "zen-bell" | "digital-chime" | "soft-ping" | "executive" | "arcade" | "none";
+
+export interface HourlyAlertSettings {
+  enabled: boolean;
+  timingMode: "top-of-hour" | "pre-hour-5" | "custom-interval";
+  customIntervalMinutes: number; // e.g. 60, 45, 30
+  activeWindowMode: "all-day" | "custom-hours";
+  startHour: number; // 0-23
+  endHour: number;   // 0-23
+  sound: HourlySoundType;
+  volume: number; // 0.1 - 1.0
+  message: string;
+  enableDesktopNotification: boolean;
+}
+
+export const DEFAULT_HOURLY_SETTINGS: HourlyAlertSettings = {
+  enabled: true,
+  timingMode: "top-of-hour",
+  customIntervalMinutes: 60,
+  activeWindowMode: "custom-hours",
+  startHour: 7,
+  endHour: 23,
+  sound: "zen-bell",
+  volume: 0.7,
+  message: "It's the top of the hour! Time to wrap up, log your block, and change or confirm your topic.",
+  enableDesktopNotification: true,
+};
+
 // ─── Sync status ─────────────────────────────────────────────────────────────
 export type SyncState = "idle" | "syncing" | "ok" | "error";
+
