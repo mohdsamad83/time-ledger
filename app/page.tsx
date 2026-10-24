@@ -311,40 +311,49 @@ export default function App() {
   const isToday = viewDate === TODAY;
   const activeCategories = appData.categories || DEFAULT_CATEGORIES;
 
-  // Monthly targets for active view (excludes completed / accomplished targets)
+  // Monthly targets for active view (strictly matches Active Targets in Goal Tracker)
   const currentMonthStr = viewDate.substring(0, 7);
   let currentTargets: string[] = [];
   let completedTargetsCount = 0;
   
   if (appData.monthlyTargets && Object.keys(appData.monthlyTargets).length > 0) {
-    const targetMap = new Map<string, boolean>();
-    const completedSet = new Set<string>();
-
-    // Seed from base targets if not dropped or accomplished
-    (appData.targets || []).forEach(name => targetMap.set(name, true));
+    const targetMap = new Map<string, TargetMeta>();
+    const viewedMonthStart = startOfMonth(new Date(viewDate));
 
     Object.keys(appData.monthlyTargets).sort().forEach(m => {
       if (m <= currentMonthStr) {
         for (const t of appData.monthlyTargets![m]) {
           if (t.accomplishedAt === "dropped") {
             targetMap.delete(t.name);
-            completedSet.delete(t.name);
             continue;
           }
           if (t.accomplishedAt) {
-            // Target is accomplished/completed: remove from active targets entirely!
-            targetMap.delete(t.name);
-            completedSet.add(t.name);
-            continue;
+            const accDate = new Date(t.accomplishedAt);
+            if (isBefore(accDate, viewedMonthStart)) {
+              // Accomplished in an earlier month: not active this month
+              targetMap.delete(t.name);
+              continue;
+            }
           }
-          // Target is active
-          targetMap.set(t.name, true);
-          completedSet.delete(t.name);
+          targetMap.set(t.name, t);
         }
       }
     });
-    currentTargets = Array.from(targetMap.keys());
-    completedTargetsCount = completedSet.size;
+
+    const activeList: string[] = [];
+    let completedCount = 0;
+
+    targetMap.forEach((t) => {
+      const isAccomplished = !!t.accomplishedAt && t.accomplishedAt !== "dropped" && t.accomplishedAt <= `${currentMonthStr}-31`;
+      if (isAccomplished) {
+        completedCount++;
+      } else {
+        activeList.push(t.name);
+      }
+    });
+
+    currentTargets = activeList;
+    completedTargetsCount = completedCount;
   } else if (appData.targets && appData.targets.length > 0) {
     currentTargets = appData.targets;
   }

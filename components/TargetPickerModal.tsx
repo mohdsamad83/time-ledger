@@ -250,7 +250,8 @@ export default function TargetPickerModal({
         if (activeChallenge.targetMapping) {
           Object.values(activeChallenge.targetMapping).forEach(ts => mapped.push(...ts));
         }
-        const set = new Set([...mapped, ...activeChallenge.goals]);
+        const activeMapped = mapped.filter(t => allTargets.includes(t));
+        const set = new Set([...activeMapped, ...activeChallenge.goals]);
         const list = Array.from(set);
         return list.length > 0 ? list : allTargets;
       }
