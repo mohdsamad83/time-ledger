@@ -55,7 +55,15 @@ export default function ChallengesView({ challenges, allTargets, dayTargets, all
       setActionPlan(c.actionPlan);
       setStatus(c.status);
       setLogs(c.logs || []);
-      setTargetMapping(c.targetMapping || {});
+      const activeSet = new Set(allTargets || []);
+      const activeMapping: Record<string, string[]> = {};
+      if (c.targetMapping) {
+        Object.entries(c.targetMapping).forEach(([goal, targets]) => {
+          const activeOnly = targets.filter(t => activeSet.has(t));
+          if (activeOnly.length > 0) activeMapping[goal] = activeOnly;
+        });
+      }
+      setTargetMapping(activeMapping);
     } else {
       setEditingChallenge(null);
       setName("");
@@ -100,6 +108,13 @@ export default function ChallengesView({ challenges, allTargets, dayTargets, all
   const handleSave = () => {
     if (!name || !startDate) return;
 
+    const activeSet = new Set(allTargets || []);
+    const cleanedMapping: Record<string, string[]> = {};
+    Object.entries(targetMapping).forEach(([goal, targets]) => {
+      const activeOnly = targets.filter(t => activeSet.has(t));
+      if (activeOnly.length > 0) cleanedMapping[goal] = activeOnly;
+    });
+
     const newChallenge: Challenge = {
       id: editingChallenge?.id || `challenge-${Date.now()}`,
       name,
@@ -110,7 +125,7 @@ export default function ChallengesView({ challenges, allTargets, dayTargets, all
       actionPlan,
       status,
       logs,
-      targetMapping,
+      targetMapping: cleanedMapping,
       goalMetadata: editingChallenge?.goalMetadata || {}
     };
 

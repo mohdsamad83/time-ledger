@@ -23,6 +23,8 @@ interface Props {
   activeChallenge?: Challenge | null;
   targetRank?: { level: string, rankStr: string, rankColor: string, rankLabel: string };
   onOpenPicker?: () => void;
+  monthlyCompletedCount?: number;
+  onViewTargets?: () => void;
 }
 
 const toTime = (h: number) => {
@@ -57,7 +59,7 @@ const nowHour = () => new Date().getHours();
 export default function TimelineView({
   date, setup, blocks, routine, onLogBlock, onEveningReview, hasEveningReview, 
   dayTargets, allTargets, categories, onToggleTarget, onUpdateCommitments, onExtendDay, 
-  activeChallenge, targetRank, onOpenPicker
+  activeChallenge, targetRank, onOpenPicker, monthlyCompletedCount = 0, onViewTargets
 }: Props) {
   const hours = Array.from(
     { length: Math.max(1, (setup.sleepHour > setup.wakeHour
@@ -254,7 +256,7 @@ export default function TimelineView({
               <div className="flex items-center gap-2">
                 <CheckSquare size={16} className="primary-text" />
                 <span style={{ color: "var(--text)" }} className="text-sm font-semibold uppercase tracking-widest">
-                  All Targets
+                  Active Targets
                 </span>
               </div>
               <span
@@ -321,6 +323,23 @@ export default function TimelineView({
                 );
               })}
             </div>
+
+            {/* Link to Completed Targets if any exist */}
+            {monthlyCompletedCount > 0 && (
+              <button
+                onClick={onViewTargets}
+                className="w-full mt-3 p-2.5 rounded-lg border border-dashed flex items-center justify-between gap-2 text-xs transition-all hover:bg-emerald-500/10 hover:border-emerald-500/30 text-emerald-400 group"
+                title="View completed targets in Goal Tracker"
+              >
+                <div className="flex items-center gap-2">
+                  <Trophy size={13} className="text-amber-400 group-hover:scale-110 transition-transform" />
+                  <span className="font-semibold">{monthlyCompletedCount} Accomplished Goal{monthlyCompletedCount > 1 ? "s" : ""}</span>
+                </div>
+                <span className="text-[10px] opacity-70 group-hover:opacity-100 flex items-center gap-1 font-mono">
+                  View →
+                </span>
+              </button>
+            )}
           </div>
         )}
       </div>

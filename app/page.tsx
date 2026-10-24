@@ -311,30 +311,40 @@ export default function App() {
   const isToday = viewDate === TODAY;
   const activeCategories = appData.categories || DEFAULT_CATEGORIES;
 
-  // Monthly targets for active view
+  // Monthly targets for active view (excludes completed / accomplished targets)
   const currentMonthStr = viewDate.substring(0, 7);
   let currentTargets: string[] = [];
+  let completedTargetsCount = 0;
   
-  if (appData.monthlyTargets) {
+  if (appData.monthlyTargets && Object.keys(appData.monthlyTargets).length > 0) {
     const targetMap = new Map<string, boolean>();
-    const viewedMonthStart = startOfMonth(new Date(viewDate));
+    const completedSet = new Set<string>();
+
+    // Seed from base targets if not dropped or accomplished
+    (appData.targets || []).forEach(name => targetMap.set(name, true));
 
     Object.keys(appData.monthlyTargets).sort().forEach(m => {
       if (m <= currentMonthStr) {
         for (const t of appData.monthlyTargets![m]) {
           if (t.accomplishedAt === "dropped") {
             targetMap.delete(t.name);
+            completedSet.delete(t.name);
             continue;
           }
           if (t.accomplishedAt) {
-            const accDate = new Date(t.accomplishedAt);
-            if (isBefore(accDate, viewedMonthStart)) continue;
+            // Target is accomplished/completed: remove from active targets entirely!
+            targetMap.delete(t.name);
+            completedSet.add(t.name);
+            continue;
           }
+          // Target is active
           targetMap.set(t.name, true);
+          completedSet.delete(t.name);
         }
       }
     });
     currentTargets = Array.from(targetMap.keys());
+    completedTargetsCount = completedSet.size;
   } else if (appData.targets && appData.targets.length > 0) {
     currentTargets = appData.targets;
   }
@@ -516,6 +526,8 @@ export default function App() {
                 activeChallenge={appData.challenges?.find(c => c.status === "active")}
                 targetRank={calculateCurrentMonthRank(appData)}
                 onOpenPicker={() => setShowPicker(true)}
+                monthlyCompletedCount={completedTargetsCount}
+                onViewTargets={() => setTab("targets")}
               />
             )}
           </>

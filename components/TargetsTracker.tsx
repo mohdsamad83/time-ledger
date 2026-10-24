@@ -874,6 +874,7 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets, onOpen
       {/* 1. TOP CARD: ACTIVE TARGETS                                               */}
       {/* ────────────────────────────────────────────────────────────────────────── */}
       <div
+        id="active-targets-card"
         className="rounded-xl border shadow-sm relative overflow-hidden"
         style={{ borderColor: "var(--border)", background: "var(--surface)" }}
       >
@@ -901,7 +902,7 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets, onOpen
             </div>
           </div>
 
-          {/* Search, Filter Pills, and Sort */}
+          {/* Search, Filter Pills, Sort, and Jump */}
           <div className="flex items-center gap-2 flex-wrap">
             {/* Search input */}
             <div className="relative">
@@ -958,11 +959,26 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets, onOpen
               <option value="percent-asc" className="bg-slate-900 text-white">Sort: Low %</option>
               <option value="alpha" className="bg-slate-900 text-white">Sort: A-Z</option>
             </select>
+
+            {/* Quick jump to Completed targets down below */}
+            {completedRowStats.length > 0 && (
+              <button
+                onClick={() => {
+                  document.getElementById("completed-targets-card")?.scrollIntoView({ behavior: "smooth" });
+                }}
+                className="px-2.5 py-1 text-xs rounded-lg font-semibold flex items-center gap-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition-all hover:scale-105 active:scale-95 shrink-0"
+                title="Jump down to completed targets"
+              >
+                <Trophy size={13} className="text-amber-400" />
+                <span className="hidden sm:inline">Completed ({completedRowStats.length})</span>
+                <span>↓</span>
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Active Grid Table */}
-        <div className="overflow-auto max-h-[500px] relative custom-scrollbar">
+        {/* Active Grid Table — naturally expanded with no internal vertical scrollbar */}
+        <div className="overflow-x-auto relative custom-scrollbar">
           <table className="w-full text-sm text-center border-collapse">
             <thead className="sticky top-0 z-20" style={{ background: "var(--s2)" }}>
               <tr>
@@ -1115,6 +1131,7 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets, onOpen
       {/* 2. BOTTOM CARD: COMPLETED TARGETS (MOVED DOWN)                            */}
       {/* ────────────────────────────────────────────────────────────────────────── */}
       <div
+        id="completed-targets-card"
         className="rounded-xl border shadow-sm relative overflow-hidden transition-all"
         style={{
           borderColor: completedRowStats.length > 0 ? "rgba(16, 185, 129, 0.4)" : "var(--border)",
@@ -1146,6 +1163,19 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets, onOpen
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Quick jump back to Active targets card at the top */}
+            <button
+              onClick={() => {
+                document.getElementById("active-targets-card")?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="px-2.5 py-1 text-xs rounded-lg font-semibold flex items-center gap-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 transition-all hover:scale-105 active:scale-95"
+              title="Jump back to active targets at the top"
+            >
+              <ArrowUp size={13} />
+              <span className="hidden sm:inline">Active Targets</span>
+              <span>↑</span>
+            </button>
+
             <button
               onClick={() => setIsCompletedExpanded(!isCompletedExpanded)}
               className="p-1.5 rounded-lg hover:bg-white/10 text-[var(--muted)] hover:text-[var(--text)] transition-colors flex items-center gap-1 text-xs font-semibold"
@@ -1160,7 +1190,7 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets, onOpen
           </div>
         </div>
 
-        {/* Completed Targets Content */}
+        {/* Completed Targets Content — naturally expanded with no internal vertical scrollbar */}
         {isCompletedExpanded && (
           <div>
             {completedRowStats.length === 0 ? (
@@ -1176,7 +1206,7 @@ export default function TargetsTracker({ data, onToggle, onUpdateTargets, onOpen
                 </p>
               </div>
             ) : (
-              <div className="overflow-auto max-h-[420px] relative custom-scrollbar">
+              <div className="overflow-x-auto relative custom-scrollbar">
                 <table className="w-full text-sm text-center border-collapse">
                   <thead className="sticky top-0 z-20" style={{ background: "var(--s2)" }}>
                     <tr>
