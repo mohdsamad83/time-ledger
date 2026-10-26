@@ -574,6 +574,7 @@ export default function App() {
         {tab === "routine" && (
           <RoutineView 
             routine={appData.routine || []} 
+            targets={currentTargets}
             onSave={handleSaveRoutine} 
             onGoToSettings={() => setTab("settings")}
           />

@@ -1,14 +1,16 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { RoutineItem, HourlyAlertSettings, DEFAULT_HOURLY_SETTINGS } from "@/lib/types";
 import {
   Clock, Plus, Save, Trash2, ArrowUpDown, Bell, Sparkles, CheckCircle2,
-  AlertTriangle, Coffee, Play, Check, ChevronDown, ChevronUp
+  AlertTriangle, Coffee, Play, Check, ChevronDown, ChevronUp, Target,
+  Layers, Bookmark
 } from "lucide-react";
 
 interface Props {
   routine: RoutineItem[];
+  targets?: string[];
   onSave: (routine: RoutineItem[]) => Promise<void>;
   onGoToSettings?: () => void;
 }
@@ -80,13 +82,19 @@ function format12Hour(time24: string): string {
   return `${hr}:${minStr || "00"} ${period}`;
 }
 
-export default function RoutineView({ routine: initialRoutine, onSave, onGoToSettings }: Props) {
+export default function RoutineView({ 
+  routine: initialRoutine, 
+  targets = [], 
+  onSave, 
+  onGoToSettings 
+}: Props) {
   // Always start with sorted routine for consistency
   const [routine, setRoutine] = useState<RoutineItem[]>(() => sortRoutineByTime(initialRoutine || []));
   const [isSaving, setIsSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string>("");
   const [autoSortEnabled, setAutoSortEnabled] = useState(true);
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
+  const [openTargetPickerIdx, setOpenTargetPickerIdx] = useState<number | null>(null);
 
   // Hourly / Routine notification setting state
   const [alertSettings, setAlertSettings] = useState<HourlyAlertSettings>(() => {
@@ -131,6 +139,19 @@ export default function RoutineView({ routine: initialRoutine, onSave, onGoToSet
     };
   }, []);
 
+  // Close target dropdown when clicking outside
+  useEffect(() => {
+    if (openTargetPickerIdx === null) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest(".target-picker-container")) {
+        setOpenTargetPickerIdx(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [openTargetPickerIdx]);
+
   // Toggle routine notification mode directly from Routine page
   const handleToggleRoutineNotifications = () => {
     const isCurrentlyRoutine = 
@@ -172,8 +193,37 @@ export default function RoutineView({ routine: initialRoutine, onSave, onGoToSet
     setRoutine(prev => [...prev, newItem]);
   };
 
+  // Add an activity row pre-filled with an active target
+  const handleAddFromTarget = (targetName: string) => {
+    // Intelligently find previous block's end time to propose as start time
+    let suggestedStart = "";
+    let suggestedEnd = "";
+
+    const itemsWithTimes = routine.filter(r => !!r.endTime);
+    if (itemsWithTimes.length > 0) {
+      const last = itemsWithTimes[itemsWithTimes.length - 1];
+      suggestedStart = last.endTime;
+      const [h, m] = suggestedStart.split(":").map(Number);
+      if (!isNaN(h)) {
+        const nextH = (h + 1) % 24;
+        suggestedEnd = `${String(nextH).padStart(2, "0")}:${String(m || 0).padStart(2, "0")}`;
+      }
+    }
+
+    const newItem: RoutineItem = {
+      activity: targetName,
+      startTime: suggestedStart,
+      endTime: suggestedEnd,
+    };
+
+    setRoutine(prev => [...prev, newItem]);
+    setStatusMessage(`🎯 Added target "${targetName}" to routine. Adjust timings if needed.`);
+    setTimeout(() => setStatusMessage(""), 4000);
+  };
+
   const handleRemove = (index: number) => {
     setRoutine(prev => prev.filter((_, i) => i !== index));
+    if (openTargetPickerIdx === index) setOpenTargetPickerIdx(null);
   };
 
   const handleChange = (index: number, field: keyof RoutineItem, value: string) => {
@@ -263,6 +313,13 @@ export default function RoutineView({ routine: initialRoutine, onSave, onGoToSet
 
   return (
     <div className="max-w-4xl mx-auto px-4 pb-20 fade-up">
+      {/* ── Native Datalist for Autocomplete from Active Targets ── */}
+      <datalist id="routine-targets-datalist">
+        {targets.map(t => (
+          <option key={t} value={t} />
+        ))}
+      </datalist>
+
       {/* ── Page Header ── */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
         <div>
@@ -275,7 +332,7 @@ export default function RoutineView({ routine: initialRoutine, onSave, onGoToSet
             </span>
           </div>
           <p style={{ color: "var(--faint)" }} className="text-xs sm:text-sm mt-1">
-            Design your ideal daily routine. Activities automatically sort chronologically by time as you edit and save.
+            Design your ideal daily routine. Activities automatically sort chronologically by time, and you can easily add directly from your active targets.
           </p>
         </div>
         
@@ -428,23 +485,99 @@ export default function RoutineView({ routine: initialRoutine, onSave, onGoToSet
         </div>
       </div>
 
+      {/* ── Top Quick-Add from Targets Bar ── */}
+      {targets.length > 0 && (
+        <div 
+          className="p-4 sm:p-4.5 rounded-2xl border mb-6 space-y-2.5 backdrop-blur-md"
+          style={{ background: "var(--surface)", borderColor: "var(--border)" }}
+        >
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Target size={16} className="text-amber-400" />
+              <span className="text-xs sm:text-sm font-bold" style={{ color: "var(--text)" }}>
+                Quick Add Target to Routine
+              </span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-black/20 text-white/70">
+                1-Click Add
+              </span>
+            </div>
+            <span className="text-[11px] text-[var(--faint)]">
+              {targets.filter(t => routine.some(r => r.activity.toLowerCase().includes(t.toLowerCase()))).length} of {targets.length} targets scheduled
+            </span>
+          </div>
+
+          <p className="text-xs" style={{ color: "var(--faint)" }}>
+            Tap any active monthly target to instantly create a new routine block for it:
+          </p>
+
+          <div className="flex flex-wrap gap-2 pt-1">
+            {targets.map((t) => {
+              const isAlreadyInRoutine = routine.some(r => r.activity.toLowerCase().includes(t.toLowerCase()));
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => handleAddFromTarget(t)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm border ${
+                    isAlreadyInRoutine
+                      ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/20"
+                      : "bg-sky-500/10 text-sky-300 border-sky-500/30 hover:bg-sky-500/20 hover:scale-[1.02] active:scale-[0.98]"
+                  }`}
+                  title={isAlreadyInRoutine ? `"${t}" is already scheduled. Click to add another session.` : `Add "${t}" as a routine block`}
+                >
+                  <Plus size={13} className={isAlreadyInRoutine ? "text-emerald-400" : "text-sky-400"} />
+                  <span>{t}</span>
+                  {isAlreadyInRoutine && (
+                    <span className="text-[9px] font-mono opacity-60">✓ in routine</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* ── Routine Table Card ── */}
       <div className="bg-white/5 rounded-2xl p-5 sm:p-6" style={{ border: "1px solid var(--border)" }}>
         {routine.length === 0 ? (
           <div className="text-center py-12">
             <Clock size={48} className="mx-auto mb-4 opacity-20 text-[var(--text)]" />
-            <p className="text-[var(--text)] font-medium mb-2">No routine defined</p>
+            <p className="text-[var(--text)] font-medium mb-2">No routine defined yet</p>
             <p className="text-[var(--faint)] text-sm mb-6">Create your ideal daily schedule. It will automatically order by timings.</p>
-            <button onClick={handleAdd} className="btn-primary px-4 py-2 rounded-xl text-sm font-bold">
-              + Add First Activity
-            </button>
+            
+            <div className="flex flex-col items-center gap-4">
+              <button onClick={handleAdd} className="btn-primary px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg">
+                + Add Custom Activity Row
+              </button>
+
+              {targets.length > 0 && (
+                <div className="pt-4 border-t border-white/10 max-w-lg w-full">
+                  <p className="text-xs text-[var(--faint)] mb-3 font-medium">
+                    Or start by clicking any of your active targets:
+                  </p>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {targets.map(t => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => handleAddFromTarget(t)}
+                        className="px-3 py-1.5 rounded-xl text-xs font-bold bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 border border-sky-500/40 flex items-center gap-1.5 transition-all shadow-sm"
+                      >
+                        <Plus size={12} />
+                        <span>{t}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           <div className="space-y-3">
             {/* Table Header Row */}
             <div className="hidden md:flex gap-4 px-3 pb-2 text-xs font-bold uppercase tracking-wider" style={{ color: "var(--faint)" }}>
               <div className="w-10 text-center">#</div>
-              <div className="flex-[3]">Activity Name</div>
+              <div className="flex-[3]">Activity Name & Target</div>
               <div className="flex-[2]">Start Time</div>
               <div className="flex-[2]">End Time</div>
               <div className="flex-[1.5] text-center">Duration</div>
@@ -457,6 +590,12 @@ export default function RoutineView({ routine: initialRoutine, onSave, onGoToSet
               const formattedSpan = item.startTime && item.endTime 
                 ? `${format12Hour(item.startTime)} – ${format12Hour(item.endTime)}`
                 : null;
+
+              const matchedTarget = targets.find(
+                t => item.activity.toLowerCase() === t.toLowerCase() ||
+                     item.activity.toLowerCase().includes(t.toLowerCase())
+              );
+              const isTargetLinked = !!matchedTarget;
 
               return (
                 <div 
@@ -478,8 +617,8 @@ export default function RoutineView({ routine: initialRoutine, onSave, onGoToSet
                     {idx + 1}
                   </div>
 
-                  {/* Activity Name */}
-                  <div className="w-full md:flex-[3]">
+                  {/* Activity Name with Target Picker & Linking */}
+                  <div className="w-full md:flex-[3] relative">
                     <div className="flex items-center gap-2 mb-1 md:hidden">
                       <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/20 text-white/70">#{idx + 1}</span>
                       {isCurrent && (
@@ -493,18 +632,106 @@ export default function RoutineView({ routine: initialRoutine, onSave, onGoToSet
                         </span>
                       )}
                     </div>
-                    <input
-                      type="text"
-                      value={item.activity}
-                      onChange={(e) => handleChange(idx, "activity", e.target.value)}
-                      placeholder="e.g., Morning Workout, Deep Work, Review"
-                      className="w-full bg-transparent outline-none font-bold placeholder:font-normal text-sm sm:text-base"
-                      style={{ color: "var(--text)" }}
-                    />
-                    {formattedSpan && (
-                      <span className="text-[11px] font-mono block opacity-50 mt-0.5">
-                        {formattedSpan}
-                      </span>
+
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        list="routine-targets-datalist"
+                        value={item.activity}
+                        onChange={(e) => handleChange(idx, "activity", e.target.value)}
+                        placeholder="e.g., Morning Workout, Deep Work, Review"
+                        className="w-full bg-transparent outline-none font-bold placeholder:font-normal text-sm sm:text-base"
+                        style={{ color: "var(--text)" }}
+                      />
+
+                      {/* In-row Target Picker Trigger */}
+                      {targets.length > 0 && (
+                        <div className="relative shrink-0 target-picker-container">
+                          <button
+                            type="button"
+                            onClick={() => setOpenTargetPickerIdx(openTargetPickerIdx === idx ? null : idx)}
+                            className={`p-1.5 rounded-lg border transition-all text-xs flex items-center gap-1 ${
+                              isTargetLinked 
+                                ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40" 
+                                : "hover:bg-white/10 text-[var(--muted)] border-white/10"
+                            }`}
+                            title={isTargetLinked ? `Linked to target "${matchedTarget}". Click to change.` : "Pick from your active targets"}
+                          >
+                            <Target size={14} className={isTargetLinked ? "text-emerald-400" : "text-amber-400"} />
+                          </button>
+
+                          {/* Popover Menu with Targets */}
+                          {openTargetPickerIdx === idx && (
+                            <div 
+                              className="absolute left-0 sm:right-0 sm:left-auto top-full mt-2 w-64 max-h-60 overflow-y-auto rounded-xl border p-2 shadow-2xl z-50 backdrop-blur-xl fade-up custom-scrollbar"
+                              style={{ background: "var(--surface)", borderColor: "var(--border)" }}
+                            >
+                              <div className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 text-[var(--faint)]">
+                                Select Target:
+                              </div>
+                              <div className="space-y-1">
+                                {targets.map((t) => (
+                                  <button
+                                    key={t}
+                                    type="button"
+                                    onClick={() => {
+                                      handleChange(idx, "activity", t);
+                                      setOpenTargetPickerIdx(null);
+                                    }}
+                                    className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-sky-500/15 hover:text-sky-300 transition-colors flex items-center justify-between"
+                                    style={{ color: "var(--text)" }}
+                                  >
+                                    <span className="truncate">{t}</span>
+                                    {item.activity.toLowerCase() === t.toLowerCase() && (
+                                      <Check size={12} className="text-emerald-400 shrink-0" />
+                                    )}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Metadata & Target Status Badges */}
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      {formattedSpan && (
+                        <span className="text-[11px] font-mono opacity-50">
+                          {formattedSpan}
+                        </span>
+                      )}
+                      {isTargetLinked && (
+                        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                          <Target size={10} /> Target: {matchedTarget}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Quick suggestion chips if activity name is empty */}
+                    {!item.activity && targets.length > 0 && (
+                      <div className="flex items-center gap-1.5 mt-2 overflow-x-auto custom-scrollbar py-0.5">
+                        <span className="text-[10px] text-[var(--faint)] shrink-0">Pick target:</span>
+                        {targets.slice(0, 4).map(t => (
+                          <button
+                            key={t}
+                            type="button"
+                            onClick={() => handleChange(idx, "activity", t)}
+                            className="text-[10px] px-2 py-0.5 rounded-md bg-white/5 hover:bg-sky-500/15 hover:text-sky-300 text-[var(--muted)] border border-white/10 hover:border-sky-500/30 transition-all shrink-0"
+                          >
+                            {t}
+                          </button>
+                        ))}
+                        {targets.length > 4 && (
+                          <button
+                            type="button"
+                            onClick={() => setOpenTargetPickerIdx(idx)}
+                            className="text-[10px] px-1.5 py-0.5 text-sky-400 hover:underline shrink-0 font-medium"
+                          >
+                            +{targets.length - 4} more
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
 
@@ -556,14 +783,14 @@ export default function RoutineView({ routine: initialRoutine, onSave, onGoToSet
               );
             })}
 
-            {/* Add Activity Button */}
+            {/* Add Activity Button Section */}
             <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
               <button 
                 onClick={handleAdd}
                 className="w-full sm:flex-1 py-3 rounded-xl border border-dashed flex items-center justify-center gap-2 text-sm font-bold transition-all hover:bg-white/5 hover:border-sky-400 text-sky-400"
                 style={{ borderColor: "var(--border)" }}
               >
-                <Plus size={16} /> Add Activity Row
+                <Plus size={16} /> Add Custom Activity Row
               </button>
 
               <button
