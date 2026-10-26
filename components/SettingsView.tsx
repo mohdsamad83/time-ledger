@@ -921,38 +921,72 @@ export default function SettingsView({ initialCategories, routine = [], onUpdate
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
               {THEMES.map(t => {
                 const isSelected = theme === t.id;
+                const isSpeedster = t.id === "speedster";
+
                 return (
                   <div
                     key={t.id}
                     onClick={() => setTheme(t.id as ThemeId)}
                     className={`p-4 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between gap-4 ${
                       isSelected
-                        ? "border-sky-400 bg-sky-500/10 shadow-lg scale-[1.02]"
+                        ? "border-[var(--primary)] bg-[var(--primary)]/10 shadow-lg scale-[1.02]"
                         : "hover:bg-white/5 opacity-80"
                     }`}
                     style={!isSelected ? { borderColor: "var(--border)" } : {}}
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-2xl">{t.icon}</span>
-                      {isSelected && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-500 text-white">
+                      {isSelected ? (
+                        <span 
+                          className="px-2 py-0.5 rounded-full text-[10px] font-bold text-black"
+                          style={{ background: isSpeedster ? "#8ae3b5" : "var(--primary)" }}
+                        >
                           Active ✓
                         </span>
-                      )}
+                      ) : isSpeedster ? (
+                        <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold uppercase tracking-wider bg-red-500/15 text-red-400 border border-red-500/30">
+                          NEW
+                        </span>
+                      ) : null}
                     </div>
 
                     <div>
-                      <h4 className="font-bold text-sm" style={{ color: "var(--text)" }}>{t.label}</h4>
-                      <p className="text-xs mt-0.5" style={{ color: "var(--faint)" }}>{t.description}</p>
+                      <div className="flex items-center gap-1.5">
+                        <h4 className="font-bold text-sm" style={{ color: "var(--text)" }}>{t.label}</h4>
+                      </div>
+                      <p className="text-xs mt-0.5 leading-snug" style={{ color: "var(--faint)" }}>{t.description}</p>
                     </div>
 
-                    <div className="h-2 rounded-full overflow-hidden flex">
-                      <div className="w-1/3" style={{ background: t.id === "light" ? "#f3f4f6" : t.id === "midnight" ? "#060B18" : "#0f172a" }} />
-                      <div className="w-1/3" style={{ background: t.id === "light" ? "#3b82f6" : t.id === "midnight" ? "#60A5FA" : "#38bdf8" }} />
-                      <div className="w-1/3" style={{ background: t.id === "light" ? "#111827" : t.id === "midnight" ? "#E2EEFF" : "#f8fafc" }} />
+                    {/* Multi-tone Color Palette Preview Swatch */}
+                    <div className="h-2.5 rounded-full overflow-hidden flex border border-white/10 shadow-inner">
+                      {t.id === "speedster" ? (
+                        <>
+                          <div className="w-1/3" style={{ background: "#080c0a" }} title="Matte Obsidian Black" />
+                          <div className="w-1/3" style={{ background: "#8ae3b5" }} title="Porsche Mint Green" />
+                          <div className="w-1/3" style={{ background: "#ea2839" }} title="Racing Crimson Red" />
+                        </>
+                      ) : t.id === "light" ? (
+                        <>
+                          <div className="w-1/3" style={{ background: "#f3f4f6" }} />
+                          <div className="w-1/3" style={{ background: "#3b82f6" }} />
+                          <div className="w-1/3" style={{ background: "#111827" }} />
+                        </>
+                      ) : t.id === "midnight" ? (
+                        <>
+                          <div className="w-1/3" style={{ background: "#060B18" }} />
+                          <div className="w-1/3" style={{ background: "#60A5FA" }} />
+                          <div className="w-1/3" style={{ background: "#E2EEFF" }} />
+                        </>
+                      ) : (
+                        <>
+                          <div className="w-1/3" style={{ background: "#0f172a" }} />
+                          <div className="w-1/3" style={{ background: "#38bdf8" }} />
+                          <div className="w-1/3" style={{ background: "#f8fafc" }} />
+                        </>
+                      )}
                     </div>
                   </div>
                 );

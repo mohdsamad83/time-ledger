@@ -173,7 +173,9 @@ export default function ThemeToggle() {
                     height: "100%",
                     borderRadius: "50%",
                     background:
-                      t.id === "dark"
+                      t.id === "speedster"
+                        ? "linear-gradient(135deg, #080C0A 0%, #8AE3B5 55%, #EA2839 100%)"
+                        : t.id === "dark"
                         ? "linear-gradient(135deg, #17150F, #C9A84C)"
                         : t.id === "light"
                         ? "linear-gradient(135deg, #F5EDD6, #C9A84C)"

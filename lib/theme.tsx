@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 
-export type ThemeId = "dark" | "light" | "midnight";
+export type ThemeId = "dark" | "light" | "midnight" | "speedster";
 
 export interface ThemeConfig {
   id: ThemeId;
@@ -19,16 +19,22 @@ export const THEMES: ThemeConfig[] = [
     description: "Classic amber on obsidian",
   },
   {
-    id: "light",
-    label: "Parchment",
-    icon: "☀️",
-    description: "Warm light, ink & gold",
+    id: "speedster",
+    label: "Built Different",
+    icon: "🏎️",
+    description: "Porsche mint, racing crimson & matte obsidian",
   },
   {
     id: "midnight",
     label: "Midnight",
     icon: "🌌",
     description: "Deep navy with sapphire",
+  },
+  {
+    id: "light",
+    label: "Parchment",
+    icon: "☀️",
+    description: "Warm light, ink & gold",
   },
 ];
 

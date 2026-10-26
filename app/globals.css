@@ -11,9 +11,26 @@
   --border:  #334155;
   --primary: #38bdf8;
   --dim:     #0ea5e9;
+  --gold:    #f59e0b;
   --text:    #f8fafc;
   --muted:   #94a3b8;
   --faint:   #475569;
+  color-scheme: dark;
+}
+
+/* ── Built Different (Porsche Mint, Racing Crimson & Matte Obsidian) ── */
+[data-theme="speedster"] {
+  --bg:      #080c0a;
+  --surface: #101713;
+  --s2:      #18231d;
+  --border:  #21332a;
+  --primary: #8ae3b5;
+  --dim:     #4ed697;
+  --gold:    #ea2839;
+  --accent:  #ea2839;
+  --text:    #f3faf6;
+  --muted:   #92aca0;
+  --faint:   #4a6557;
   color-scheme: dark;
 }
 
@@ -25,6 +42,7 @@
   --border:  #e5e7eb;
   --primary: #3b82f6;
   --dim:     #2563eb;
+  --gold:    #d97706;
   --text:    #111827;
   --muted:   #4b5563;
   --faint:   #9ca3af;
@@ -39,6 +57,7 @@
   --border:  #1E3058;
   --primary: #60A5FA;
   --dim:     #3B82F6;
+  --gold:    #60A5FA;
   --text:    #E2EEFF;
   --muted:   #94AECF;
   --faint:   #3D5A8A;
@@ -198,4 +217,42 @@ select option { background: var(--surface); }
 .gold-glow {
   animation: gold-shine 2s infinite ease-in-out;
 }
+
+/* ── Speedster (Built Different) Automotive Editorial Enhancements ── */
+[data-theme="speedster"] body,
+html[data-theme="speedster"] body {
+  background-color: #080c0a;
+  background-image: 
+    radial-gradient(circle at 92% 4%, rgba(234, 40, 57, 0.08) 0%, transparent 45%),
+    radial-gradient(circle at 8% 95%, rgba(138, 227, 181, 0.04) 0%, transparent 50%);
+  background-attachment: fixed;
+}
+
+[data-theme="speedster"] .btn-primary {
+  background: #8ae3b5;
+  color: #080c0a;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+[data-theme="speedster"] .btn-primary:hover {
+  background: #a3ebd0;
+  box-shadow: 0 4px 18px rgba(138, 227, 181, 0.3);
+}
+
+[data-theme="speedster"] input:focus,
+[data-theme="speedster"] textarea:focus,
+[data-theme="speedster"] select:focus {
+  border-color: #8ae3b5;
+  box-shadow: 0 0 0 2px rgba(138, 227, 181, 0.22), 0 0 14px rgba(234, 40, 57, 0.12);
+}
+
+[data-theme="speedster"] ::-webkit-scrollbar-thumb {
+  background: #21332a;
+}
+
+[data-theme="speedster"] ::-webkit-scrollbar-thumb:hover {
+  background: #8ae3b5;
+}
+
 
