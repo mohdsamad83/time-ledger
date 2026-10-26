@@ -49,6 +49,9 @@ export default function App() {
   const [viewDate,      setViewDate]      = useState(TODAY);
   const [appData,       setAppData]       = useState<AppData | null>(null);
   const [modalHour,     setModalHour]     = useState<number | null>(null);
+  const [modalTimeLabel, setModalTimeLabel] = useState<string | null>(null);
+  const [modalDurationLabel, setModalDurationLabel] = useState<string | null>(null);
+  const [prefillActivity, setPrefillActivity] = useState<string | null>(null);
   const [prefillTarget, setPrefillTarget] = useState<string | null>(null);
   const [showEvening,   setShowEvening]   = useState(false);
   const [showReminder,  setShowReminder]  = useState(false);
@@ -526,7 +529,12 @@ export default function App() {
                 allTargets={currentTargets}
                 categories={activeCategories}
                 syncState={syncState}
-                onLogBlock={(hour) => setModalHour(hour)}
+                onLogBlock={(hour, timeLabel, durationLabel, prefillAct) => {
+                  setModalHour(hour);
+                  setModalTimeLabel(timeLabel || null);
+                  setModalDurationLabel(durationLabel || null);
+                  setPrefillActivity(prefillAct || null);
+                }}
                 onEveningReview={() => setShowEvening(true)}
                 hasEveningReview={!!dayData.eveningReview}
                 onToggleTarget={(targetName) => handleToggleTarget(viewDate, targetName)}
@@ -633,9 +641,15 @@ export default function App() {
           onSave={handleBlockSave}
           onClose={() => {
             setModalHour(null);
+            setModalTimeLabel(null);
+            setModalDurationLabel(null);
             setPrefillTarget(null);
+            setPrefillActivity(null);
           }}
           prefillTarget={prefillTarget}
+          prefillActivity={prefillActivity}
+          timeLabel={modalTimeLabel}
+          durationLabel={modalDurationLabel}
         />
       )}
 

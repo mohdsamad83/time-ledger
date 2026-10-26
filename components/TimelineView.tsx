@@ -1,9 +1,21 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { TimeBlock, DaySetup, Category, CustomCategory, RoutineItem, Challenge } from "@/lib/types";
 import { Plus, Edit2, Moon, CheckSquare, Star, Flame, Zap, Trophy, Dices } from "lucide-react";
 import { SyncState } from "@/lib/types";
 import { differenceInDays } from "date-fns";
+
+export interface TimelineSlot {
+  id: string;
+  slotKey: number;          // Unique key used in blocks dictionary (e.g. 13.5)
+  startHour: number;
+  startMinutes: number;
+  endMinutes: number;
+  durationMinutes: number;
+  timeLabel: string;
+  durationLabel: string;
+  routineItem: RoutineItem | null;
+}
 
 interface Props {
   date:          string;
@@ -11,7 +23,7 @@ interface Props {
   blocks:        { [hour: number]: TimeBlock };
   routine:       RoutineItem[];
   syncState:     SyncState;
-  onLogBlock:    (hour: number) => void;
+  onLogBlock:    (hour: number, timeLabel?: string, durationLabel?: string, prefillActivity?: string) => void;
   onEveningReview: () => void;
   hasEveningReview: boolean;
   dayTargets: Record<string, boolean>;
@@ -27,109 +39,163 @@ interface Props {
   onViewTargets?: () => void;
 }
 
-const toTime = (h: number) => {
-  const p = h < 12 ? "AM" : "PM";
-  return `${h % 12 || 12}:00`;
-};
-
-function format12Hour(timeStr: string): string {
-  if (!timeStr) return "";
+function parseTimeToMinutes(timeStr: string): number | null {
+  if (!timeStr) return null;
   const clean = timeStr.trim();
-  if (clean.toLowerCase().includes("am") || clean.toLowerCase().includes("pm")) {
-    return clean;
-  }
-  const [hrStr, minStr] = clean.split(":");
-  let hr = parseInt(hrStr, 10);
-  if (isNaN(hr)) return clean;
-  const period = hr >= 12 ? "PM" : "AM";
-  hr = hr % 12 || 12;
-  const mins = minStr ? minStr.padStart(2, "0") : "00";
-  return `${hr}:${mins} ${period}`;
+  const [hStr, mStr] = clean.split(":");
+  let h = parseInt(hStr, 10);
+  const m = parseInt(mStr, 10) || 0;
+  if (isNaN(h)) return null;
+  return h * 60 + m;
 }
 
-function formatRoutineBreak(startTime: string, endTime: string, currentHour?: number): string {
-  if (!startTime && !endTime) return "";
+function minutesTo12Hour(totalMins: number): string {
+  const norm = ((totalMins % (24 * 60)) + (24 * 60)) % (24 * 60);
+  let hr = Math.floor(norm / 60);
+  const min = norm % 60;
+  const period = hr >= 12 ? "PM" : "AM";
+  hr = hr % 12 || 12;
+  const minStr = min === 0 ? "00" : String(min).padStart(2, "0");
+  return `${hr}:${minStr} ${period}`;
+}
 
-  const adjustPeriod = (tStr: string) => {
-    if (!tStr) return "";
-    const clean = tStr.trim();
-    if (clean.toLowerCase().includes("am") || clean.toLowerCase().includes("pm")) {
-      return clean;
-    }
-    const [hS, mS] = clean.split(":");
-    let h = parseInt(hS, 10);
-    if (isNaN(h)) return clean;
-    const m = mS ? mS.padStart(2, "0") : "00";
-    if (currentHour !== undefined && currentHour >= 12 && h < 12) {
-      return `${h}:${m} PM`;
-    }
-    const period = h >= 12 ? "PM" : "AM";
-    h = h % 12 || 12;
-    return `${h}:${m} ${period}`;
-  };
+function formatTimeRange(startMins: number, endMins: number): string {
+  const startStr = minutesTo12Hour(startMins);
+  const endStr = minutesTo12Hour(endMins);
 
-  const startFormatted = adjustPeriod(startTime);
-  const endFormatted = adjustPeriod(endTime);
-
-  if (!endTime) return startFormatted;
-  if (!startTime) return endFormatted;
-
-  const startParts = startFormatted.split(" ");
-  const endParts = endFormatted.split(" ");
+  const startParts = startStr.split(" ");
+  const endParts = endStr.split(" ");
   if (startParts.length === 2 && endParts.length === 2 && startParts[1] === endParts[1]) {
     return `${startParts[0]} – ${endParts[0]} ${endParts[1]}`;
   }
-  return `${startFormatted} – ${endFormatted}`;
+  return `${startStr} – ${endStr}`;
 }
 
-function getRoutineForHour(hour: number, routine: RoutineItem[]): RoutineItem | null {
-  if (!routine || routine.length === 0) return null;
-  const hourStart = hour * 60;
-  const hourEnd = (hour + 1) * 60;
-  
-  // 1. Direct 24-hour match
-  for (const item of routine) {
-    if (!item.startTime || !item.endTime) continue;
-    let [sHr, sMin] = item.startTime.split(':').map(Number);
-    let [eHr, eMin] = item.endTime.split(':').map(Number);
-    if (isNaN(sHr) || isNaN(eHr)) continue;
-    let start = sHr * 60 + (sMin || 0);
-    let end = eHr * 60 + (eMin || 0);
-    
-    if (end < start) {
-      if (hourStart < end || hourEnd > start) return item;
-    } else {
-      if (Math.max(hourStart, start) < Math.min(hourEnd, end)) {
-         return item;
-      }
-    }
+function formatDuration(durationMins: number): string {
+  if (durationMins <= 0) return "";
+  const hrs = Math.floor(durationMins / 60);
+  const mins = durationMins % 60;
+  if (hrs === 0) return `${mins}m`;
+  if (mins === 0) return `${hrs} hr${hrs > 1 ? "s" : ""}`;
+  if (mins === 30) return `${hrs}.5 hrs`;
+  return `${hrs}h ${mins}m`;
+}
+
+function generateTimelineSlots(setup: DaySetup, routine: RoutineItem[]): TimelineSlot[] {
+  const validRoutine = (routine || [])
+    .filter(r => r.activity && r.startTime && r.endTime)
+    .map(r => {
+      let s = parseTimeToMinutes(r.startTime);
+      let e = parseTimeToMinutes(r.endTime);
+      if (s === null || e === null) return null;
+      if (e < s) e += 24 * 60; // handle overnight transition
+      return { item: r, start: s, end: e };
+    })
+    .filter(Boolean) as { item: RoutineItem; start: number; end: number }[];
+
+  // If no routine defined, fall back to standard 1-hour slots
+  if (validRoutine.length === 0) {
+    const count = setup.sleepHour > setup.wakeHour 
+      ? setup.sleepHour - setup.wakeHour 
+      : 24 - setup.wakeHour + setup.sleepHour;
+    return Array.from({ length: Math.max(1, count) }, (_, i) => {
+      const h = (setup.wakeHour + i) % 24;
+      const sM = h * 60;
+      const eM = (h + 1) * 60;
+      return {
+        id: `slot-h${h}`,
+        slotKey: h,
+        startHour: h,
+        startMinutes: sM,
+        endMinutes: eM,
+        durationMinutes: 60,
+        timeLabel: formatTimeRange(sM, eM),
+        durationLabel: "1 hr",
+        routineItem: null,
+      };
+    });
   }
 
-  // 2. 12-hour AM/PM normalization fallback for afternoon hours
-  if (hour >= 12) {
-    const hour12 = hour % 12 || 12;
-    const h12Start = hour12 * 60;
-    const h12End = (hour12 + 1) * 60;
-    for (const item of routine) {
-      if (!item.startTime || !item.endTime) continue;
-      let [sHr, sMin] = item.startTime.split(':').map(Number);
-      let [eHr, eMin] = item.endTime.split(':').map(Number);
-      if (isNaN(sHr) || isNaN(eHr)) continue;
-      if (sHr < 12 && eHr <= 12) {
-        let start = sHr * 60 + (sMin || 0);
-        let end = eHr * 60 + (eMin || 0);
-        if (end < start) {
-          if (h12Start < end || h12End > start) return item;
-        } else {
-          if (Math.max(h12Start, start) < Math.min(h12End, end)) {
-            return item;
-          }
-        }
+  // Sort routine items chronologically
+  validRoutine.sort((a, b) => a.start - b.start);
+
+  // Day boundaries from setup (in minutes)
+  let dayStart = setup.wakeHour * 60;
+  let dayEnd = setup.sleepHour > setup.wakeHour ? setup.sleepHour * 60 : (setup.sleepHour + 24) * 60;
+
+  if (validRoutine[0].start < dayStart) dayStart = validRoutine[0].start;
+  if (validRoutine[validRoutine.length - 1].end > dayEnd) dayEnd = validRoutine[validRoutine.length - 1].end;
+
+  const slots: TimelineSlot[] = [];
+  let curr = dayStart;
+
+  for (const r of validRoutine) {
+    // If routine item ends before current time, skip
+    if (r.end <= curr) continue;
+    // Adjust start if slightly overlapping with previous end
+    const itemStart = Math.max(r.start, curr);
+    if (r.end <= itemStart) continue;
+
+    // Open gap before routine item
+    if (itemStart > curr) {
+      let gapCurr = curr;
+      while (gapCurr < itemStart) {
+        const gapNext = Math.min(gapCurr + 60, itemStart);
+        const gapDur = gapNext - gapCurr;
+        const sH = Number((gapCurr / 60).toFixed(2));
+        slots.push({
+          id: `open-${gapCurr}`,
+          slotKey: sH,
+          startHour: sH,
+          startMinutes: gapCurr,
+          endMinutes: gapNext,
+          durationMinutes: gapDur,
+          timeLabel: formatTimeRange(gapCurr, gapNext),
+          durationLabel: formatDuration(gapDur),
+          routineItem: null,
+        });
+        gapCurr = gapNext;
       }
     }
+
+    // Add the routine item slot (EXACTLY ONCE)
+    const dur = r.end - itemStart;
+    const sH = Number((itemStart / 60).toFixed(2));
+    slots.push({
+      id: `routine-${itemStart}-${r.item.activity}`,
+      slotKey: sH,
+      startHour: sH,
+      startMinutes: itemStart,
+      endMinutes: r.end,
+      durationMinutes: dur,
+      timeLabel: formatTimeRange(itemStart, r.end),
+      durationLabel: formatDuration(dur),
+      routineItem: r.item,
+    });
+
+    curr = r.end;
   }
 
-  return null;
+  // Open gap after last routine item up to dayEnd
+  while (curr < dayEnd) {
+    const next = Math.min(curr + 60, dayEnd);
+    const dur = next - curr;
+    const sH = Number((curr / 60).toFixed(2));
+    slots.push({
+      id: `open-${curr}`,
+      slotKey: sH,
+      startHour: sH,
+      startMinutes: curr,
+      endMinutes: next,
+      durationMinutes: dur,
+      timeLabel: formatTimeRange(curr, next),
+      durationLabel: formatDuration(dur),
+      routineItem: null,
+    });
+    curr = next;
+  }
+
+  return slots;
 }
 
 const nowHour = () => new Date().getHours();
@@ -139,12 +205,7 @@ export default function TimelineView({
   dayTargets, allTargets, categories, onToggleTarget, onUpdateCommitments, onExtendDay, 
   activeChallenge, targetRank, onOpenPicker, monthlyCompletedCount = 0, onViewTargets
 }: Props) {
-  const hours = Array.from(
-    { length: Math.max(1, (setup.sleepHour > setup.wakeHour
-      ? setup.sleepHour - setup.wakeHour
-      : 24 - setup.wakeHour + setup.sleepHour)) },
-    (_, i) => (setup.wakeHour + i) % 24
-  );
+  const slots = useMemo(() => generateTimelineSlots(setup, routine), [setup.wakeHour, setup.sleepHour, routine]);
 
   const now = new Date();
   const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
@@ -429,7 +490,7 @@ export default function TimelineView({
           className="rounded-xl p-5 mb-8 grid grid-cols-2 md:grid-cols-4 gap-4 shadow-sm"
           style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
         >
-          <Stat label="Hours Logged" value={`${loggedCount} / ${hours.length}`} color="#C9A84C" />
+          <Stat label="Sessions Logged" value={`${loggedCount} / ${slots.length}`} color="#C9A84C" />
           <Stat label="Planned" value={loggedCount > 0 ? `${Math.round((plannedCount/loggedCount)*100)}%` : "—"} color="#4ADE80" />
           <Stat label="On Priority" value={loggedCount > 0 ? `${Math.round((priorityCount/loggedCount)*100)}%` : "—"} color="#60A5FA" />
           <Stat label="Avg Rating" value={String(avgSat)} color="#A78BFA" />
@@ -437,19 +498,23 @@ export default function TimelineView({
 
         {/* Timeline */}
         <div className="space-y-3">
-          {hours.map((hour) => {
-            const block = blocks[hour];
-            const isPast  = isToday && hour < currentHour;
-            const isCurrent = isToday && hour === currentHour;
+          {slots.map((slot) => {
+            const block = blocks[slot.slotKey] || 
+                          blocks[slot.startHour] || 
+                          blocks[Math.floor(slot.startHour)] || 
+                          (slot.startMinutes % 60 !== 0 ? blocks[Math.ceil(slot.startHour)] : null);
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+            const isCurrent = isToday && currentMinutes >= slot.startMinutes && currentMinutes < slot.endMinutes;
+            const isPast = isToday && currentMinutes >= slot.endMinutes;
             
             // Get all mapped categories for the block
             const mappedCats = (block?.categories || []).map(cVal => categories.find((c) => c.value === cVal)).filter(Boolean) as typeof categories;
             // Fallback for background styling
             const mainCat = mappedCats[0];
-            const routineItem = getRoutineForHour(hour, routine);
+            const routineItem = slot.routineItem;
 
             return (
-              <div key={hour} className="flex gap-4 items-stretch">
+              <div key={slot.id} className="flex gap-4 items-stretch">
                 {/* Time label & Routine column */}
                 <div 
                   className="w-24 sm:w-28 md:w-32 flex-shrink-0 flex flex-col items-end justify-start pt-3 pr-3"
@@ -462,24 +527,20 @@ export default function TimelineView({
                     {isCurrent && (
                       <span className="w-2 h-2 rounded-full animate-pulse shadow-sm shadow-[var(--primary)] inline-block shrink-0" style={{ background: "var(--primary)" }} />
                     )}
-                    {routineItem && routineItem.startTime && routineItem.endTime ? (
-                      <span 
-                        style={{ color: "var(--primary)" }} 
-                        className="font-mono text-[11px] sm:text-xs font-bold text-right leading-tight tracking-tight"
-                      >
-                        {formatRoutineBreak(routineItem.startTime, routineItem.endTime, hour)}
-                      </span>
-                    ) : (
-                      <span 
-                        style={{ color: "var(--text)" }} 
-                        className="font-mono text-xs font-bold text-right"
-                      >
-                        {toTime(hour)}
-                      </span>
-                    )}
+                    <span 
+                      style={{ color: routineItem ? "var(--primary)" : "var(--text)" }} 
+                      className="font-mono text-[11px] sm:text-xs font-bold text-right leading-tight tracking-tight"
+                    >
+                      {slot.timeLabel}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 mt-1 justify-end flex-wrap">
+                    <span className="text-[10px] font-mono opacity-60">
+                      {slot.durationLabel}
+                    </span>
                   </div>
                   {routineItem && (
-                    <span className="text-[9px] uppercase font-bold text-right mt-1.5 leading-tight tracking-wider" style={{ color: "var(--text)" }}>
+                    <span className="text-[9px] uppercase font-bold text-right mt-1 leading-tight tracking-wider" style={{ color: "var(--text)" }}>
                       {routineItem.activity}
                     </span>
                   )}
@@ -489,7 +550,7 @@ export default function TimelineView({
                 <div className="flex-1 min-w-0">
                   {block ? (
                     <button
-                      onClick={() => onLogBlock(hour)}
+                      onClick={() => onLogBlock(slot.startHour, slot.timeLabel, slot.durationLabel, routineItem?.activity)}
                       className="w-full text-left rounded-xl p-4 transition-all group hover:shadow-md"
                       style={{
                         background: mainCat?.bg ?? "var(--s2)",
@@ -534,20 +595,31 @@ export default function TimelineView({
                     </button>
                   ) : (
                     <button
-                      onClick={() => onLogBlock(hour)}
+                      onClick={() => onLogBlock(slot.startHour, slot.timeLabel, slot.durationLabel, routineItem?.activity)}
                       className="w-full text-left rounded-xl p-4 transition-all group border-dashed"
                       style={{
                         background: isCurrent ? "var(--surface)" : "transparent",
                         borderWidth: 1,
                         borderColor: isCurrent ? "var(--gold)" : "var(--border)",
-                        opacity: isPast ? 0.4 : 1,
+                        opacity: isPast ? 0.45 : 1,
                       }}
                     >
-                      <div className="flex items-center gap-2">
-                        {isCurrent ? <Plus size={16} className="primary-text" /> : <Plus size={16} style={{ color: "var(--faint)" }} />}
-                        <span style={{ color: isCurrent ? "var(--gold)" : "var(--faint)" }} className="text-sm font-medium">
-                          {isCurrent ? "Log current hour" : isPast ? "Unlogged hour — tap to fill in" : "Plan this hour"}
-                        </span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          {isCurrent ? <Plus size={16} className="primary-text" /> : <Plus size={16} style={{ color: "var(--faint)" }} />}
+                          <span style={{ color: isCurrent ? "var(--gold)" : "var(--faint)" }} className="text-sm font-medium">
+                            {isCurrent 
+                              ? `Log current ${routineItem ? "routine" : "session"} (${slot.durationLabel})` 
+                              : isPast 
+                              ? `Unlogged ${routineItem ? "routine" : "time"} — tap to fill in (${slot.durationLabel})` 
+                              : `Plan this ${routineItem ? "routine" : "window"} (${slot.durationLabel})`}
+                          </span>
+                        </div>
+                        {routineItem && (
+                          <span className="text-xs font-semibold px-2 py-0.5 rounded bg-black/10 dark:bg-white/5 text-[var(--faint)] group-hover:text-[var(--text)] transition-colors">
+                            {routineItem.activity}
+                          </span>
+                        )}
                       </div>
                     </button>
                   )}
@@ -575,7 +647,7 @@ export default function TimelineView({
         )}
 
         {/* Evening Review floating button */}
-        {(loggedCount === hours.length || hasEveningReview || currentHour >= 18) && (
+        {(loggedCount >= slots.length || hasEveningReview || currentHour >= 18) && (
           <div className="mt-12 flex justify-center">
             <button
               onClick={onEveningReview}

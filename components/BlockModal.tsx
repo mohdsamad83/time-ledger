@@ -11,6 +11,9 @@ interface Props {
   onSave:      (block: TimeBlock) => void;
   onClose:     () => void;
   prefillTarget?: string | null;
+  prefillActivity?: string | null;
+  timeLabel?: string | null;
+  durationLabel?: string | null;
 }
 
 const toTime = (h: number) => {
@@ -24,17 +27,27 @@ const ENERGY_OPTIONS: { value: EnergyLevel; label: string; icon: React.ReactNode
   { value: "low",    label: "Low",    icon: <BatteryLow size={14} />, color: "#F87171" },
 ];
 
-export default function BlockModal({ hour, block, targets, categories: categoriesList, onSave, onClose, prefillTarget }: Props) {
-  const [activity,     setActivity]     = useState(block?.activity ?? (prefillTarget ? `Work on ${prefillTarget}` : ""));
+export default function BlockModal({ hour, block, targets, categories: categoriesList, onSave, onClose, prefillTarget, prefillActivity, timeLabel, durationLabel }: Props) {
+  const initialActivity = block?.activity ?? prefillActivity ?? (prefillTarget ? `Work on ${prefillTarget}` : "");
+  const [activity,     setActivity]     = useState(initialActivity);
   const [categories, setCategories] = useState<string[]>(
     block?.categories ?? (block?.category ? [block.category] : ["working"])
   );
   const [energy,       setEnergy]       = useState<EnergyLevel>(block?.energy   ?? "medium");
   const [wasPlanned,   setWasPlanned]   = useState(block?.wasPlanned   ?? true);
+
+  // Auto-detect target match from activity name
+  const matchedTarget = targets.find(t => 
+    (initialActivity || "").toLowerCase().includes(t.toLowerCase()) || 
+    t.toLowerCase().includes((initialActivity || "").toLowerCase())
+  );
+
   const [contributedTargets, setContributedTargets] = useState<{name: string, percentage: number}[]>(
     block?.contributedTargets ?? (
       prefillTarget
         ? [{ name: prefillTarget, percentage: 100 }]
+        : matchedTarget
+        ? [{ name: matchedTarget, percentage: 100 }]
         : (block?.contributedPriority && block.contributedPriority !== "None" ? [{ name: block.contributedPriority, percentage: 100 }] : [])
     )
   );
@@ -55,6 +68,7 @@ export default function BlockModal({ hour, block, targets, categories: categorie
     onSave({
       id:                      block?.id ?? `${hour}-${Date.now()}`,
       startHour:               hour,
+      timeLabel:               timeLabel || block?.timeLabel || undefined,
       activity:                activity.trim(),
       categories,
       energy,
@@ -86,11 +100,18 @@ export default function BlockModal({ hour, block, targets, categories: categorie
           style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)" }}
         >
           <div>
-            <span style={{ color: "var(--gold)" }} className="font-mono text-sm">
-              {toTime(hour)} – {toTime(hour + 1)}
-            </span>
+            <div className="flex items-center gap-2">
+              <span style={{ color: "var(--gold)" }} className="font-mono text-sm font-semibold">
+                {timeLabel || block?.timeLabel || `${toTime(Math.floor(hour))} – ${toTime(Math.ceil(hour + 1))}`}
+              </span>
+              {durationLabel && (
+                <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30 font-bold">
+                  {durationLabel}
+                </span>
+              )}
+            </div>
             <h3 style={{ color: "var(--text)" }} className="font-serif text-xl mt-0.5">
-              {block ? "Edit Hour" : "Log This Hour"}
+              {block ? "Edit Session" : "Log This Session"}
             </h3>
           </div>
           <button onClick={onClose} style={{ color: "var(--faint)" }} className="hover:text-[var(--text)] transition-colors">

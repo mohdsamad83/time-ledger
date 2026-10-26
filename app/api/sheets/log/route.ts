@@ -16,11 +16,13 @@ export async function POST(req: NextRequest) {
     const categoriesStr = block.categories ? block.categories.join(",") : (block.category || "deep-work");
     const syncedAt = new Date().toISOString();
 
+    const timeSpan = block.timeLabel || `${toTime(Math.floor(block.startHour))} – ${toTime(Math.ceil(block.startHour + 1))}`;
+
     const row = [
       date,
       dayName,
       block.startHour,
-      `${toTime(block.startHour)} – ${toTime(block.startHour + 1)}`,
+      timeSpan,
       block.activity,
       categoriesStr,
       block.energy,

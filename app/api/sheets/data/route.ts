@@ -190,7 +190,8 @@ export async function GET() {
       if (!date) continue;
       if (!appData.days[date]) appData.days[date] = { date, setup: null, blocks: {}, eveningReview: null };
 
-      const startHour = parseInt(row[2] ?? "0", 10);
+      const startHour = parseFloat(row[2] ?? "0");
+      const timeLabel = row[3] || undefined;
       const catRaw = row[5] || "";
       const categories: string[] = [];
       const parts = catRaw.split(",").map((s: string) => s.trim()).filter(Boolean);
@@ -236,6 +237,7 @@ export async function GET() {
       const block: TimeBlock = {
         id: `${startHour}-${Date.now()}-${Math.random()}`,
         startHour,
+        timeLabel,
         activity: row[4] ?? "",
         categories,
         energy: (row[6] as any) ?? "medium",

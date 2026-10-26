@@ -43,7 +43,9 @@ export type PriorityTag   = string;
 
 export interface TimeBlock {
   id:                      string;
-  startHour:               number;          // 0–23
+  startHour:               number;          // 0–23 (supports fractional hours e.g. 13.5 for 1:30 PM)
+  timeLabel?:              string;          // Formatted time range e.g. "1:30 – 3:00 PM"
+  durationMinutes?:        number;          // Duration in minutes
   activity:                string;
   category?:               Category;        // [DEPRECATED] Legacy
   categories:              string[];        // Array of category values
