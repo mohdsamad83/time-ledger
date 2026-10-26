@@ -32,14 +32,67 @@ const toTime = (h: number) => {
   return `${h % 12 || 12}:00`;
 };
 
+function format12Hour(timeStr: string): string {
+  if (!timeStr) return "";
+  const clean = timeStr.trim();
+  if (clean.toLowerCase().includes("am") || clean.toLowerCase().includes("pm")) {
+    return clean;
+  }
+  const [hrStr, minStr] = clean.split(":");
+  let hr = parseInt(hrStr, 10);
+  if (isNaN(hr)) return clean;
+  const period = hr >= 12 ? "PM" : "AM";
+  hr = hr % 12 || 12;
+  const mins = minStr ? minStr.padStart(2, "0") : "00";
+  return `${hr}:${mins} ${period}`;
+}
+
+function formatRoutineBreak(startTime: string, endTime: string, currentHour?: number): string {
+  if (!startTime && !endTime) return "";
+
+  const adjustPeriod = (tStr: string) => {
+    if (!tStr) return "";
+    const clean = tStr.trim();
+    if (clean.toLowerCase().includes("am") || clean.toLowerCase().includes("pm")) {
+      return clean;
+    }
+    const [hS, mS] = clean.split(":");
+    let h = parseInt(hS, 10);
+    if (isNaN(h)) return clean;
+    const m = mS ? mS.padStart(2, "0") : "00";
+    if (currentHour !== undefined && currentHour >= 12 && h < 12) {
+      return `${h}:${m} PM`;
+    }
+    const period = h >= 12 ? "PM" : "AM";
+    h = h % 12 || 12;
+    return `${h}:${m} ${period}`;
+  };
+
+  const startFormatted = adjustPeriod(startTime);
+  const endFormatted = adjustPeriod(endTime);
+
+  if (!endTime) return startFormatted;
+  if (!startTime) return endFormatted;
+
+  const startParts = startFormatted.split(" ");
+  const endParts = endFormatted.split(" ");
+  if (startParts.length === 2 && endParts.length === 2 && startParts[1] === endParts[1]) {
+    return `${startParts[0]} – ${endParts[0]} ${endParts[1]}`;
+  }
+  return `${startFormatted} – ${endFormatted}`;
+}
+
 function getRoutineForHour(hour: number, routine: RoutineItem[]): RoutineItem | null {
+  if (!routine || routine.length === 0) return null;
   const hourStart = hour * 60;
   const hourEnd = (hour + 1) * 60;
   
+  // 1. Direct 24-hour match
   for (const item of routine) {
     if (!item.startTime || !item.endTime) continue;
     let [sHr, sMin] = item.startTime.split(':').map(Number);
     let [eHr, eMin] = item.endTime.split(':').map(Number);
+    if (isNaN(sHr) || isNaN(eHr)) continue;
     let start = sHr * 60 + (sMin || 0);
     let end = eHr * 60 + (eMin || 0);
     
@@ -51,6 +104,31 @@ function getRoutineForHour(hour: number, routine: RoutineItem[]): RoutineItem | 
       }
     }
   }
+
+  // 2. 12-hour AM/PM normalization fallback for afternoon hours
+  if (hour >= 12) {
+    const hour12 = hour % 12 || 12;
+    const h12Start = hour12 * 60;
+    const h12End = (hour12 + 1) * 60;
+    for (const item of routine) {
+      if (!item.startTime || !item.endTime) continue;
+      let [sHr, sMin] = item.startTime.split(':').map(Number);
+      let [eHr, eMin] = item.endTime.split(':').map(Number);
+      if (isNaN(sHr) || isNaN(eHr)) continue;
+      if (sHr < 12 && eHr <= 12) {
+        let start = sHr * 60 + (sMin || 0);
+        let end = eHr * 60 + (eMin || 0);
+        if (end < start) {
+          if (h12Start < end || h12End > start) return item;
+        } else {
+          if (Math.max(h12Start, start) < Math.min(h12End, end)) {
+            return item;
+          }
+        }
+      }
+    }
+  }
+
   return null;
 }
 
@@ -374,19 +452,31 @@ export default function TimelineView({
               <div key={hour} className="flex gap-4 items-stretch">
                 {/* Time label & Routine column */}
                 <div 
-                  className="w-16 md:w-20 flex-shrink-0 flex flex-col items-end justify-start pt-3 pr-3"
+                  className="w-24 sm:w-28 md:w-32 flex-shrink-0 flex flex-col items-end justify-start pt-3 pr-3"
                   style={{ 
                     borderRight: `2px solid ${routineItem ? "var(--primary)" : "var(--border)"}`,
                     opacity: routineItem ? 1 : 0.6
                   }}
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 justify-end w-full">
                     {isCurrent && (
-                      <span className="w-2 h-2 rounded-full animate-pulse shadow-sm shadow-[var(--primary)] inline-block" style={{ background: "var(--primary)" }} />
+                      <span className="w-2 h-2 rounded-full animate-pulse shadow-sm shadow-[var(--primary)] inline-block shrink-0" style={{ background: "var(--primary)" }} />
                     )}
-                    <span style={{ color: routineItem ? "var(--primary)" : "var(--text)" }} className="font-mono text-xs font-bold">
-                      {toTime(hour)}
-                    </span>
+                    {routineItem && routineItem.startTime && routineItem.endTime ? (
+                      <span 
+                        style={{ color: "var(--primary)" }} 
+                        className="font-mono text-[11px] sm:text-xs font-bold text-right leading-tight tracking-tight"
+                      >
+                        {formatRoutineBreak(routineItem.startTime, routineItem.endTime, hour)}
+                      </span>
+                    ) : (
+                      <span 
+                        style={{ color: "var(--text)" }} 
+                        className="font-mono text-xs font-bold text-right"
+                      >
+                        {toTime(hour)}
+                      </span>
+                    )}
                   </div>
                   {routineItem && (
                     <span className="text-[9px] uppercase font-bold text-right mt-1.5 leading-tight tracking-wider" style={{ color: "var(--text)" }}>
