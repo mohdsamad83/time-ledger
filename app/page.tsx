@@ -572,7 +572,11 @@ export default function App() {
 
         {/* ROUTINE ────────────────────────────────────────────────────────── */}
         {tab === "routine" && (
-          <RoutineView routine={appData.routine || []} onSave={handleSaveRoutine} />
+          <RoutineView 
+            routine={appData.routine || []} 
+            onSave={handleSaveRoutine} 
+            onGoToSettings={() => setTab("settings")}
+          />
         )}
 
         {/* CHALLENGES ─────────────────────────────────────────────────────── */}
@@ -605,6 +609,7 @@ export default function App() {
         {tab === "settings" && (
           <SettingsView
             initialCategories={activeCategories}
+            routine={appData.routine || []}
             onUpdate={(newCategories) => {
               setAppData(prev => prev ? { ...prev, categories: newCategories } : prev);
             }}

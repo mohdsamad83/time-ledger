@@ -159,10 +159,19 @@ export interface AppData {
 
 export type HourlySoundType = "zen-bell" | "digital-chime" | "soft-ping" | "executive" | "arcade" | "none";
 
+export type HourlyTimingMode =
+  | "top-of-hour"
+  | "pre-hour-5"
+  | "custom-interval"
+  | "routine-schedule"
+  | "both-hourly-and-routine";
+
 export interface HourlyAlertSettings {
   enabled: boolean;
-  timingMode: "top-of-hour" | "pre-hour-5" | "custom-interval";
+  timingMode: HourlyTimingMode;
   customIntervalMinutes: number; // e.g. 60, 45, 30
+  routineLeadTimeMinutes: number; // 0 (at start), 5 (5m before), 10 (10m before)
+  notifyOnRoutine?: boolean;
   activeWindowMode: "all-day" | "custom-hours";
   startHour: number; // 0-23
   endHour: number;   // 0-23
@@ -176,6 +185,8 @@ export const DEFAULT_HOURLY_SETTINGS: HourlyAlertSettings = {
   enabled: true,
   timingMode: "top-of-hour",
   customIntervalMinutes: 60,
+  routineLeadTimeMinutes: 0,
+  notifyOnRoutine: false,
   activeWindowMode: "custom-hours",
   startHour: 7,
   endHour: 23,

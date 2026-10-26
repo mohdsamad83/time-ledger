@@ -3,12 +3,12 @@
 import React, { useState, useEffect } from "react";
 import {
   CustomCategory, DEFAULT_CATEGORIES, HourlyAlertSettings, DEFAULT_HOURLY_SETTINGS,
-  HourlySoundType
+  HourlySoundType, RoutineItem, HourlyTimingMode
 } from "@/lib/types";
 import {
   Plus, Trash2, Save, RefreshCw, Settings2, Loader2, CheckCircle2,
   Bell, Palette, Timer, Database, Volume2, Play, Sparkles, Check,
-  Clock, Shield, ExternalLink, Download, AlertCircle, Laptop
+  Clock, Shield, ExternalLink, Download, AlertCircle, Laptop, Calendar, ArrowUpDown
 } from "lucide-react";
 import { saveCategories } from "@/lib/storage";
 import { useTheme, THEMES, ThemeId } from "@/lib/theme";
@@ -16,6 +16,7 @@ import { playHourlySound } from "@/lib/hourly-audio";
 
 interface Props {
   initialCategories: CustomCategory[];
+  routine?: RoutineItem[];
   onUpdate: (categories: CustomCategory[]) => void;
 }
 
@@ -37,7 +38,7 @@ const PRESET_COLORS = [
   "#FB923C", "#F87171", "#38BDF8", "#A78BFA", "#A3E635"
 ];
 
-export default function SettingsView({ initialCategories, onUpdate }: Props) {
+export default function SettingsView({ initialCategories, routine = [], onUpdate }: Props) {
   const [activeTab, setActiveTab] = useState<SettingsTab>("alerts");
   const { theme, setTheme } = useTheme();
 
@@ -115,10 +116,10 @@ export default function SettingsView({ initialCategories, onUpdate }: Props) {
     }
   };
 
-  // Trigger test in-app alert
-  const handleTestAlert = () => {
+  // Trigger test in-app alert (supports testing hourly or routine)
+  const handleTestAlert = (testType: "hourly" | "routine" = "hourly") => {
     window.dispatchEvent(
-      new CustomEvent("tl-test-hourly-alert", { detail: { settings: hourlySettings } })
+      new CustomEvent("tl-test-hourly-alert", { detail: { settings: hourlySettings, testType } })
     );
   };
 
@@ -311,7 +312,7 @@ export default function SettingsView({ initialCategories, onUpdate }: Props) {
               <div className="flex items-center justify-between">
                 <h4 className="text-sm font-bold flex items-center gap-2" style={{ color: "var(--text)" }}>
                   <Clock size={16} className="text-amber-400" />
-                  Alert Timing Cadence
+                  Alert Timing Cadence & Schedule
                 </h4>
                 <span className="text-[10px] font-mono opacity-60">When to notify</span>
               </div>
@@ -322,21 +323,36 @@ export default function SettingsView({ initialCategories, onUpdate }: Props) {
                     id: "top-of-hour",
                     title: "Exact Top of the Hour (:00)",
                     desc: "Fires at exactly 1:00 PM, 2:00 PM, 3:00 PM... Perfect for clean hourly ledger logging.",
+                    tag: "Hourly",
                   },
                   {
                     id: "pre-hour-5",
                     title: "5 Minutes Warning (:55)",
                     desc: "Fires at 1:55 PM, 2:55 PM... Gives you 5 minutes to conclude the current block.",
+                    tag: "Wrap-up",
+                  },
+                  {
+                    id: "routine-schedule",
+                    title: "📅 Routine Schedule Transitions (NEW)",
+                    desc: "Alerts at the start of each activity in your Time Table routine (e.g. 7:00 AM Gym, 9:00 AM Deep Work).",
+                    tag: "Routine",
+                  },
+                  {
+                    id: "both-hourly-and-routine",
+                    title: "⚡ Dual Mode (Hourly Check-in + Routine Transitions)",
+                    desc: "The ultimate system: get hourly ledger pacer chimes PLUS alerts whenever your scheduled routine activity switches.",
+                    tag: "Recommended",
                   },
                   {
                     id: "custom-interval",
                     title: "Custom Minute Interval",
-                    desc: "Repeats every custom duration (e.g., every 45 or 60 minutes).",
+                    desc: "Repeats every custom duration (e.g., every 30, 45, or 60 minutes).",
+                    tag: "Flexible",
                   },
                 ].map(opt => (
                   <div
                     key={opt.id}
-                    onClick={() => handleUpdateHourly({ timingMode: opt.id as any })}
+                    onClick={() => handleUpdateHourly({ timingMode: opt.id as HourlyTimingMode })}
                     className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
                       hourlySettings.timingMode === opt.id
                         ? "border-sky-400 bg-sky-500/10 shadow-sm"
@@ -344,14 +360,78 @@ export default function SettingsView({ initialCategories, onUpdate }: Props) {
                     }`}
                     style={hourlySettings.timingMode !== opt.id ? { borderColor: "var(--border)" } : {}}
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold" style={{ color: "var(--text)" }}>{opt.title}</span>
-                      {hourlySettings.timingMode === opt.id && <Check size={14} className="text-sky-400" />}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold" style={{ color: "var(--text)" }}>{opt.title}</span>
+                        {opt.tag === "Recommended" ? (
+                          <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-amber-400 text-black">
+                            {opt.tag}
+                          </span>
+                        ) : opt.tag === "Routine" ? (
+                          <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                            {opt.tag}
+                          </span>
+                        ) : (
+                          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-black/20 text-white/70">
+                            {opt.tag}
+                          </span>
+                        )}
+                      </div>
+                      {hourlySettings.timingMode === opt.id && <Check size={14} className="text-sky-400 shrink-0" />}
                     </div>
                     <p className="text-[11px] mt-1" style={{ color: "var(--faint)" }}>{opt.desc}</p>
                   </div>
                 ))}
               </div>
+
+              {/* Routine Schedule Lead Time & Status Card */}
+              {(hourlySettings.timingMode === "routine-schedule" || hourlySettings.timingMode === "both-hourly-and-routine") && (
+                <div className="p-3.5 rounded-xl border space-y-2.5 bg-emerald-500/5 border-emerald-500/30 fade-up">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                      <Calendar size={13} /> Routine Advance Notice (Lead Time):
+                    </span>
+                    <span className="text-[10px] font-mono opacity-70">
+                      {hourlySettings.routineLeadTimeMinutes === 0 ? "Exact time" : `${hourlySettings.routineLeadTimeMinutes}m early`}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { mins: 0, label: "At Start Time (0m)" },
+                      { mins: 5, label: "5 mins Before" },
+                      { mins: 10, label: "10 mins Before" },
+                    ].map(lead => (
+                      <button
+                        key={lead.mins}
+                        type="button"
+                        onClick={() => handleUpdateHourly({ routineLeadTimeMinutes: lead.mins })}
+                        className={`py-1.5 px-2 rounded-lg text-[11px] font-bold border transition-all ${
+                          (hourlySettings.routineLeadTimeMinutes || 0) === lead.mins
+                            ? "bg-emerald-500 text-white border-emerald-400 shadow-sm"
+                            : "hover:bg-white/5 text-[var(--muted)] border-white/10"
+                        }`}
+                      >
+                        {lead.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Routine Status Info */}
+                  <div className="pt-1 flex items-center justify-between text-[11px] text-[var(--faint)]">
+                    <span>
+                      📋 Time Table: <strong className="text-white">{routine?.length || 0} activities</strong> configured
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleTestAlert("routine")}
+                      className="text-emerald-400 hover:underline font-bold text-[11px] flex items-center gap-1"
+                    >
+                      <Sparkles size={11} /> Test Routine Chime
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {hourlySettings.timingMode === "custom-interval" && (
                 <div className="pt-2 flex items-center gap-3">
@@ -604,14 +684,24 @@ export default function SettingsView({ initialCategories, onUpdate }: Props) {
                 )}
               </div>
 
-              {/* In-app Simulator Trigger */}
-              <div className="pt-2 flex justify-end">
+              {/* In-app Simulator Triggers */}
+              <div className="pt-2 flex flex-wrap justify-end gap-2">
                 <button
-                  onClick={handleTestAlert}
-                  className="px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 border hover:bg-white/10 transition-all text-amber-400 border-amber-400/40"
+                  type="button"
+                  onClick={() => handleTestAlert("hourly")}
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 border hover:bg-white/10 transition-all text-amber-400 border-amber-400/40"
                 >
-                  <Sparkles size={14} />
-                  <span>Simulate Hourly Alert Right Now 🔔</span>
+                  <Bell size={13} />
+                  <span>Simulate Hourly Alert 🔔</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleTestAlert("routine")}
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 border hover:bg-white/10 transition-all text-emerald-400 border-emerald-400/40 bg-emerald-500/10"
+                >
+                  <Sparkles size={13} />
+                  <span>Simulate Routine Alert 📅</span>
                 </button>
               </div>
             </div>
